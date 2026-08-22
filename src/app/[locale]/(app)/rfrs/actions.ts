@@ -15,6 +15,7 @@ import {
   type RfrInput,
 } from "./schema";
 import { canTransition } from "./stage-rules";
+import { isSkipStage } from "./stage-tone";
 
 /**
  * RFR mutations. Writing operations and maintenance is data_admin and above,
@@ -180,8 +181,8 @@ export async function updateRfr(
 }
 
 /**
- * The one place a stage moves. It writes rfrs.stage_id (plus the whole-request
- * skip reason when that is the target) and nothing else — trg_rfr_stage_log
+ * The one place a stage moves. It writes rfrs.stage_id (plus the skip reason
+ * when the target is any skip variant) and nothing else — trg_rfr_stage_log
  * records the change, and the access-time clock follows from that history.
  *
  * The transition-graph check below mirrors fn_validate_rfr_stage_transition
@@ -227,8 +228,8 @@ export async function changeStage(
     return { formError: "invalidStageTransition", fieldErrors: {} };
   }
 
-  // "Skipped" means the whole request was dropped, and that needs a reason.
-  if (stage.code === "skipped" && !parsed.data.skipReasonId) {
+  // Every skip variant — dropped, or deferred to next trip/PM — needs a reason.
+  if (isSkipStage(stage.code) && !parsed.data.skipReasonId) {
     return { formError: null, fieldErrors: { skipReasonId: "skipReasonRequired" } };
   }
 
@@ -250,7 +251,7 @@ export async function changeStage(
     .update({
       stage_id: parsed.data.stageId,
       // a reason only belongs on a skipped request
-      skip_reason_id: stage.code === "skipped" ? parsed.data.skipReasonId : null,
+      skip_reason_id: isSkipStage(stage.code) ? parsed.data.skipReasonId : null,
       // nothing in the schema stamps this, so the stage move does — and clears
       // it again if the request comes back out of Completed
       completed_at: stage.code === "completed" ? new Date().toISOString() : null,

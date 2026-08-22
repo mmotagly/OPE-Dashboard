@@ -52,7 +52,7 @@ export function StageRail({
 
         const label = (
           <span
-            className={`block text-[9.5px] font-semibold uppercase leading-tight tracking-[0.05em] ${
+            className={`block break-words text-[9.5px] font-semibold uppercase leading-tight tracking-[0.05em] ${
               filled ? "text-ink" : isClickable ? "text-ink-2" : "text-ink-3"
             } ${s.state === "skip" ? "line-through" : ""}`}
           >

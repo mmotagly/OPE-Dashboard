@@ -7,6 +7,7 @@ import { StageRail, type Stage } from "@/components/ui/stage-rail";
 import { EMPTY_FORM_STATE } from "@/lib/forms";
 import type { LookupOption } from "@/lib/lookups";
 import { canTransition } from "./stage-rules";
+import { isSkipStage } from "./stage-tone";
 import { changeStage } from "./actions";
 
 const ARM_TIMEOUT_MS = 4000;
@@ -14,10 +15,10 @@ const ARM_TIMEOUT_MS = 4000;
 /**
  * The stage rail is the control now — no separate select + "Move stage"
  * button. Tapping a valid node arms it (a ring, no write yet); tapping the
- * same node again within a few seconds commits. "Skipped" is the one target
- * that still needs a second decision (a reason), so arming it reveals the
- * reason picker instead of waiting on a second tap — choosing a reason is
- * itself the commit.
+ * same node again within a few seconds commits. Every skip variant (Skip
+ * Next Trip, Skip Next PM, Skipped) still needs a second decision — a
+ * reason — so arming one reveals the reason picker instead of waiting on a
+ * second tap; choosing a reason is itself the commit.
  */
 export function StageActions({
   rfrId,
@@ -106,8 +107,8 @@ export function StageActions({
     if (pending) return;
 
     if (armedCode === code) {
-      // Skipped's second decision is the reason picker below, not a retap.
-      if (code === "skipped") return;
+      // A skip variant's second decision is the reason picker below, not a retap.
+      if (isSkipStage(code)) return;
       commit(code, "");
       return;
     }
@@ -116,7 +117,7 @@ export function StageActions({
   };
 
   const armedStage = armedCode ? stages.find((s) => s.code === armedCode) : null;
-  const showSkipPicker = armedCode === "skipped";
+  const showSkipPicker = armedCode !== null && isSkipStage(armedCode);
 
   return (
     <div className="grid gap-2.5">
@@ -135,7 +136,7 @@ export function StageActions({
         </p>
       )}
 
-      {showSkipPicker && (
+      {showSkipPicker && armedCode && (
         <Field label={t("skipReason")} htmlFor="skipReasonId" error={err("skipReasonId")}>
           <SelectInput
             id="skipReasonId"
@@ -144,7 +145,7 @@ export function StageActions({
             onChange={(e) => {
               const id = e.target.value;
               setSkipReasonId(id);
-              if (id) commit("skipped", id);
+              if (id) commit(armedCode, id);
             }}
           >
             <option value="">{t("chooseSkipReason")}</option>
