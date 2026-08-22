@@ -44,6 +44,10 @@ export function StageActions({
   const [armedCode, setArmedCode] = useState<string | null>(null);
   const [skipReasonId, setSkipReasonId] = useState("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards against a literal duplicate commit — some Android Chrome builds
+  // fire a <select>'s change event twice for one pick. Reset once the
+  // in-flight action settles (see the effect below).
+  const submittingRef = useRef(false);
 
   const clearArmTimer = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -68,6 +72,11 @@ export function StageActions({
 
   useEffect(() => clearArmTimer, []);
 
+  // Re-arm the duplicate-commit guard once the action settles, success or not.
+  useEffect(() => {
+    if (!pending) submittingRef.current = false;
+  }, [pending]);
+
   const clickable = useMemo(
     () =>
       new Set(
@@ -90,9 +99,15 @@ export function StageActions({
   };
 
   const commit = (targetCode: string, reasonId: string) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     clearArmTimer();
     const target = stages.find((s) => s.code === targetCode);
-    if (!target) return;
+    if (!target) {
+      submittingRef.current = false;
+      return;
+    }
 
     const fd = new FormData();
     fd.set("stageId", target.id);

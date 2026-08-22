@@ -224,6 +224,17 @@ export async function changeStage(
   const fromCode = await stageCodeById(supabase, rfrRow.stage_id);
   if (!fromCode) return { formError: "saveFailed", fieldErrors: {} };
 
+  // Already there — most likely a second, overlapping dispatch of the same
+  // commit (a real quirk: some Android Chrome builds fire a <select>'s
+  // change event twice for one pick) landing after the first one already
+  // moved the stage, not a genuine repeat attempt. Treat it as done rather
+  // than rejecting it as a self-transition — canTransition correctly refuses
+  // from === to, but that check is for a fresh request, not a race replay.
+  if (fromCode === stage.code) {
+    refresh();
+    return { formError: null, fieldErrors: {} };
+  }
+
   if (!canTransition(fromCode, stage.code, isSuper(gate.role))) {
     return { formError: "invalidStageTransition", fieldErrors: {} };
   }
