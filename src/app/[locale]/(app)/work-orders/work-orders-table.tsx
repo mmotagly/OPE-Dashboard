@@ -70,6 +70,7 @@ export function WorkOrdersTable({
     {
       key: "issue",
       header: t("field.issueType"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.issueTypeLabel,
       cell: (r) => orDash(r.issueTypeLabel),
     },
