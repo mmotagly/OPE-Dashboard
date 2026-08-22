@@ -46,16 +46,22 @@ export function MobileNav({ role }: { role: AppRole }) {
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t("openMenu")}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? t("closeMenu") : t("openMenu")}
         aria-expanded={open}
         className="grid h-11 w-11 shrink-0 place-items-center rounded-[8px] border border-hairline text-ink-2 transition-colors hover:bg-raise hover:text-ink xl:hidden"
       >
-        <span aria-hidden className="grid gap-[3px]">
-          <span className="block h-[1.5px] w-4 bg-current" />
-          <span className="block h-[1.5px] w-4 bg-current" />
-          <span className="block h-[1.5px] w-4 bg-current" />
-        </span>
+        {open ? (
+          <span aria-hidden className="text-[15px]">
+            ×
+          </span>
+        ) : (
+          <span aria-hidden className="grid gap-[3px]">
+            <span className="block h-[1.5px] w-4 bg-current" />
+            <span className="block h-[1.5px] w-4 bg-current" />
+            <span className="block h-[1.5px] w-4 bg-current" />
+          </span>
+        )}
       </button>
 
       {open &&
@@ -75,16 +81,6 @@ export function MobileNav({ role }: { role: AppRole }) {
               aria-label={t("openMenu")}
               className="fixed bottom-0 start-0 top-[68px] z-50 flex w-[min(300px,84vw)] flex-col overflow-y-auto border-e border-hairline bg-surface shadow-[0_0_60px_rgb(0_0_0/0.6)] xl:hidden"
             >
-              <div className="flex shrink-0 justify-end border-b border-hairline px-3 py-2.5">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label={t("closeMenu")}
-                  className="grid h-11 w-11 place-items-center rounded-[8px] border border-hairline text-[15px] text-ink-2 transition-colors hover:bg-raise hover:text-ink"
-                >
-                  ×
-                </button>
-              </div>
               <Sidebar role={role} variant="mobile" onNavigate={() => setOpen(false)} />
             </aside>
           </>,
