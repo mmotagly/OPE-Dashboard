@@ -45,12 +45,14 @@ export function ChargingTable({
     {
       key: "charger",
       header: t("field.charger"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.chargerCode,
       cell: (r) => <span className="tnum">{r.chargerCode}</span>,
     },
     {
       key: "plugs",
       header: t("field.plugs"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.plugsUsed,
       cell: (r) => <Pill tone="idle">{r.plugsUsed}</Pill>,
     },

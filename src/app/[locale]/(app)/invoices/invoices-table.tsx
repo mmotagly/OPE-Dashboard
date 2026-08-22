@@ -67,6 +67,7 @@ export function InvoicesTable({
       key: "quantity",
       header: t("field.busQuantity"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.busQuantity,
       cell: (r) => (r.busQuantity === null ? orDash(null) : r.busQuantity),
     },
@@ -74,6 +75,7 @@ export function InvoicesTable({
       key: "gross",
       header: t("field.gross"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.grossAmount,
       cell: (r) =>
         r.grossAmount === null ? orDash(null) : money(r.grossAmount, r.currency),

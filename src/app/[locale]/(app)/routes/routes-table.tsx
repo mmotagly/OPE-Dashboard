@@ -45,6 +45,7 @@ export function RoutesTable({
       key: "distance",
       header: t("field.routeDistance"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.routeDistanceKm,
       cell: (r) => (r.routeDistanceKm === null ? orDash(null) : km(r.routeDistanceKm)),
     },
@@ -52,6 +53,7 @@ export function RoutesTable({
       key: "stops",
       header: t("stopsInSequence"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.linkedStations,
       cell: (r) => (
         <Micro bar={false} tone={r.linkedStations === 0 ? "warn" : "neutral"}>

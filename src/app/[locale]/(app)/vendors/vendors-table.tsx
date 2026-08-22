@@ -65,6 +65,7 @@ export function VendorsTable({
     {
       key: "basis",
       header: tFinance("basis"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => basisLabel(r),
       cell: (r) => orDash(basisLabel(r)),
     },
@@ -72,6 +73,7 @@ export function VendorsTable({
       key: "rate",
       header: t("field.rateAmount"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.rateAmount,
       cell: (r) => (r.rateAmount === null ? orDash(null) : money(r.rateAmount, r.currency)),
     },

@@ -45,12 +45,14 @@ export function OperationsTable({
     {
       key: "date",
       header: t("field.date"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.date,
       cell: (r) => <span className="tnum">{r.date}</span>,
     },
     {
       key: "shift",
       header: t("field.shift"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => shiftLabel(r.shiftId),
       cell: (r) => orDash(shiftLabel(r.shiftId)),
     },
@@ -91,6 +93,7 @@ export function OperationsTable({
       key: "endKm",
       header: t("field.endingKm"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.endKm,
       cell: (r) => (r.endKm === null ? orDash(null) : km(r.endKm)),
     },

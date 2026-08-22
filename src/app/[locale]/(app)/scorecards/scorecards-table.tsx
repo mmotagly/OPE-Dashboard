@@ -54,6 +54,7 @@ export function ScorecardsTable({
             key: "sections",
             header: t("field.sections"),
             numeric: true,
+            className: "hidden sm:table-cell",
             sortValue: (r) => r.sectionCount,
             cell: (r) => r.sectionCount,
           },
@@ -61,6 +62,7 @@ export function ScorecardsTable({
             key: "lines",
             header: t("field.kpiLines"),
             numeric: true,
+            className: "hidden sm:table-cell",
             sortValue: (r) => r.lineCount,
             cell: (r) => r.lineCount,
           },
@@ -99,6 +101,7 @@ export function ScorecardsTable({
             key: "total",
             header: t("field.totalAchieved"),
             numeric: true,
+            className: "hidden sm:table-cell",
             sortValue: (r) => r.totalAchievedPct,
             cell: (r) =>
               // Straight from v_scorecard_totals.

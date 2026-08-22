@@ -52,6 +52,7 @@ export function WorkOrdersTable({
     {
       key: "rfr",
       header: t("field.rfr"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.rfrNumber,
       cell: (r) => <span className="tnum">{r.rfrNumber}</span>,
     },

@@ -36,6 +36,7 @@ export function RfrsTable({
     {
       key: "requested",
       header: t("requested"),
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.requestAt,
       cell: (r) => (
         <span className="tnum">{r.requestAt.slice(0, 16).replace("T", " ")}</span>
@@ -78,6 +79,7 @@ export function RfrsTable({
       key: "access",
       header: t("accessTime"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.accessMinutes,
       cell: (r) => (
         // Red only while the clock is actually ticking; paused reads neutral.

@@ -64,6 +64,7 @@ export function VehiclesTable({
       key: "odometer",
       header: tVehicle("odometer"),
       numeric: true,
+      className: "hidden sm:table-cell",
       sortValue: (r) => r.currentOdometerKm,
       cell: (r) => (r.currentOdometerKm === null ? orDash(null) : km(r.currentOdometerKm)),
     },
