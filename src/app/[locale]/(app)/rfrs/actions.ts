@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
-import { canWriteOps, requireUser } from "@/lib/auth";
+import { canWriteOps, isSuper, requireUser } from "@/lib/auth";
+import type { AppRole } from "@/lib/auth";
 import { dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
 import {
   parseIssueSkipForm,
@@ -13,6 +14,7 @@ import {
   readIssueTypeIds,
   type RfrInput,
 } from "./schema";
+import { canTransition } from "./stage-rules";
 
 /**
  * RFR mutations. Writing operations and maintenance is data_admin and above,
@@ -25,14 +27,14 @@ import {
  *     every stage change, including the one at insert
  */
 
-type Guard = { locale: string } | FormState;
+type Guard = { locale: string; role: AppRole } | FormState;
 const denied = (g: Guard): g is FormState => "formError" in g;
 
 async function guardOps(): Promise<Guard> {
   const locale = await getLocale();
   const user = await requireUser(locale);
   if (!canWriteOps(user.role)) return { formError: "forbidden", fieldErrors: {} };
-  return { locale };
+  return { locale, role: user.role };
 }
 
 async function stageByCode(
@@ -47,6 +49,19 @@ async function stageByCode(
     .maybeSingle();
 
   return data?.id ?? null;
+}
+
+async function stageCodeById(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  stageId: string,
+) {
+  const { data } = await supabase
+    .from("lookups")
+    .select("code")
+    .eq("id", stageId)
+    .maybeSingle();
+
+  return data?.code ?? null;
 }
 
 const refresh = () => revalidatePath("/[locale]/rfrs", "page");
@@ -168,6 +183,10 @@ export async function updateRfr(
  * The one place a stage moves. It writes rfrs.stage_id (plus the whole-request
  * skip reason when that is the target) and nothing else — trg_rfr_stage_log
  * records the change, and the access-time clock follows from that history.
+ *
+ * The transition-graph check below mirrors fn_validate_rfr_stage_transition
+ * (0004_rfr_stage_transitions.sql), the authoritative gate — this exists only
+ * to fail fast with a translated message instead of a raw Postgres error.
  */
 export async function changeStage(
   rfrId: string,
@@ -192,6 +211,21 @@ export async function changeStage(
     .maybeSingle();
 
   if (!stage) return { formError: null, fieldErrors: { stageId: "required" } };
+
+  const { data: rfrRow } = await supabase
+    .from("rfrs")
+    .select("stage_id")
+    .eq("id", rfrId)
+    .maybeSingle();
+
+  if (!rfrRow) return { formError: "saveFailed", fieldErrors: {} };
+
+  const fromCode = await stageCodeById(supabase, rfrRow.stage_id);
+  if (!fromCode) return { formError: "saveFailed", fieldErrors: {} };
+
+  if (!canTransition(fromCode, stage.code, isSuper(gate.role))) {
+    return { formError: "invalidStageTransition", fieldErrors: {} };
+  }
 
   // "Skipped" means the whole request was dropped, and that needs a reason.
   if (stage.code === "skipped" && !parsed.data.skipReasonId) {

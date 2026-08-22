@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
-import { canWriteOps, requireUser } from "@/lib/auth";
+import { canWriteOps, isSuper, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -39,6 +39,7 @@ export default async function RfrsPage({
   const t = await getTranslations("rfr");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
+  const isSuperAdmin = isSuper(user.role);
 
   const [stages, all, options, { state: filterState, saved }] = await Promise.all([
     loadStages(),
@@ -182,6 +183,7 @@ export default async function RfrsPage({
           stages={stages}
           closeHref={{ pathname: "/rfrs", query }}
           canEdit={canEdit}
+          isSuperAdmin={isSuperAdmin}
         />
       )}
     </>

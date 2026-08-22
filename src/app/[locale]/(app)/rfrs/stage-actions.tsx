@@ -1,28 +1,38 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import { Field, SelectInput } from "@/components/ui/field";
+import { StageRail, type Stage } from "@/components/ui/stage-rail";
 import { EMPTY_FORM_STATE } from "@/lib/forms";
 import type { LookupOption } from "@/lib/lookups";
+import { canTransition } from "./stage-rules";
 import { changeStage } from "./actions";
 
+const ARM_TIMEOUT_MS = 4000;
+
 /**
- * Moves the RFR to another stage. One action, one write to rfrs.stage_id —
- * rfr_stage_history is the trigger's business, and the access-time clock
- * follows from it.
+ * The stage rail is the control now — no separate select + "Move stage"
+ * button. Tapping a valid node arms it (a ring, no write yet); tapping the
+ * same node again within a few seconds commits. "Skipped" is the one target
+ * that still needs a second decision (a reason), so arming it reveals the
+ * reason picker instead of waiting on a second tap — choosing a reason is
+ * itself the commit.
  */
 export function StageActions({
   rfrId,
   stages,
   skipReasons,
-  currentStageId,
+  rail,
+  currentStageCode,
+  isSuperAdmin,
 }: {
   rfrId: string;
   stages: LookupOption[];
   skipReasons: LookupOption[];
-  currentStageId: string;
+  rail: Stage[];
+  currentStageCode: string;
+  isSuperAdmin: boolean;
 }) {
   const t = useTranslations("rfr");
   const [state, formAction, pending] = useActionState(
@@ -30,45 +40,112 @@ export function StageActions({
     EMPTY_FORM_STATE,
   );
 
-  const [stageId, setStageId] = useState(currentStageId);
+  const [armedCode, setArmedCode] = useState<string | null>(null);
   const [skipReasonId, setSkipReasonId] = useState("");
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const target = stages.find((s) => s.id === stageId);
-  const needsReason = target?.code === "skipped";
+  const clearArmTimer = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  };
+
+  // Resync to server truth on any rejected transition — nothing stays armed
+  // or half-picked past a failure. Adjusted during render (comparing against
+  // the last action result already committed) rather than in an effect, per
+  // React's guidance against setState-in-effect for this exact "derive local
+  // state from a result change" shape. The stale arm timeout (a ref) isn't
+  // touched here — refs can't be read/written during render — it's left to
+  // fire later and no-op against an already-null armedCode.
+  const [lastHandledState, setLastHandledState] = useState(state);
+  if (state !== lastHandledState) {
+    setLastHandledState(state);
+    if (state.formError || Object.keys(state.fieldErrors).length > 0) {
+      setArmedCode(null);
+      setSkipReasonId("");
+    }
+  }
+
+  useEffect(() => clearArmTimer, []);
+
+  const clickable = useMemo(
+    () =>
+      new Set(
+        stages
+          .filter((s) => canTransition(currentStageCode, s.code, isSuperAdmin))
+          .map((s) => s.code),
+      ),
+    [stages, currentStageCode, isSuperAdmin],
+  );
 
   const err = (field: string) => {
     const key = state.fieldErrors[field];
     return key ? t(`error.${key}`) : undefined;
   };
 
-  return (
-    <form action={formAction} className="grid gap-3">
-      <Field label={t("changeStage")} htmlFor="stageId" error={err("stageId")}>
-        <SelectInput
-          id="stageId"
-          name="stageId"
-          value={stageId}
-          onChange={(e) => setStageId(e.target.value)}
-        >
-          {stages.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.labelEn}
-            </option>
-          ))}
-        </SelectInput>
-      </Field>
+  const arm = (code: string) => {
+    clearArmTimer();
+    setArmedCode(code);
+    timeoutRef.current = setTimeout(() => setArmedCode(null), ARM_TIMEOUT_MS);
+  };
 
-      {needsReason && (
-        <Field
-          label={t("skipReason")}
-          htmlFor="skipReasonId"
-          error={err("skipReasonId")}
-        >
+  const commit = (targetCode: string, reasonId: string) => {
+    clearArmTimer();
+    const target = stages.find((s) => s.code === targetCode);
+    if (!target) return;
+
+    const fd = new FormData();
+    fd.set("stageId", target.id);
+    fd.set("skipReasonId", reasonId);
+    formAction(fd);
+
+    setArmedCode(null);
+    setSkipReasonId("");
+  };
+
+  const handleSelect = (code: string) => {
+    if (pending) return;
+
+    if (armedCode === code) {
+      // Skipped's second decision is the reason picker below, not a retap.
+      if (code === "skipped") return;
+      commit(code, "");
+      return;
+    }
+
+    arm(code);
+  };
+
+  const armedStage = armedCode ? stages.find((s) => s.code === armedCode) : null;
+  const showSkipPicker = armedCode === "skipped";
+
+  return (
+    <div className="grid gap-2.5">
+      <div className={pending ? "pointer-events-none opacity-60" : ""}>
+        <StageRail
+          stages={rail}
+          onSelect={handleSelect}
+          clickable={clickable}
+          armedCode={armedCode}
+        />
+      </div>
+
+      {armedStage && !showSkipPicker && (
+        <p aria-live="polite" className="text-[11px] text-ink-2">
+          {t("tapToConfirm", { stage: armedStage.labelEn })}
+        </p>
+      )}
+
+      {showSkipPicker && (
+        <Field label={t("skipReason")} htmlFor="skipReasonId" error={err("skipReasonId")}>
           <SelectInput
             id="skipReasonId"
-            name="skipReasonId"
             value={skipReasonId}
-            onChange={(e) => setSkipReasonId(e.target.value)}
+            disabled={pending}
+            onChange={(e) => {
+              const id = e.target.value;
+              setSkipReasonId(id);
+              if (id) commit("skipped", id);
+            }}
           >
             <option value="">{t("chooseSkipReason")}</option>
             {skipReasons.map((s) => (
@@ -80,21 +157,11 @@ export function StageActions({
         </Field>
       )}
 
-      {state.formError && (
+      {(state.formError || state.fieldErrors.stageId) && (
         <p role="alert" className="text-[12px] text-stop-text">
-          {t(`error.${state.formError}`)}
+          {t(`error.${state.formError ?? state.fieldErrors.stageId}`)}
         </p>
       )}
-
-      <div>
-        <Button
-          type="submit"
-          variant={needsReason ? "danger" : "default"}
-          disabled={pending || stageId === currentStageId}
-        >
-          {needsReason ? t("skipRequest") : t("applyStage")}
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }

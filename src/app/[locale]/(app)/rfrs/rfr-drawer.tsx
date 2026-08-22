@@ -29,12 +29,14 @@ export async function RfrDrawer({
   stages,
   closeHref,
   canEdit,
+  isSuperAdmin,
 }: {
   mode: "view" | "new" | "edit";
   id?: string;
   stages: LookupOption[];
   closeHref: CloseHref;
   canEdit: boolean;
+  isSuperAdmin: boolean;
 }) {
   const t = await getTranslations("rfr");
   const tCommon = await getTranslations("common");
@@ -120,7 +122,18 @@ export async function RfrDrawer({
       }
     >
       <Section title={t("stage")}>
-        <StageRail stages={rail} />
+        {canEdit ? (
+          <StageActions
+            rfrId={rfr.id}
+            stages={stages}
+            skipReasons={options.skipReasons}
+            rail={rail}
+            currentStageCode={rfr.stageCode ?? ""}
+            isSuperAdmin={isSuperAdmin}
+          />
+        ) : (
+          <StageRail stages={rail} />
+        )}
       </Section>
 
       <Section title={t("accessTime")}>
@@ -236,17 +249,6 @@ export async function RfrDrawer({
           </ul>
         )}
       </Section>
-
-      {canEdit && (
-        <Section title={t("changeStage")}>
-          <StageActions
-            rfrId={rfr.id}
-            stages={stages}
-            skipReasons={options.skipReasons}
-            currentStageId={rfr.stageId}
-          />
-        </Section>
-      )}
     </Drawer>
   );
 }
