@@ -72,10 +72,18 @@ export function StageActions({
 
   useEffect(() => clearArmTimer, []);
 
-  // Re-arm the duplicate-commit guard once the action settles, success or not.
+  // Re-arm the duplicate-commit guard once the action settles. Keyed on
+  // `state` rather than `pending` — changeStage() always returns a fresh
+  // object, so this fires exactly once per real response no matter how
+  // `pending` behaves for a dispatch invoked directly (not via a <form>
+  // submission). Keying this on `pending` instead was the bug: if `pending`
+  // never visibly transitions through an observable `true`, the effect never
+  // re-fires and the guard stays locked forever after the first commit,
+  // silently no-opping every tap after it — which is exactly what "changes
+  // got slow and then stopped happening at all" looks like.
   useEffect(() => {
-    if (!pending) submittingRef.current = false;
-  }, [pending]);
+    submittingRef.current = false;
+  }, [state]);
 
   const clickable = useMemo(
     () =>
@@ -173,9 +181,11 @@ export function StageActions({
         </Field>
       )}
 
-      {(state.formError || state.fieldErrors.stageId) && (
+      {(state.formError || state.fieldErrors.stageId || state.fieldErrors.skipReasonId) && (
         <p role="alert" className="text-[12px] text-stop-text">
-          {t(`error.${state.formError ?? state.fieldErrors.stageId}`)}
+          {t(
+            `error.${state.formError ?? state.fieldErrors.stageId ?? state.fieldErrors.skipReasonId}`,
+          )}
         </p>
       )}
     </div>

@@ -52,19 +52,6 @@ async function stageByCode(
   return data?.id ?? null;
 }
 
-async function stageCodeById(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  stageId: string,
-) {
-  const { data } = await supabase
-    .from("lookups")
-    .select("code")
-    .eq("id", stageId)
-    .maybeSingle();
-
-  return data?.code ?? null;
-}
-
 const refresh = () => revalidatePath("/[locale]/rfrs", "page");
 
 /** Replaces the RFR's issue list with exactly the ticked types. */
@@ -204,24 +191,24 @@ export async function changeStage(
 
   const supabase = await createClient();
 
-  const { data: stage } = await supabase
-    .from("lookups")
-    .select("code")
-    .eq("id", parsed.data.stageId)
-    .eq("category", "rfr_stage")
-    .maybeSingle();
+  // rfr_stage is seven rows, cheap to fetch whole — this resolves both the
+  // target's code (validating parsed.data.stageId is a real one) and the
+  // RFR's current code from one in-memory list, instead of two separate
+  // per-id lookups queries. Run alongside the RFR's own stage_id fetch
+  // (independent of it) rather than after it — sequential round trips here
+  // were adding real, measurable latency to every stage change.
+  const [{ data: stages }, { data: rfrRow }] = await Promise.all([
+    supabase.from("lookups").select("id, code").eq("category", "rfr_stage"),
+    supabase.from("rfrs").select("stage_id").eq("id", rfrId).maybeSingle(),
+  ]);
 
+  const stageList = stages ?? [];
+  const stage = stageList.find((s) => s.id === parsed.data.stageId);
   if (!stage) return { formError: null, fieldErrors: { stageId: "required" } };
-
-  const { data: rfrRow } = await supabase
-    .from("rfrs")
-    .select("stage_id")
-    .eq("id", rfrId)
-    .maybeSingle();
 
   if (!rfrRow) return { formError: "saveFailed", fieldErrors: {} };
 
-  const fromCode = await stageCodeById(supabase, rfrRow.stage_id);
+  const fromCode = stageList.find((s) => s.id === rfrRow.stage_id)?.code ?? null;
   if (!fromCode) return { formError: "saveFailed", fieldErrors: {} };
 
   // Already there — most likely a second, overlapping dispatch of the same
