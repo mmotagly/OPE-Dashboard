@@ -21,6 +21,14 @@ import {
  *   - it never checks for a duplicate before writing; the unique constraint on
  *     (vehicle_id, operation_date, shift_type_id) is the authority, and its
  *     rejection is translated into a field-level message
+ *
+ * Phase 1 compatibility shim (0009_operation_status.sql): this form still only
+ * knows Operating/Completed, derived from whether endingKm was entered — the
+ * same thing the UI used to derive from endKm alone. status_id now has to be
+ * set explicitly because the DB default ('planned') requires driver/KM to be
+ * null, which this form never satisfies. The real status picker (Planned, the
+ * Cancelled variants, Under Maintenance) is a later phase; this only keeps
+ * today's form working against the new schema, unchanged.
  */
 
 type DbError = { code?: string; message?: string; details?: string | null };
@@ -68,6 +76,24 @@ function toRow(input: OperationInput) {
 }
 
 /**
+ * Phase 1 shim — see the module doc comment. Resolves the operation_status
+ * lookup id for whichever of the two codes this old form can produce.
+ */
+async function resolveStatusId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  endingKm: number | null,
+) {
+  const { data } = await supabase
+    .from("lookups")
+    .select("id")
+    .eq("category", "operation_status")
+    .eq("code", endingKm === null ? "operating" : "completed")
+    .single();
+
+  return data?.id ?? null;
+}
+
+/**
  * `operation_code` is `not null unique` with no default and no trigger, so the
  * application has to supply it. Numbered per day; collisions on the code alone
  * are retried with the next number.
@@ -111,7 +137,8 @@ export async function createOperation(
   }
 
   const supabase = await createClient();
-  const row = toRow(parsed.data);
+  const status_id = await resolveStatusId(supabase, parsed.data.endingKm);
+  const row = { ...toRow(parsed.data), status_id };
 
   let created: { id: string } | null = null;
   let lastError: DbError | null = null;
@@ -123,9 +150,14 @@ export async function createOperation(
       attempt,
     );
 
+    // status_id (migration 0009) is newer than the checked-in generated
+    // types, so the typed client doesn't know this column exists yet — same
+    // gap saved-filters-db.ts documents for a whole missing table, here it's
+    // one column on an existing one. Removable once types are regenerated.
     const { data, error } = await supabase
       .from("daily_vehicle_operations")
-      .insert({ ...row, operation_code })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert({ ...row, operation_code } as any)
       .select("id")
       .single();
 
@@ -166,12 +198,15 @@ export async function updateOperation(
   }
 
   const supabase = await createClient();
+  const status_id = await resolveStatusId(supabase, parsed.data.endingKm);
 
   // operation_code is left alone on purpose — a record's identifier should not
-  // churn when its vehicle or date is corrected.
+  // churn when its vehicle or date is corrected. status_id: see the same
+  // stale-generated-types note above resolveStatusId's call in createOperation.
   const { error } = await supabase
     .from("daily_vehicle_operations")
-    .update(toRow(parsed.data))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ ...toRow(parsed.data), status_id } as any)
     .eq("id", id);
 
   if (error) return toFormState(error);
