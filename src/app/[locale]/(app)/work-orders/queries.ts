@@ -141,14 +141,19 @@ export function workOrderStatus(row: {
   return "notStarted";
 }
 
+// Resolving labels for whatever an existing row already points at — a
+// deactivated value should still show its real label here, not a dash.
 async function lookupMap(): Promise<Map<string, LookupOption>> {
-  const sets = await loadLookupSets([
-    "maintenance_type",
-    "issue_type",
-    "maintenance_category",
-    "vehicle_status_after",
-    "skip_reason",
-  ] as const);
+  const sets = await loadLookupSets(
+    [
+      "maintenance_type",
+      "issue_type",
+      "maintenance_category",
+      "vehicle_status_after",
+      "skip_reason",
+    ] as const,
+    { includeInactive: true },
+  );
 
   return new Map(
     [

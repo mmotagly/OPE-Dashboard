@@ -641,10 +641,10 @@
   "settings": {
     "usersTitle": "Users and roles",
     "thresholdsTitle": "Periodic maintenance thresholds",
-    "lookupsTitle": "Lookup lists",
+    "dataValidationTitle": "Data validation",
     "usersTab": "Users",
     "thresholdsTab": "Thresholds",
-    "lookupsTab": "Lookups",
+    "dataValidationTab": "Data Validation",
     "record": "Record",
     "searchUsers": "Search name or job title",
     "allCategories": "All categories",

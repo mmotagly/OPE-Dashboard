@@ -93,7 +93,7 @@ export default async function SettingsPage({
     { value: "thresholds", label: t("thresholdsTab"), count: thresholds.length },
     {
       value: "lookups",
-      label: t("lookupsTab"),
+      label: t("dataValidationTab"),
       count: entity === "lookups" ? lookups.length : categories.length,
     },
   ];
@@ -112,7 +112,7 @@ export default async function SettingsPage({
 
   const title =
     entity === "lookups"
-      ? t("lookupsTitle")
+      ? t("dataValidationTitle")
       : entity === "thresholds"
         ? t("thresholdsTitle")
         : t("usersTitle");

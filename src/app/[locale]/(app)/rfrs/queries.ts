@@ -114,7 +114,11 @@ export async function loadStages(): Promise<LookupOption[]> {
 }
 
 async function lookupMap(): Promise<Map<string, LookupOption>> {
-  const sets = await loadLookupSets(["rfr_stage", "skip_reason"] as const);
+  // Resolving labels for whatever an existing row already points at — a
+  // deactivated value should still show its real label here, not a dash.
+  const sets = await loadLookupSets(["rfr_stage", "skip_reason"] as const, {
+    includeInactive: true,
+  });
   return new Map([...sets.rfr_stage, ...sets.skip_reason].map((l) => [l.id, l]));
 }
 

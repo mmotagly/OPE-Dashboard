@@ -68,7 +68,9 @@ const statusOf = (
 };
 
 async function statusMap(): Promise<Map<string, LookupOption>> {
-  const statuses = await loadLookups("generic_status");
+  // Resolving labels for whatever an existing row already points at — a
+  // deactivated value should still show its real label here, not a dash.
+  const statuses = await loadLookups("generic_status", { includeInactive: true });
   return new Map(statuses.map((l) => [l.id, l]));
 }
 

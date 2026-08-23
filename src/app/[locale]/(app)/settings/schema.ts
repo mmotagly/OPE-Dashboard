@@ -50,12 +50,34 @@ export const parseThresholdsForm = (formData: FormData) =>
   thresholdsSchema.safeParse(readFields(formData, THRESHOLD_FIELDS));
 
 /**
+ * The categories Data Validation exposes — genuinely free content lists with
+ * no code-level logic hanging off their entries. rfr_stage, generic_status,
+ * shift_type and fuel_type are deliberately excluded: real logic (the RFR
+ * transition graph, the access-time clock, status pill colour, the
+ * Morning/Night domain model, the electric-vehicle charging filter) is
+ * hardcoded against their specific codes, so they stay SQL-only.
+ */
+export const DATA_VALIDATION_CATEGORIES = [
+  "issue_type",
+  "skip_reason",
+  "maintenance_type",
+  "maintenance_category",
+  "vehicle_status_after",
+  "vendor_type",
+  "vehicle_type",
+  "license_grade",
+] as const;
+
+export type DataValidationCategory = (typeof DATA_VALIDATION_CATEGORIES)[number];
+
+/**
  * Lookup values are added, renamed, reordered and deactivated — never deleted.
  * A value that has been used is referenced by operational rows, so `is_active`
- * is what takes it out of circulation.
+ * is what takes it out of circulation. `category` is restricted to the
+ * Data Validation set — this is the actual guard, not just the UI dropdown.
  */
 export const lookupSchema = z.object({
-  category: requiredText(60),
+  category: z.enum(DATA_VALIDATION_CATEGORIES, { errorMap: () => ({ message: "required" }) }),
   code: requiredText(60),
   labelEn: requiredText(200),
   labelAr: optionalText(200),

@@ -641,10 +641,10 @@
   "settings": {
     "usersTitle": "المستخدمون والصلاحيات",
     "thresholdsTitle": "حدود الصيانة الدورية",
-    "lookupsTitle": "قوائم القيم",
+    "dataValidationTitle": "التحقق من صحة البيانات",
     "usersTab": "المستخدمون",
     "thresholdsTab": "الحدود",
-    "lookupsTab": "القوائم",
+    "dataValidationTab": "التحقق من صحة البيانات",
     "record": "السجل",
     "searchUsers": "ابحث بالاسم أو المسمى الوظيفي",
     "allCategories": "كل الفئات",

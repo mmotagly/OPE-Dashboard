@@ -105,13 +105,16 @@ function toRow(v: any, lookups: Map<string, LookupOption>): VehicleRow {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-/** Every lookup a vehicle can reference, keyed by id. */
+/**
+ * Every lookup a vehicle can reference, keyed by id. Resolving labels for
+ * whatever an existing row already points at — a deactivated value should
+ * still show its real label here, not a dash.
+ */
 async function lookupMap(): Promise<Map<string, LookupOption>> {
-  const sets = await loadLookupSets([
-    "vehicle_type",
-    "fuel_type",
-    "generic_status",
-  ] as const);
+  const sets = await loadLookupSets(
+    ["vehicle_type", "fuel_type", "generic_status"] as const,
+    { includeInactive: true },
+  );
 
   return new Map(
     [...sets.vehicle_type, ...sets.fuel_type, ...sets.generic_status].map((l) => [

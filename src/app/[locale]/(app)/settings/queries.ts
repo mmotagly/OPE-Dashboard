@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/lib/roles";
+import { DATA_VALIDATION_CATEGORIES } from "./schema";
 
 /** Read side of settings. `super_admin` only — the page refuses everyone else. */
 
@@ -94,9 +95,20 @@ export async function loadThresholds(): Promise<ThresholdRow[]> {
   }));
 }
 
+/**
+ * Data Validation's category list — restricted to DATA_VALIDATION_CATEGORIES
+ * regardless of what's actually in lookup_categories. rfr_stage,
+ * generic_status, shift_type and fuel_type never surface through this
+ * query, so there's no dropdown option and no crafted `?category=` that
+ * can reach them.
+ */
 export async function loadLookupCategories(): Promise<LookupCategoryRow[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("lookup_categories").select("key, label").order("key");
+  const { data } = await supabase
+    .from("lookup_categories")
+    .select("key, label")
+    .in("key", [...DATA_VALIDATION_CATEGORIES])
+    .order("key");
   return (data ?? []).map((c) => ({ key: c.key, label: c.label }));
 }
 
@@ -108,6 +120,9 @@ export async function loadAllLookups(category: string): Promise<LookupRow[]> {
   let query = supabase
     .from("lookups")
     .select("id, category, code, label_en, label_ar, sort_order, is_active")
+    // Same restriction as loadLookupCategories — a stray ?category=rfr_stage
+    // in the URL still can't pull structural rows into this view.
+    .in("category", [...DATA_VALIDATION_CATEGORIES])
     .order("category")
     .order("sort_order");
 

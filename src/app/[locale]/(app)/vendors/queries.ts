@@ -92,7 +92,11 @@ function toRow(v: any, lookups: Map<string, LookupOption>): VendorRow {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 async function lookupMap(): Promise<Map<string, LookupOption>> {
-  const sets = await loadLookupSets(["vendor_type", "generic_status"] as const);
+  // Resolving labels for whatever an existing row already points at — a
+  // deactivated value should still show its real label here, not a dash.
+  const sets = await loadLookupSets(["vendor_type", "generic_status"] as const, {
+    includeInactive: true,
+  });
   return new Map([...sets.vendor_type, ...sets.generic_status].map((l) => [l.id, l]));
 }
 

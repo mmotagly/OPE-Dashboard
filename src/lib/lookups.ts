@@ -19,14 +19,22 @@ export type LookupCategory =
 
 export async function loadLookups(
   category: LookupCategory,
+  options: { includeInactive?: boolean } = {},
 ): Promise<LookupOption[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("lookups")
     .select("id, code, label_en")
     .eq("category", category)
-    .eq("is_active", true)
     .order("sort_order");
+
+  // Pickers only ever offer active values. Resolving a label for a value a
+  // stored record already points at is different — deactivating something
+  // shouldn't blank out what past records show, so that read path opts into
+  // includeInactive instead.
+  if (!options.includeInactive) query = query.eq("is_active", true);
+
+  const { data } = await query;
 
   return (data ?? []).map((l) => ({
     id: l.id,
@@ -38,8 +46,9 @@ export async function loadLookups(
 /** Several categories in one round of queries. */
 export async function loadLookupSets<T extends LookupCategory>(
   categories: readonly T[],
+  options: { includeInactive?: boolean } = {},
 ): Promise<Record<T, LookupOption[]>> {
-  const lists = await Promise.all(categories.map((c) => loadLookups(c)));
+  const lists = await Promise.all(categories.map((c) => loadLookups(c, options)));
   return Object.fromEntries(
     categories.map((c, i) => [c, lists[i]]),
   ) as Record<T, LookupOption[]>;
