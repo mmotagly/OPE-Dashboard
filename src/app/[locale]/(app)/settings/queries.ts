@@ -108,7 +108,8 @@ export async function loadLookupCategories(): Promise<LookupCategoryRow[]> {
     .from("lookup_categories")
     .select("key, label")
     .in("key", [...DATA_VALIDATION_CATEGORIES])
-    .order("key");
+    // Alphabetical by what's actually shown, not the internal key.
+    .order("label");
   return (data ?? []).map((c) => ({ key: c.key, label: c.label }));
 }
 
@@ -124,7 +125,11 @@ export async function loadAllLookups(category: string): Promise<LookupRow[]> {
     // in the URL still can't pull structural rows into this view.
     .in("category", [...DATA_VALIDATION_CATEGORIES])
     .order("category")
-    .order("sort_order");
+    // Alphabetical, not manual sort_order — sort_order still exists and
+    // still drives ordering everywhere these categories are used as an
+    // operational picker (RFR issues, work order forms, etc.); this only
+    // changes how Data Validation's own table lists its values.
+    .order("label_en");
 
   if (category) query = query.eq("category", category);
 
