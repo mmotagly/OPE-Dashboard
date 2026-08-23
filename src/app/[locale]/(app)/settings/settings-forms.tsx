@@ -236,7 +236,10 @@ export function LookupForm({
   const [state, formAction, pending] = useActionState(action, EMPTY_FORM_STATE);
 
   const [values, setValues] = useState({
-    category: lookup?.category ?? defaultCategory ?? categories[0]?.key ?? "",
+    // `||`, not `??` — defaultCategory arrives as "" (not undefined) when no
+    // category filter is active, and an empty string should fall through
+    // to the first real option same as a missing one would.
+    category: lookup?.category || defaultCategory || categories[0]?.key || "",
     code: lookup?.code ?? "",
     labelEn: lookup?.labelEn ?? "",
     labelAr: lookup?.labelAr ?? "",
