@@ -127,6 +127,7 @@ export function buildOperationSchema(statusCodeById: Record<string, string>) {
       need("endingKm", v.endingKm);
       need("startingBatteryPct", v.startingBatteryPct);
       need("endingBatteryPct", v.endingBatteryPct);
+      need("operatingPct", v.operatingPct);
     } else {
       // planned / cancelled_by_* / under_maintenance
       forbid("driverId", v.driverId);

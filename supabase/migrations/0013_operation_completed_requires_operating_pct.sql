@@ -1,0 +1,55 @@
+-- ============================================================================
+-- 0013: Daily operations status — Completed requires operating %
+-- ============================================================================
+-- operating_percentage was never required by any status — Completed should
+-- require it, same as it already requires both KM readings and both battery
+-- readings. Operating stays as before (optional): only Completed changes.
+
+create or replace function fn_validate_operation_status()
+returns trigger language plpgsql as $$
+declare
+  status_code text := fn_lookup_code(new.status_id);
+begin
+  if status_code = 'operating' then
+    if new.driver_id is null then
+      raise exception 'operation_requires_driver' using errcode = 'P0001';
+    end if;
+    if new.starting_odometer_km is null then
+      raise exception 'operating_requires_start_km' using errcode = 'P0001';
+    end if;
+    if new.ending_odometer_km is not null then
+      raise exception 'operating_forbids_end_km' using errcode = 'P0001';
+    end if;
+    if new.starting_battery_pct is null then
+      raise exception 'operating_requires_start_battery' using errcode = 'P0001';
+    end if;
+    if new.ending_battery_pct is not null then
+      raise exception 'operating_forbids_end_battery' using errcode = 'P0001';
+    end if;
+
+  elsif status_code = 'completed' then
+    if new.driver_id is null then
+      raise exception 'operation_requires_driver' using errcode = 'P0001';
+    end if;
+    if new.starting_odometer_km is null or new.ending_odometer_km is null then
+      raise exception 'completed_requires_both_km' using errcode = 'P0001';
+    end if;
+    if new.starting_battery_pct is null or new.ending_battery_pct is null then
+      raise exception 'completed_requires_both_battery' using errcode = 'P0001';
+    end if;
+    if new.operating_percentage is null then
+      raise exception 'completed_requires_operating_pct' using errcode = 'P0001';
+    end if;
+
+  else
+    -- planned / cancelled_by_vendor / cancelled_by_tmf / cancelled_by_ope /
+    -- under_maintenance
+    if new.driver_id is not null or new.starting_odometer_km is not null
+       or new.ending_odometer_km is not null or new.operating_percentage is not null
+       or new.starting_battery_pct is not null or new.ending_battery_pct is not null then
+      raise exception 'non_operating_status_requires_blank_fields' using errcode = 'P0001';
+    end if;
+  end if;
+
+  return new;
+end $$;

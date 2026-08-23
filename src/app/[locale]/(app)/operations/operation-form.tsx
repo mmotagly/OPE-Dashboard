@@ -308,6 +308,7 @@ export function OperationForm({
             <NumberInput
               id="operatingPct"
               name="operatingPct"
+              required={needsEndKm}
               min={0}
               max={100}
               step="0.1"
