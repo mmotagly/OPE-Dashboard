@@ -66,7 +66,6 @@
     "new": "سجل تشغيل جديد",
     "edit": "تعديل سجل التشغيل",
     "record": "السجل",
-    "missingEndKm": "عداد النهاية ناقص",
     "clearFilters": "مسح",
     "choose": "اختر",
     "optional": "اختياري",
@@ -106,7 +105,8 @@
       "duplicate": "توجد بالفعل بيانات لهذه المركبة في نفس التاريخ والوردية. عدّل السجل الموجود بدلًا من ذلك.",
       "forbidden": "صلاحيتك لا تسمح بتعديل سجلات التشغيل.",
       "saveFailed": "تعذّر حفظ السجل. حاول مرة أخرى.",
-      "stillReferenced": "ما زالت هناك سجلات أخرى مرتبطة بهذا السجل."
+      "stillReferenced": "ما زالت هناك سجلات أخرى مرتبطة بهذا السجل.",
+      "notAllowedForStatus": "هذا الحقل غير مستخدم لهذه الحالة."
     },
     "source": {
       "odometer": "من آخر قراءة لهذه الحافلة",
@@ -115,7 +115,6 @@
     "kmDelta": "+{km} كم",
     "batteryRange": "{from} ← {to}%",
     "vendorLabel": "المورد",
-    "statusOperating": "تعمل",
     "searchPlaceholder": "ابحث بالكود أو المركبة أو اللوحة أو السائق أو المورد"
   },
   "master": {
@@ -254,7 +253,13 @@
     "toNext": "حتى القادمة"
   },
   "status": {
+    "planned": "مخطط لها",
     "operating": "تعمل",
+    "completed": "مكتملة",
+    "cancelledByVendor": "أُلغيت من المورد",
+    "cancelledByTmf": "أُلغيت من TMF",
+    "cancelledByOpe": "أُلغيت من OPE",
+    "underMaintenance": "تحت الصيانة",
     "noEndKm": "بدون عداد نهاية",
     "underRepair": "تحت الإصلاح",
     "ready": "جاهزة",

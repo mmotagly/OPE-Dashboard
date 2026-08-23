@@ -13,8 +13,8 @@ import {
   TextArea,
   TextInput,
 } from "@/components/ui/field";
-import { Micro } from "@/components/ui/micro";
 import { VehiclePicker } from "@/components/ui/vehicle-picker";
+import { statusLabel } from "@/lib/format";
 import { createOperation, updateOperation } from "./actions";
 import { EMPTY_FORM_STATE } from "./schema";
 import type {
@@ -45,6 +45,7 @@ export function OperationForm({
 }) {
   const t = useTranslations("operations");
   const tShift = useTranslations("shift");
+  const tStatus = useTranslations("status");
   const tCommon = useTranslations("common");
 
   const action =
@@ -75,6 +76,12 @@ export function OperationForm({
 
   const selectedVehicle =
     options.vehicles.find((v) => v.id === values.vehicleId) ?? null;
+
+  const statusCode = options.statuses.find((s) => s.id === values.statusId)?.code ?? "";
+  /** Mirrors fn_validate_operation_status (0009/0010) exactly: only these two
+   * statuses carry a driver/KM record; only Completed carries an end reading. */
+  const needsRunFields = statusCode === "operating" || statusCode === "completed";
+  const needsEndKm = statusCode === "completed";
 
   const startKmIsPrefill =
     selectedVehicle !== null &&
@@ -147,27 +154,46 @@ export function OperationForm({
         }}
       />
 
-      <Field
-        label={t("field.driver")}
-        htmlFor="driverId"
-        error={err("driverId")}
-        source={driverIsDefault ? t("source.driver") : undefined}
-      >
+      <Field label={t("field.status")} htmlFor="statusId" error={err("statusId")}>
         <SelectInput
-          id="driverId"
-          name="driverId"
+          id="statusId"
+          name="statusId"
           required
-          value={values.driverId}
-          onChange={(e) => set("driverId", e.target.value)}
+          value={values.statusId}
+          onChange={(e) => set("statusId", e.target.value)}
         >
           <option value="">{t("choose")}</option>
-          {options.drivers.map((d) => (
-            <option key={d.id} value={d.id}>
-              {driverLabel(d)}
+          {options.statuses.map((s) => (
+            <option key={s.id} value={s.id}>
+              {statusLabel(tStatus, s)}
             </option>
           ))}
         </SelectInput>
       </Field>
+
+      {needsRunFields && (
+        <Field
+          label={t("field.driver")}
+          htmlFor="driverId"
+          error={err("driverId")}
+          source={driverIsDefault ? t("source.driver") : undefined}
+        >
+          <SelectInput
+            id="driverId"
+            name="driverId"
+            required
+            value={values.driverId}
+            onChange={(e) => set("driverId", e.target.value)}
+          >
+            <option value="">{t("choose")}</option>
+            {options.drivers.map((d) => (
+              <option key={d.id} value={d.id}>
+                {driverLabel(d)}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
+      )}
 
       <Field label={t("field.route")} htmlFor="routeId" error={err("routeId")}>
         <SelectInput
@@ -185,40 +211,40 @@ export function OperationForm({
         </SelectInput>
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label={t("field.startingKm")}
-          htmlFor="startingKm"
-          error={err("startingKm")}
-          source={startKmIsPrefill ? t("source.odometer") : undefined}
-        >
-          <NumberInput
-            id="startingKm"
-            name="startingKm"
-            required
-            min={0}
-            step="0.01"
-            value={values.startingKm}
-            onChange={(e) => set("startingKm", e.target.value)}
-          />
-        </Field>
+      {needsRunFields && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label={t("field.startingKm")}
+            htmlFor="startingKm"
+            error={err("startingKm")}
+            source={startKmIsPrefill ? t("source.odometer") : undefined}
+          >
+            <NumberInput
+              id="startingKm"
+              name="startingKm"
+              required
+              min={0}
+              step="0.01"
+              value={values.startingKm}
+              onChange={(e) => set("startingKm", e.target.value)}
+            />
+          </Field>
 
-        <Field
-          label={t("field.endingKm")}
-          htmlFor="endingKm"
-          error={err("endingKm")}
-          hint={<Micro bar={false}>{t("optional")}</Micro>}
-        >
-          <NumberInput
-            id="endingKm"
-            name="endingKm"
-            min={0}
-            step="0.01"
-            value={values.endingKm}
-            onChange={(e) => set("endingKm", e.target.value)}
-          />
-        </Field>
-      </div>
+          {needsEndKm && (
+            <Field label={t("field.endingKm")} htmlFor="endingKm" error={err("endingKm")}>
+              <NumberInput
+                id="endingKm"
+                name="endingKm"
+                required
+                min={0}
+                step="0.01"
+                value={values.endingKm}
+                onChange={(e) => set("endingKm", e.target.value)}
+              />
+            </Field>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
@@ -255,21 +281,23 @@ export function OperationForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label={t("field.operatingPct")}
-          htmlFor="operatingPct"
-          error={err("operatingPct")}
-        >
-          <NumberInput
-            id="operatingPct"
-            name="operatingPct"
-            min={0}
-            max={100}
-            step="0.1"
-            value={values.operatingPct}
-            onChange={(e) => set("operatingPct", e.target.value)}
-          />
-        </Field>
+        {needsRunFields && (
+          <Field
+            label={t("field.operatingPct")}
+            htmlFor="operatingPct"
+            error={err("operatingPct")}
+          >
+            <NumberInput
+              id="operatingPct"
+              name="operatingPct"
+              min={0}
+              max={100}
+              step="0.1"
+              value={values.operatingPct}
+              onChange={(e) => set("operatingPct", e.target.value)}
+            />
+          </Field>
+        )}
 
         <Field
           label={t("field.driverTips")}

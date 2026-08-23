@@ -21,6 +21,17 @@ export default async function DayBoardPage({
 
   const supabase = await createClient();
 
+  // Day Board is "what's actually out today" — a bus that's Planned (hasn't
+  // run yet), Cancelled, or Under Maintenance isn't out, so it's excluded
+  // here rather than shown with the noEndKm/KmMeter treatment below, which
+  // only makes sense for a bus that's actually running or finished running.
+  const { data: runningStatuses } = await supabase
+    .from("lookups")
+    .select("id")
+    .eq("category", "operation_status")
+    .in("code", ["operating", "completed"]);
+  const runningStatusIds = (runningStatuses ?? []).map((s) => s.id);
+
   const { data: operations } = await supabase
     .from("daily_vehicle_operations")
     .select(
@@ -41,6 +52,7 @@ export default async function DayBoardPage({
     `,
     )
     .eq("operation_date", day)
+    .in("status_id", runningStatusIds)
     .order("operation_code");
 
   const rows: OperationRow[] = (operations ?? []).map((o) => {

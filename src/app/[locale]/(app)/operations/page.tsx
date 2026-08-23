@@ -6,6 +6,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
 import { applyFilters, toControls, writeFilterState } from "@/lib/filters";
 import { resolveFilters } from "@/lib/filter-page";
+import { statusLabel } from "@/lib/format";
 import { loadOperations, loadPickerOptions } from "./queries";
 import { buildOperationFilters } from "./filters";
 import { OperationsTable } from "./operations-table";
@@ -45,6 +46,7 @@ export default async function OperationsPage({
   const dir = one("dir") || "asc";
 
   const t = await getTranslations("operations");
+  const tStatus = await getTranslations("status");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
 
@@ -69,11 +71,13 @@ export default async function OperationsPage({
       distance: t("field.distance"),
       operatingPct: t("field.operatingPct"),
       status: t("field.status"),
-      statusOperating: t("statusOperating"),
-      statusNoEndKm: t("missingEndKm"),
     },
     {
       shifts,
+      statuses: pickers.statuses.map((s) => ({
+        value: s.code,
+        label: statusLabel(tStatus, s) ?? s.labelEn,
+      })),
       vehicles: pickers.vehicles.map((v) => ({
         value: v.id,
         label: `${v.vehicleCode} · ${v.plateNumber}`,

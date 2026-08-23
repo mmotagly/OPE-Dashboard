@@ -11,6 +11,14 @@ import { z } from "zod";
  *   - `total_distance_km` / `battery_consumed_pct`, generated columns
  * and nothing here writes `vehicles.current_odometer_km` — trg_sync_odometer
  * owns it.
+ *
+ * Which of driver/startingKm/endingKm/operatingPct are required vs. forbidden
+ * depends on the chosen status, mirroring fn_validate_operation_status
+ * (0009/0010) exactly — as inline field errors here rather than a database
+ * round trip. That mapping needs the status's *code*, not just its id, so
+ * `buildOperationSchema` takes a statusCodeById map built from the
+ * operation_status lookup rows (small and cheap to load whole, same pattern
+ * rfr_stage uses).
  */
 
 const REQUIRED = "required";
@@ -18,6 +26,7 @@ const NOT_A_NUMBER = "number";
 const NEGATIVE = "negative";
 const PERCENT = "percent";
 const END_BEFORE_START = "endBeforeStart";
+const NOT_ALLOWED = "notAllowedForStatus";
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -40,13 +49,6 @@ const isoDate = z
     message: REQUIRED,
   });
 
-const requiredNumber = z
-  .string()
-  .trim()
-  .min(1, { message: REQUIRED })
-  .refine((v) => Number.isFinite(Number(v)), { message: NOT_A_NUMBER })
-  .transform(Number);
-
 const optionalNumber = z
   .string()
   .trim()
@@ -55,8 +57,6 @@ const optionalNumber = z
     message: NOT_A_NUMBER,
   })
   .transform((v) => (v === null ? null : Number(v)));
-
-const nonNegative = requiredNumber.refine((n) => n >= 0, { message: NEGATIVE });
 
 const optionalNonNegative = optionalNumber.refine((n) => n === null || n >= 0, {
   message: NEGATIVE,
@@ -73,14 +73,15 @@ const optionalText = z
   .max(2000)
   .transform((v) => (v === "" ? null : v));
 
-export const operationSchema = z
+const baseOperationSchema = z
   .object({
     operationDate: isoDate,
     shiftTypeId: requiredId,
     vehicleId: requiredId,
-    driverId: requiredId,
+    statusId: requiredId,
+    driverId: optionalId,
     routeId: optionalId,
-    startingKm: nonNegative,
+    startingKm: optionalNonNegative,
     endingKm: optionalNonNegative,
     operatingPct: optionalPercent,
     startingBatteryPct: optionalPercent,
@@ -90,12 +91,44 @@ export const operationSchema = z
   })
   // mirrors the table's own check constraint so the user sees it as a field
   // error rather than a database round trip
-  .refine((v) => v.endingKm === null || v.endingKm >= v.startingKm, {
+  .refine((v) => v.endingKm === null || v.startingKm === null || v.endingKm >= v.startingKm, {
     message: END_BEFORE_START,
     path: ["endingKm"],
   });
 
-export type OperationInput = z.infer<typeof operationSchema>;
+export function buildOperationSchema(statusCodeById: Record<string, string>) {
+  return baseOperationSchema.superRefine((v, ctx) => {
+    const code = statusCodeById[v.statusId];
+
+    const need = (field: "driverId" | "startingKm" | "endingKm", value: unknown) => {
+      if (value === null) ctx.addIssue({ code: "custom", path: [field], message: REQUIRED });
+    };
+    const forbid = (
+      field: "driverId" | "startingKm" | "endingKm" | "operatingPct",
+      value: unknown,
+    ) => {
+      if (value !== null) ctx.addIssue({ code: "custom", path: [field], message: NOT_ALLOWED });
+    };
+
+    if (code === "operating") {
+      need("driverId", v.driverId);
+      need("startingKm", v.startingKm);
+      forbid("endingKm", v.endingKm);
+    } else if (code === "completed") {
+      need("driverId", v.driverId);
+      need("startingKm", v.startingKm);
+      need("endingKm", v.endingKm);
+    } else {
+      // planned / cancelled_by_* / under_maintenance
+      forbid("driverId", v.driverId);
+      forbid("startingKm", v.startingKm);
+      forbid("endingKm", v.endingKm);
+      forbid("operatingPct", v.operatingPct);
+    }
+  });
+}
+
+export type OperationInput = z.infer<typeof baseOperationSchema>;
 
 /**
  * What a server action hands back to the form. Lives here rather than in
@@ -118,6 +151,7 @@ export const OPERATION_FIELDS = [
   "operationDate",
   "shiftTypeId",
   "vehicleId",
+  "statusId",
   "driverId",
   "routeId",
   "startingKm",
@@ -131,13 +165,16 @@ export const OPERATION_FIELDS = [
 
 export type OperationField = (typeof OPERATION_FIELDS)[number];
 
-export function parseOperationForm(formData: FormData) {
+export function parseOperationForm(
+  formData: FormData,
+  statusCodeById: Record<string, string>,
+) {
   const read = (name: OperationField) => {
     const value = formData.get(name);
     return typeof value === "string" ? value : "";
   };
 
-  return operationSchema.safeParse(
+  return buildOperationSchema(statusCodeById).safeParse(
     Object.fromEntries(OPERATION_FIELDS.map((f) => [f, read(f)])),
   );
 }

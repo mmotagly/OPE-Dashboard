@@ -1,11 +1,14 @@
 import type { FilterDef, FilterOption } from "@/lib/filters";
 import type { OperationRow, ShiftOption } from "./queries";
 
-/** One def per table column — every column on the board is filterable. */
+/** One def per table column — every column on the board is filterable.
+ * `statuses` arrives pre-translated (label resolved via statusLabel in
+ * page.tsx) since this module has no translator to call itself. */
 export function buildOperationFilters(
   labels: Record<string, string>,
   options: {
     shifts: ShiftOption[];
+    statuses: FilterOption[];
     vehicles: FilterOption[];
     drivers: FilterOption[];
     routes: FilterOption[];
@@ -30,10 +33,7 @@ export function buildOperationFilters(
     { key: "operatingPct", label: labels.operatingPct, kind: "number",
       get: (r) => r.operatingPct },
     { key: "status", label: labels.status, kind: "select",
-      options: [
-        { value: "operating", label: labels.statusOperating },
-        { value: "noEndKm", label: labels.statusNoEndKm },
-      ],
-      get: (r) => (r.endKm === null ? "noEndKm" : "operating") },
+      options: options.statuses,
+      get: (r) => r.statusCode },
   ];
 }

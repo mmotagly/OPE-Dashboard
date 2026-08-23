@@ -15,7 +15,8 @@ export type LookupCategory =
   | "skip_reason"
   | "maintenance_type"
   | "maintenance_category"
-  | "vehicle_status_after";
+  | "vehicle_status_after"
+  | "operation_status";
 
 export async function loadLookups(
   category: LookupCategory,

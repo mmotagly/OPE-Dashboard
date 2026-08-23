@@ -22,13 +22,11 @@ import {
  *     (vehicle_id, operation_date, shift_type_id) is the authority, and its
  *     rejection is translated into a field-level message
  *
- * Phase 1 compatibility shim (0009_operation_status.sql): this form still only
- * knows Operating/Completed, derived from whether endingKm was entered — the
- * same thing the UI used to derive from endKm alone. status_id now has to be
- * set explicitly because the DB default ('planned') requires driver/KM to be
- * null, which this form never satisfies. The real status picker (Planned, the
- * Cancelled variants, Under Maintenance) is a later phase; this only keeps
- * today's form working against the new schema, unchanged.
+ * status_id (0009_operation_status.sql) is a real form field now — the form
+ * picks Planned/Operating/Completed/Cancelled By.../Under Maintenance
+ * directly, and schema.ts's buildOperationSchema enforces which of
+ * driver/startingKm/endingKm/operatingPct that status allows, mirroring
+ * fn_validate_operation_status so the DB trigger never has the final word.
  */
 
 type DbError = { code?: string; message?: string; details?: string | null };
@@ -63,6 +61,7 @@ function toRow(input: OperationInput) {
     operation_date: input.operationDate,
     shift_type_id: input.shiftTypeId,
     vehicle_id: input.vehicleId,
+    status_id: input.statusId,
     driver_id: input.driverId,
     route_id: input.routeId,
     starting_odometer_km: input.startingKm,
@@ -75,22 +74,13 @@ function toRow(input: OperationInput) {
   };
 }
 
-/**
- * Phase 1 shim — see the module doc comment. Resolves the operation_status
- * lookup id for whichever of the two codes this old form can produce.
- */
-async function resolveStatusId(
+/** operation_status id -> code, for schema.ts's status-conditional field
+ * rules. Seven rows, cheap to fetch whole — same pattern rfr_stage uses. */
+async function loadStatusCodeById(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  endingKm: number | null,
-) {
-  const { data } = await supabase
-    .from("lookups")
-    .select("id")
-    .eq("category", "operation_status")
-    .eq("code", endingKm === null ? "operating" : "completed")
-    .single();
-
-  return data?.id ?? null;
+): Promise<Record<string, string>> {
+  const { data } = await supabase.from("lookups").select("id, code").eq("category", "operation_status");
+  return Object.fromEntries((data ?? []).map((l) => [String(l.id), String(l.code)]));
 }
 
 /**
@@ -131,14 +121,14 @@ export async function createOperation(
   const gate = await guard();
   if (isState(gate)) return gate;
 
-  const parsed = parseOperationForm(formData);
+  const supabase = await createClient();
+  const statusCodeById = await loadStatusCodeById(supabase);
+  const parsed = parseOperationForm(formData, statusCodeById);
   if (!parsed.success) {
     return { formError: null, fieldErrors: firstFieldErrors(parsed.error) };
   }
 
-  const supabase = await createClient();
-  const status_id = await resolveStatusId(supabase, parsed.data.endingKm);
-  const row = { ...toRow(parsed.data), status_id };
+  const row = toRow(parsed.data);
 
   let created: { id: string } | null = null;
   let lastError: DbError | null = null;
@@ -192,21 +182,20 @@ export async function updateOperation(
   const gate = await guard();
   if (isState(gate)) return gate;
 
-  const parsed = parseOperationForm(formData);
+  const supabase = await createClient();
+  const statusCodeById = await loadStatusCodeById(supabase);
+  const parsed = parseOperationForm(formData, statusCodeById);
   if (!parsed.success) {
     return { formError: null, fieldErrors: firstFieldErrors(parsed.error) };
   }
 
-  const supabase = await createClient();
-  const status_id = await resolveStatusId(supabase, parsed.data.endingKm);
-
   // operation_code is left alone on purpose — a record's identifier should not
   // churn when its vehicle or date is corrected. status_id: see the same
-  // stale-generated-types note above resolveStatusId's call in createOperation.
+  // stale-generated-types note above the insert in createOperation.
   const { error } = await supabase
     .from("daily_vehicle_operations")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update({ ...toRow(parsed.data), status_id } as any)
+    .update(toRow(parsed.data) as any)
     .eq("id", id);
 
   if (error) return toFormState(error);

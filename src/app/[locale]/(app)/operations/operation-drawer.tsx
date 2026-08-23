@@ -7,7 +7,7 @@ import { KmMeter } from "@/components/ui/km-meter";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
-import { km, money, percent, pmTone, type PmStatus } from "@/lib/format";
+import { km, money, percent, pmTone, operationTone, statusLabel, type PmStatus } from "@/lib/format";
 import {
   loadNearestPm,
   loadOperation,
@@ -95,6 +95,10 @@ export async function OperationDrawer({
 
     const today = new Date().toISOString().slice(0, 10);
     const shiftFromFilter = shifts.find((s) => s.code === filterShift);
+    // Operating is the historical default shape (start KM now, add an end KM
+    // later) — status stays a real, changeable field, this just avoids an
+    // extra click for the common case.
+    const defaultStatusId = options.statuses.find((s) => s.code === "operating")?.id ?? "";
 
     return (
       <Drawer
@@ -114,6 +118,7 @@ export async function OperationDrawer({
                   operationDate: filterDate || today,
                   shiftTypeId: shiftFromFilter?.id ?? "",
                   vehicleId: "",
+                  statusId: defaultStatusId,
                   driverId: "",
                   routeId: "",
                   startingKm: "",
@@ -147,7 +152,9 @@ export async function OperationDrawer({
     );
   }
 
-  const noEnd = operation.endKm === null;
+  const status = operation.statusCode
+    ? { code: operation.statusCode, labelEn: operation.statusLabel ?? operation.statusCode }
+    : null;
   const pm = operation.vehicleId ? await loadNearestPm(operation.vehicleId) : null;
   const pmStatus = pm?.status ?? null;
 
@@ -156,9 +163,9 @@ export async function OperationDrawer({
       code={operation.vehicleCode}
       sub={`${operation.plate} · ${operation.code}`}
       pill={
-        <Pill tone={noEnd ? "warn" : "go"}>
-          {noEnd ? tStatus("noEndKm") : tStatus("operating")}
-        </Pill>
+        status && (
+          <Pill tone={operationTone(status.code)}>{statusLabel(tStatus, status)}</Pill>
+        )
       }
       closeHref={closeHref}
       closeLabel={tCommon("cancel")}
@@ -224,7 +231,7 @@ export async function OperationDrawer({
             <span className="tnum">{km(operation.startKm)}</span>
           </Row>
           <Row label={t("field.endingKm")}>
-            {noEnd ? (
+            {operation.statusCode === "operating" ? (
               <span className="text-warn-text">{tStatus("noEndKm")}</span>
             ) : (
               <span className="tnum">{km(operation.endKm)}</span>

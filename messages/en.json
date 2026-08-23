@@ -66,7 +66,6 @@
     "new": "New operation",
     "edit": "Edit operation",
     "record": "Record",
-    "missingEndKm": "Missing end KM",
     "clearFilters": "Clear",
     "choose": "Choose",
     "optional": "optional",
@@ -106,7 +105,8 @@
       "duplicate": "This vehicle already has a record for that date and shift. Edit that record instead.",
       "forbidden": "Your role cannot change operations records.",
       "saveFailed": "The record could not be saved. Try again.",
-      "stillReferenced": "Other records still point at this one."
+      "stillReferenced": "Other records still point at this one.",
+      "notAllowedForStatus": "This field isn't used for this status."
     },
     "source": {
       "odometer": "From this bus's last reading",
@@ -115,7 +115,6 @@
     "kmDelta": "+{km} km",
     "batteryRange": "{from} → {to}%",
     "vendorLabel": "Vendor",
-    "statusOperating": "Operating",
     "searchPlaceholder": "Search code, vehicle, plate, driver or vendor"
   },
   "master": {
@@ -254,7 +253,13 @@
     "toNext": "to next"
   },
   "status": {
+    "planned": "Planned",
     "operating": "Operating",
+    "completed": "Completed",
+    "cancelledByVendor": "Cancelled by vendor",
+    "cancelledByTmf": "Cancelled by TMF",
+    "cancelledByOpe": "Cancelled by OPE",
+    "underMaintenance": "Under maintenance",
     "noEndKm": "No end KM",
     "underRepair": "Under repair",
     "ready": "Ready",

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadLookups, type LookupOption } from "@/lib/lookups";
 import type { PmStatus } from "@/lib/format";
 
 /**
@@ -19,12 +20,14 @@ export type VehicleOption = {
 };
 export type DriverOption = { id: string; driverCode: string; driverName: string };
 export type RouteOption = { id: string; routeCode: string; routeName: string };
+export type StatusOption = LookupOption;
 
 export type PickerOptions = {
   shifts: ShiftOption[];
   vehicles: VehicleOption[];
   drivers: DriverOption[];
   routes: RouteOption[];
+  statuses: StatusOption[];
 };
 
 export type OperationRow = {
@@ -35,6 +38,9 @@ export type OperationRow = {
   vehicleId: string | null;
   driverId: string | null;
   routeId: string | null;
+  statusId: string | null;
+  statusCode: string | null;
+  statusLabel: string | null;
   vehicleCode: string;
   plate: string;
   vendorName: string | null;
@@ -58,6 +64,7 @@ export type OperationFormValues = {
   operationDate: string;
   shiftTypeId: string;
   vehicleId: string;
+  statusId: string;
   driverId: string;
   routeId: string;
   startingKm: string;
@@ -77,6 +84,7 @@ const SELECT = `
   vehicle_id,
   driver_id,
   route_id,
+  status_id,
   operating_percentage,
   starting_odometer_km,
   ending_odometer_km,
@@ -103,11 +111,12 @@ const num = (v: unknown): number | null =>
 const text = (v: unknown): string => (v === null || v === undefined ? "" : String(v));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-function toRow(o: any): OperationRow {
+function toRow(o: any, statuses: Map<string, LookupOption>): OperationRow {
   const vehicle = one<any>(o.vehicles);
   const driver = one<any>(o.drivers);
   const route = one<any>(o.routes);
   const vendor = one<any>(o.vendors);
+  const status = o.status_id ? statuses.get(String(o.status_id)) : undefined;
 
   return {
     id: String(o.id),
@@ -117,6 +126,9 @@ function toRow(o: any): OperationRow {
     vehicleId: o.vehicle_id ? String(o.vehicle_id) : null,
     driverId: o.driver_id ? String(o.driver_id) : null,
     routeId: o.route_id ? String(o.route_id) : null,
+    statusId: o.status_id ? String(o.status_id) : null,
+    statusCode: status?.code ?? null,
+    statusLabel: status?.labelEn ?? null,
     vehicleCode: vehicle?.vehicle_code ?? "—",
     plate: vehicle?.plate_number ?? "—",
     vendorName: vendor?.vendor_name ?? null,
@@ -152,11 +164,21 @@ export async function loadShifts(): Promise<ShiftOption[]> {
   }));
 }
 
+/** operation_status id -> {code, labelEn}. Resolves status onto a row without
+ * an embed — daily_vehicle_operations has two FKs into lookups
+ * (shift_type_id, status_id), so an embedded `lookups(...)` select is
+ * ambiguous; shift_type_id is resolved the same way via the shifts list. */
+async function loadStatusMap(): Promise<Map<string, LookupOption>> {
+  const statuses = await loadLookups("operation_status", { includeInactive: true });
+  return new Map(statuses.map((s) => [s.id, s]));
+}
+
 export async function loadPickerOptions(): Promise<PickerOptions> {
   const supabase = await createClient();
 
-  const [shifts, vehicles, drivers, routes] = await Promise.all([
+  const [shifts, statuses, vehicles, drivers, routes] = await Promise.all([
     loadShifts(),
+    loadLookups("operation_status"),
     supabase
       .from("vehicles")
       .select("id, vehicle_code, plate_number, current_odometer_km, default_driver_id")
@@ -167,6 +189,7 @@ export async function loadPickerOptions(): Promise<PickerOptions> {
 
   return {
     shifts,
+    statuses,
     vehicles: (vehicles.data ?? []).map(
       (v: {
         id: string;
@@ -220,19 +243,18 @@ export async function loadOperations({
   if (date) query = query.eq("operation_date", date);
   if (shiftId) query = query.eq("shift_type_id", shiftId);
 
-  const { data } = await query;
-  return (data ?? []).map(toRow);
+  const [{ data }, statuses] = await Promise.all([query, loadStatusMap()]);
+  return (data ?? []).map((row) => toRow(row, statuses));
 }
 
 export async function loadOperation(id: string): Promise<OperationRow | null> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("daily_vehicle_operations")
-    .select(SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data }, statuses] = await Promise.all([
+    supabase.from("daily_vehicle_operations").select(SELECT).eq("id", id).maybeSingle(),
+    loadStatusMap(),
+  ]);
 
-  return data ? toRow(data) : null;
+  return data ? toRow(data, statuses) : null;
 }
 
 export function toFormValues(row: OperationRow): OperationFormValues {
@@ -241,6 +263,7 @@ export function toFormValues(row: OperationRow): OperationFormValues {
     operationDate: row.date,
     shiftTypeId: row.shiftId ?? "",
     vehicleId: row.vehicleId ?? "",
+    statusId: row.statusId ?? "",
     driverId: row.driverId ?? "",
     routeId: row.routeId ?? "",
     startingKm: n(row.startKm),

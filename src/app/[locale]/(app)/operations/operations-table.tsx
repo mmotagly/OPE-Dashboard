@@ -6,7 +6,7 @@ import { DataTable, orDash, type Column } from "@/components/ui/data-table";
 import { Empty } from "@/components/ui/empty";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
-import { km } from "@/lib/format";
+import { km, operationTone, statusLabel } from "@/lib/format";
 import type { OperationRow, ShiftOption } from "./queries";
 
 export function OperationsTable({
@@ -113,12 +113,15 @@ export function OperationsTable({
     {
       key: "status",
       header: t("field.status"),
-      sortValue: (r) => (r.endKm === null ? 0 : 1),
-      cell: (r) => (
-        <Pill tone={r.endKm === null ? "warn" : "go"}>
-          {r.endKm === null ? tStatus("noEndKm") : tStatus("operating")}
-        </Pill>
-      ),
+      sortValue: (r) => r.statusLabel,
+      cell: (r) =>
+        r.statusCode ? (
+          <Pill tone={operationTone(r.statusCode)}>
+            {statusLabel(tStatus, { code: r.statusCode, labelEn: r.statusLabel ?? r.statusCode })}
+          </Pill>
+        ) : (
+          orDash(null)
+        ),
     },
   ];
 

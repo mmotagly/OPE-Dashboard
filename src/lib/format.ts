@@ -83,3 +83,39 @@ export type PmStatus =
 
 export const pmTone = (s: PmStatus): "go" | "warn" | "stop" | "idle" =>
   s === "overdue" ? "stop" : s === "due_now" || s === "due_soon" ? "warn" : s === "ok" ? "go" : "idle";
+
+/** operation_status codes (0009). "Operating, ready, completed, paid" = go;
+ * "Overdue, skipped, under repair" = stop, per the design system's own table —
+ * under_maintenance is that table's "under repair" and cancelled_by_* is its
+ * "skipped". Planned hasn't happened yet, so it's neutral rather than either. */
+export const operationTone = (code: string): "go" | "warn" | "stop" | "idle" =>
+  code === "operating" || code === "completed"
+    ? "go"
+    : code === "under_maintenance" || code.startsWith("cancelled_by_")
+      ? "stop"
+      : "idle";
+
+/** operation_status codes (snake_case) -> next-intl keys under `status.*`. */
+export const OPERATION_STATUS_KEY: Record<string, string> = {
+  planned: "planned",
+  operating: "operating",
+  completed: "completed",
+  cancelled_by_vendor: "cancelledByVendor",
+  cancelled_by_tmf: "cancelledByTmf",
+  cancelled_by_ope: "cancelledByOpe",
+  under_maintenance: "underMaintenance",
+};
+
+/** Translated label when one exists (mirrors shift_type's convention), else
+ * the DB label as-is. Works with either useTranslations or getTranslations —
+ * both return the same callable-plus-`.has` shape. Lives here rather than in
+ * operations/queries.ts because that module imports the server Supabase
+ * client, and this is called from a client component (operation-form.tsx). */
+export function statusLabel(
+  tStatus: { has: (key: string) => boolean } & ((key: string) => string),
+  status: { code: string; labelEn: string } | null,
+): string | null {
+  if (!status) return null;
+  const key = OPERATION_STATUS_KEY[status.code] ?? status.code;
+  return tStatus.has(key) ? tStatus(key) : status.labelEn;
+}
