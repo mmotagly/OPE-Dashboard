@@ -535,7 +535,7 @@ export function FilterBar({
           onChange={(e) => setSearch(e.target.value)}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          className="min-w-[200px] flex-1 rounded-[10px] border border-hairline bg-canvas px-3 py-2 text-[13.5px] text-ink"
+          className="min-w-[120px] flex-1 rounded-[10px] border border-hairline bg-canvas px-3 py-2 text-[13.5px] text-ink"
         />
 
         <FieldsMenu controls={controls} active={activeFields} onToggle={toggleField} />

@@ -48,8 +48,10 @@ export function OperationList({ rows }: { rows: OperationRow[] }) {
                 {noEnd ? t("status.noEndKm") : t("status.operating")}
               </Pill>
               {r.routeName && (
-                <span className="ms-auto">
-                  <Micro bar={false}>{r.routeName}</Micro>
+                <span className="ms-auto min-w-0 max-w-[45%]">
+                  <Micro bar={false}>
+                    <span className="min-w-0 truncate">{r.routeName}</span>
+                  </Micro>
                 </span>
               )}
             </CardTop>

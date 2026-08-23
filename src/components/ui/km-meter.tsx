@@ -36,7 +36,7 @@ export function KmMeter({
   return (
     <div>
       <div
-        className={`flex items-baseline gap-2 tnum font-medium ${large ? "text-lg" : "text-sm"}`}
+        className={`flex flex-wrap items-baseline gap-2 tnum font-medium ${large ? "text-lg" : "text-sm"}`}
       >
         <span>{km(startKm)}</span>
         <span className="text-ink-3 font-normal">→</span>
