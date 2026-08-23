@@ -3,6 +3,19 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC = ["/login", "/auth"];
 
+/**
+ * Vercel's own guidance for MIDDLEWARE_INVOCATION_TIMEOUT: an external call
+ * with no timeout can hang the whole function until Vercel kills it at 25s.
+ * Middleware's only external call is the Supabase Auth session check below —
+ * this bounds it well under that ceiling, with a safe fallback rather than a
+ * hang: a timed-out check is treated as unauthenticated, same as a genuinely
+ * missing session, redirecting to login instead of a dead 504.
+ */
+const AUTH_TIMEOUT_MS = 5000;
+
+const fetchWithTimeout: typeof fetch = (input, init) =>
+  fetch(input, { ...init, signal: AbortSignal.timeout(AUTH_TIMEOUT_MS) });
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -25,12 +38,19 @@ export async function updateSession(request: NextRequest) {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: cookieMethods },
+    { cookies: cookieMethods, global: { fetch: fetchWithTimeout } },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // A slow or hung Auth service should never hang middleware itself — an
+  // aborted/timed-out check falls back to "unauthenticated" rather than
+  // propagating the abort error and failing the whole request.
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    user = null;
+  }
 
   const path = request.nextUrl.pathname;
   const stripped = path.replace(/^\/(en|ar)/, "") || "/";
