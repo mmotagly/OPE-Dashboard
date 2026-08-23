@@ -44,11 +44,23 @@ export async function updateSession(request: NextRequest) {
   // A slow or hung Auth service should never hang middleware itself — an
   // aborted/timed-out check falls back to "unauthenticated" rather than
   // propagating the abort error and failing the whole request.
+  //
+  // Timed and logged deliberately: a prior fix here (bounding this call with
+  // AbortSignal.timeout) didn't stop MIDDLEWARE_INVOCATION_TIMEOUT from
+  // recurring, and nothing recorded where in the request the time actually
+  // went. This makes the next occurrence self-diagnosing instead of another
+  // guess — check Vercel's Logs "Messages" column for this line's timing.
+  const authStart = Date.now();
   let user = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
-  } catch {
+    console.log(`[middleware] getUser resolved in ${Date.now() - authStart}ms`);
+  } catch (err) {
+    console.log(
+      `[middleware] getUser failed after ${Date.now() - authStart}ms:`,
+      err instanceof Error ? err.message : err,
+    );
     user = null;
   }
 
