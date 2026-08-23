@@ -100,13 +100,18 @@ export function buildOperationSchema(statusCodeById: Record<string, string>) {
   return baseOperationSchema.superRefine((v, ctx) => {
     const code = statusCodeById[v.statusId];
 
-    const need = (field: "driverId" | "startingKm" | "endingKm", value: unknown) => {
+    type ConditionalField =
+      | "driverId"
+      | "startingKm"
+      | "endingKm"
+      | "operatingPct"
+      | "startingBatteryPct"
+      | "endingBatteryPct";
+
+    const need = (field: ConditionalField, value: unknown) => {
       if (value === null) ctx.addIssue({ code: "custom", path: [field], message: REQUIRED });
     };
-    const forbid = (
-      field: "driverId" | "startingKm" | "endingKm" | "operatingPct",
-      value: unknown,
-    ) => {
+    const forbid = (field: ConditionalField, value: unknown) => {
       if (value !== null) ctx.addIssue({ code: "custom", path: [field], message: NOT_ALLOWED });
     };
 
@@ -114,16 +119,22 @@ export function buildOperationSchema(statusCodeById: Record<string, string>) {
       need("driverId", v.driverId);
       need("startingKm", v.startingKm);
       forbid("endingKm", v.endingKm);
+      need("startingBatteryPct", v.startingBatteryPct);
+      forbid("endingBatteryPct", v.endingBatteryPct);
     } else if (code === "completed") {
       need("driverId", v.driverId);
       need("startingKm", v.startingKm);
       need("endingKm", v.endingKm);
+      need("startingBatteryPct", v.startingBatteryPct);
+      need("endingBatteryPct", v.endingBatteryPct);
     } else {
       // planned / cancelled_by_* / under_maintenance
       forbid("driverId", v.driverId);
       forbid("startingKm", v.startingKm);
       forbid("endingKm", v.endingKm);
       forbid("operatingPct", v.operatingPct);
+      forbid("startingBatteryPct", v.startingBatteryPct);
+      forbid("endingBatteryPct", v.endingBatteryPct);
     }
   });
 }

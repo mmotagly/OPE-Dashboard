@@ -35,6 +35,7 @@ export function OperationForm({
   options,
   initial,
   backTo,
+  isSuperAdmin,
 }: {
   mode: "create" | "edit";
   operationId?: string;
@@ -42,6 +43,9 @@ export function OperationForm({
   initial: OperationFormValues;
   /** Query to return to when the form is cancelled. Already free of blanks. */
   backTo: QueryParams;
+  /** Completed is terminal for everyone else — trg_operation_status_locked
+   * (0012) is the real gate; this only disables the control to match. */
+  isSuperAdmin: boolean;
 }) {
   const t = useTranslations("operations");
   const tShift = useTranslations("shift");
@@ -82,6 +86,7 @@ export function OperationForm({
    * statuses carry a driver/KM record; only Completed carries an end reading. */
   const needsRunFields = statusCode === "operating" || statusCode === "completed";
   const needsEndKm = statusCode === "completed";
+  const isLockedCompleted = mode === "edit" && statusCode === "completed" && !isSuperAdmin;
 
   const startKmIsPrefill =
     selectedVehicle !== null &&
@@ -154,11 +159,17 @@ export function OperationForm({
         }}
       />
 
-      <Field label={t("field.status")} htmlFor="statusId" error={err("statusId")}>
+      <Field
+        label={t("field.status")}
+        htmlFor="statusId"
+        error={err("statusId")}
+        source={isLockedCompleted ? t("statusLocked") : undefined}
+      >
         <SelectInput
           id="statusId"
           name="statusId"
           required
+          disabled={isLockedCompleted}
           value={values.statusId}
           onChange={(e) => set("statusId", e.target.value)}
         >
@@ -169,6 +180,7 @@ export function OperationForm({
             </option>
           ))}
         </SelectInput>
+        {isLockedCompleted && <input type="hidden" name="statusId" value={values.statusId} />}
       </Field>
 
       {needsRunFields && (
@@ -246,39 +258,45 @@ export function OperationForm({
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label={t("field.startingBattery")}
-          htmlFor="startingBatteryPct"
-          error={err("startingBatteryPct")}
-        >
-          <NumberInput
-            id="startingBatteryPct"
-            name="startingBatteryPct"
-            min={0}
-            max={100}
-            step="0.1"
-            value={values.startingBatteryPct}
-            onChange={(e) => set("startingBatteryPct", e.target.value)}
-          />
-        </Field>
+      {needsRunFields && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label={t("field.startingBattery")}
+            htmlFor="startingBatteryPct"
+            error={err("startingBatteryPct")}
+          >
+            <NumberInput
+              id="startingBatteryPct"
+              name="startingBatteryPct"
+              required
+              min={0}
+              max={100}
+              step="0.1"
+              value={values.startingBatteryPct}
+              onChange={(e) => set("startingBatteryPct", e.target.value)}
+            />
+          </Field>
 
-        <Field
-          label={t("field.endingBattery")}
-          htmlFor="endingBatteryPct"
-          error={err("endingBatteryPct")}
-        >
-          <NumberInput
-            id="endingBatteryPct"
-            name="endingBatteryPct"
-            min={0}
-            max={100}
-            step="0.1"
-            value={values.endingBatteryPct}
-            onChange={(e) => set("endingBatteryPct", e.target.value)}
-          />
-        </Field>
-      </div>
+          {needsEndKm && (
+            <Field
+              label={t("field.endingBattery")}
+              htmlFor="endingBatteryPct"
+              error={err("endingBatteryPct")}
+            >
+              <NumberInput
+                id="endingBatteryPct"
+                name="endingBatteryPct"
+                required
+                min={0}
+                max={100}
+                step="0.1"
+                value={values.endingBatteryPct}
+                onChange={(e) => set("endingBatteryPct", e.target.value)}
+              />
+            </Field>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {needsRunFields && (

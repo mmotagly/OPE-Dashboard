@@ -50,6 +50,7 @@ export async function OperationDrawer({
   shifts,
   closeHref,
   canEdit,
+  isSuperAdmin,
   filterDate,
   filterShift,
 }: {
@@ -58,6 +59,7 @@ export async function OperationDrawer({
   shifts: ShiftOption[];
   closeHref: CloseHref;
   canEdit: boolean;
+  isSuperAdmin: boolean;
   filterDate: string;
   filterShift: string;
 }) {
@@ -131,6 +133,7 @@ export async function OperationDrawer({
                 }
           }
           backTo={closeHref.query}
+          isSuperAdmin={isSuperAdmin}
         />
       </Drawer>
     );

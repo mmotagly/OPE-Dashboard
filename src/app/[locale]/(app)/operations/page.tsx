@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
-import { canWriteOps, requireUser } from "@/lib/auth";
+import { canWriteOps, isSuper, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
@@ -49,6 +49,7 @@ export default async function OperationsPage({
   const tStatus = await getTranslations("status");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
+  const isSuperAdmin = isSuper(user.role);
 
   const [pickers, { state: filterState, saved }, all] = await Promise.all([
     loadPickerOptions(),
@@ -182,6 +183,7 @@ export default async function OperationsPage({
           shifts={shifts}
           closeHref={{ pathname: "/operations", query }}
           canEdit={canEdit}
+          isSuperAdmin={isSuperAdmin}
           filterDate={prefillDate}
           filterShift={prefillShift}
         />

@@ -112,6 +112,7 @@
       "odometer": "From this bus's last reading",
       "driver": "Default driver for this bus"
     },
+    "statusLocked": "Completed records are locked — only a super admin can change this.",
     "kmDelta": "+{km} km",
     "batteryRange": "{from} → {to}%",
     "vendorLabel": "Vendor",
