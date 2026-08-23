@@ -129,8 +129,9 @@ export async function createLookup(
 }
 
 /**
- * Renames, reorders and deactivates. There is no delete: a value in use is
- * referenced by operational rows, so `is_active` is what retires it.
+ * Renames, reorders and deactivates. A value already referenced by
+ * operational rows can't be deleted (see deleteLookup below), so
+ * `is_active` is what retires it instead.
  */
 export async function updateLookup(
   id: string,
@@ -165,6 +166,34 @@ export async function updateLookup(
       pathname: "/settings",
       query: { entity: "lookups", category: parsed.data.category, id },
     },
+    locale: gate.locale,
+  });
+}
+
+/**
+ * Deletes a value outright rather than deactivating it. Safe only because
+ * nothing pre-checks references — every FK into lookups(id) has no ON
+ * DELETE clause, so Postgres itself refuses the delete if anything still
+ * points at this row, and dbErrorToState already maps that FK violation to
+ * "stillReferenced". A value with zero references just deletes cleanly.
+ */
+export async function deleteLookup(
+  id: string,
+  category: string,
+  _prev: FormState,
+  _formData: FormData,
+): Promise<FormState> {
+  const gate = await guardSuper();
+  if (denied(gate)) return gate;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("lookups").delete().eq("id", id);
+
+  if (error) return dbErrorToState(error);
+
+  refresh();
+  return redirect({
+    href: { pathname: "/settings", query: { entity: "lookups", category } },
     locale: gate.locale,
   });
 }

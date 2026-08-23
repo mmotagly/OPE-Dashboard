@@ -12,6 +12,7 @@ import {
   type SettingsEntity,
 } from "./queries";
 import { LookupForm, UserForm } from "./settings-forms";
+import { DeleteLookupButton } from "./delete-lookup-button";
 
 const editButton =
   "rounded-[10px] border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
@@ -87,20 +88,23 @@ export async function SettingsDrawer({
         closeHref={closeHref}
         closeLabel={tCommon("cancel")}
         footer={
-          <Link
-            href={{
-              pathname: "/settings",
-              query: {
-                entity: "lookups",
-                category: lookup.category,
-                mode: "edit",
-                id: lookup.id,
-              },
-            }}
-            className={editButton}
-          >
-            {tCommon("edit")}
-          </Link>
+          <>
+            <Link
+              href={{
+                pathname: "/settings",
+                query: {
+                  entity: "lookups",
+                  category: lookup.category,
+                  mode: "edit",
+                  id: lookup.id,
+                },
+              }}
+              className={editButton}
+            >
+              {tCommon("edit")}
+            </Link>
+            <DeleteLookupButton id={lookup.id} category={lookup.category} />
+          </>
         }
       >
         <Section title={t("record")}>
