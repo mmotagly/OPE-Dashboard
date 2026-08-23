@@ -52,10 +52,18 @@ type SavedViewRecord = {
 
 export async function loadSavedViews(module: string): Promise<SavedView[]> {
   const table = await savedFiltersTable();
-  const { data } = await table
+  const { data, error } = await table
     .select("id, name, is_default, filter_state")
     .eq("module", module)
     .order("created_at");
+
+  // Degrading to an empty list is the right call for a convenience feature —
+  // no error banner on every list page over this — but silently swallowing
+  // it entirely is what let saved_filters not existing at all go unnoticed.
+  // This at least leaves a trace in server logs.
+  if (error) {
+    console.error(`loadSavedViews(${module}) failed:`, error);
+  }
 
   return ((data ?? []) as SavedViewRecord[]).map((v) => ({
     id: v.id,
