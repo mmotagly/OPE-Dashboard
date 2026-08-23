@@ -264,9 +264,15 @@ export function LookupForm({
       )}
 
       <Field label={t("field.category")} htmlFor="category" error={err("category")}>
+        {/* A disabled control never submits its value — the browser drops it
+            from FormData entirely, not just from editing. Native <select>
+            has no readOnly, so the locked-on-edit value travels through a
+            hidden input instead; the visible select stays disabled purely
+            for the interaction lock. */}
+        {mode === "edit" && <input type="hidden" name="category" value={values.category} />}
         <SelectInput
           id="category"
-          name="category"
+          name={mode === "edit" ? undefined : "category"}
           required
           disabled={mode === "edit"}
           value={values.category}
