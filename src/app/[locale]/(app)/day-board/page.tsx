@@ -2,82 +2,61 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { StatBar, Stat } from "@/components/ui/stat";
+import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { Empty } from "@/components/ui/empty";
-import { OperationList, type OperationRow } from "./operation-list";
+import { loadOperations } from "../operations/queries";
+import { OperationList } from "./operation-list";
+
+/** The four statuses the "Not running" chip/stat groups — same set
+ * operationTone() already treats as one tone (src/lib/format.ts). */
+const NOT_RUNNING = [
+  "cancelled_by_vendor",
+  "cancelled_by_tmf",
+  "cancelled_by_ope",
+  "under_maintenance",
+] as const;
+
+/** Synthetic chip value for the grouped statuses — not a real status code. */
+const NOT_RUNNING_VALUE = "not_running";
 
 /**
  * Reference implementation. Every other module copies this shape:
  * Server Component fetches -> passes plain rows to a small client list ->
  * detail panel renders beside it.
+ *
+ * Status-aware as of the Day Board redesign: fetches every status for the
+ * day (not just operating/completed) via the same `loadOperations` the
+ * Operations module itself uses, so status resolution can never drift
+ * between the two pages.
  */
 export default async function DayBoardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; shift?: string }>;
+  searchParams: Promise<{ date?: string; status?: string }>;
 }) {
   const t = await getTranslations();
-  const { date } = await searchParams;
+  const { date, status } = await searchParams;
   const day = date ?? new Date().toISOString().slice(0, 10);
 
-  const supabase = await createClient();
+  const [all, supabase] = await Promise.all([
+    loadOperations({ date: day }),
+    createClient(),
+  ]);
 
-  // Day Board is "what's actually out today" — a bus that's Planned (hasn't
-  // run yet), Cancelled, or Under Maintenance isn't out, so it's excluded
-  // here rather than shown with the noEndKm/KmMeter treatment below, which
-  // only makes sense for a bus that's actually running or finished running.
-  const { data: runningStatuses } = await supabase
-    .from("lookups")
-    .select("id")
-    .eq("category", "operation_status")
-    .in("code", ["operating", "completed"]);
-  const runningStatusIds = (runningStatuses ?? []).map((s) => s.id);
+  const isIn = (r: (typeof all)[number], codes: readonly string[]) =>
+    r.statusCode !== null && codes.includes(r.statusCode);
 
-  const { data: operations } = await supabase
-    .from("daily_vehicle_operations")
-    .select(
-      `
-      id,
-      operation_code,
-      operation_date,
-      operating_percentage,
-      starting_odometer_km,
-      ending_odometer_km,
-      starting_battery_pct,
-      ending_battery_pct,
-      driver_tips,
-      vehicles ( id, vehicle_code, plate_number, current_odometer_km ),
-      drivers ( driver_code, driver_name ),
-      routes ( route_code, route_name ),
-      vendors ( vendor_name )
-    `,
-    )
-    .eq("operation_date", day)
-    .in("status_id", runningStatusIds)
-    .order("operation_code");
+  const rows =
+    status === NOT_RUNNING_VALUE
+      ? all.filter((r) => isIn(r, NOT_RUNNING))
+      : status
+        ? all.filter((r) => r.statusCode === status)
+        : all;
 
-  const rows: OperationRow[] = (operations ?? []).map((o) => {
-    const v = Array.isArray(o.vehicles) ? o.vehicles[0] : o.vehicles;
-    const d = Array.isArray(o.drivers) ? o.drivers[0] : o.drivers;
-    const r = Array.isArray(o.routes) ? o.routes[0] : o.routes;
-    const ven = Array.isArray(o.vendors) ? o.vendors[0] : o.vendors;
-
-    return {
-      id: o.id as string,
-      code: (v?.vehicle_code as string) ?? "—",
-      plate: (v?.plate_number as string) ?? "—",
-      vendorName: (ven?.vendor_name as string) ?? "—",
-      driverName: (d?.driver_name as string) ?? "—",
-      driverCode: (d?.driver_code as string) ?? "—",
-      routeName: (r?.route_name as string) ?? null,
-      startKm: (o.starting_odometer_km as number) ?? null,
-      endKm: (o.ending_odometer_km as number) ?? null,
-      operatingPct: (o.operating_percentage as number) ?? null,
-      batteryStart: (o.starting_battery_pct as number) ?? null,
-      batteryEnd: (o.ending_battery_pct as number) ?? null,
-    };
-  });
-
-  const missingEndKm = rows.filter((r) => r.endKm === null).length;
+  const operatingCount = all.filter((r) => r.statusCode === "operating").length;
+  const completedCount = all.filter((r) => r.statusCode === "completed").length;
+  const plannedCount = all.filter((r) => r.statusCode === "planned").length;
+  const notRunningCount = all.filter((r) => isIn(r, NOT_RUNNING)).length;
 
   // Open means the stage is neither Completed nor Skipped. Counting on
   // completed_at counts the closed ones instead.
@@ -99,28 +78,47 @@ export default async function DayBoardPage({
 
   const { count: openRfrs } = await openRfrsQuery;
 
-  return (
-    <Panel>
-      <PanelHead title={`${t("dayBoard.title")} · ${day}`} />
-        <StatBar>
-          <Stat label={t("dayBoard.busesOut")} value={rows.length} />
-          <Stat
-            label={t("dayBoard.missingEndKm")}
-            value={missingEndKm}
-            tone={missingEndKm > 0 ? "warn" : "neutral"}
-          />
-          <Stat
-            label={t("dayBoard.openRfrs")}
-            value={openRfrs ?? 0}
-            tone={(openRfrs ?? 0) > 0 ? "stop" : "neutral"}
-          />
-        </StatBar>
+  const chips: Chip[] = [
+    { value: "", label: t("dayBoard.allStatuses"), count: all.length },
+    { value: "operating", label: t("status.operating"), count: operatingCount, tone: "go" },
+    { value: "completed", label: t("status.completed"), count: completedCount, tone: "go" },
+    { value: "planned", label: t("status.planned"), count: plannedCount, tone: "neutral" },
+    {
+      value: NOT_RUNNING_VALUE,
+      label: t("dayBoard.notRunning"),
+      count: notRunningCount,
+      tone: "stop",
+    },
+  ];
 
-        {rows.length === 0 ? (
-          <Empty title={t("common.empty")} hint={t("common.emptyHint")} />
-        ) : (
-          <OperationList rows={rows} />
-        )}
+  return (
+    <Panel clip={false}>
+      <PanelHead title={`${t("dayBoard.title")} · ${day}`} />
+      <StatBar>
+        <Stat label={t("status.operating")} value={operatingCount} tone="go" />
+        <Stat label={t("status.completed")} value={completedCount} tone="go" />
+        <Stat label={t("status.planned")} value={plannedCount} tone="neutral" />
+        <Stat label={t("dayBoard.notRunning")} value={notRunningCount} tone="stop" />
+        <Stat
+          label={t("dayBoard.openRfrs")}
+          value={openRfrs ?? 0}
+          tone={(openRfrs ?? 0) > 0 ? "stop" : "neutral"}
+        />
+      </StatBar>
+
+      <FilterChips
+        chips={chips}
+        active={status ?? ""}
+        param="status"
+        pathname="/day-board"
+        extraQuery={date ? { date } : {}}
+      />
+
+      {rows.length === 0 ? (
+        <Empty title={t("common.empty")} hint={t("common.emptyHint")} />
+      ) : (
+        <OperationList rows={rows} />
+      )}
     </Panel>
   );
 }

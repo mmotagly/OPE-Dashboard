@@ -55,8 +55,8 @@
   },
   "dayBoard": {
     "title": "اليوم",
-    "busesOut": "حافلات بالخدمة",
-    "missingEndKm": "عداد النهاية ناقص",
+    "allStatuses": "الكل",
+    "notRunning": "غير مشغّلة",
     "openRfrs": "طلبات مفتوحة",
     "logEndKm": "تسجيل عداد النهاية",
     "raiseRfr": "فتح طلب إصلاح"

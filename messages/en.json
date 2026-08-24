@@ -55,8 +55,8 @@
   },
   "dayBoard": {
     "title": "Today",
-    "busesOut": "Buses out",
-    "missingEndKm": "Missing end KM",
+    "allStatuses": "All",
+    "notRunning": "Not running",
     "openRfrs": "Open RFRs",
     "logEndKm": "Log end KM",
     "raiseRfr": "Raise RFR"
