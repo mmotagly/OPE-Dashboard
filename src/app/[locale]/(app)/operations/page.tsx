@@ -17,6 +17,9 @@ const MODULE = "operations";
 const newButton =
   "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
 
+const bulkButton =
+  "rounded-[10px] border border-hairline bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:bg-raise";
+
 /**
  * Daily operations. One dense table across the content region; the drawer
  * overlays it from the inline-end edge for viewing, creating and editing.
@@ -126,11 +129,13 @@ export default async function OperationsPage({
   const drawerMode =
     canEdit && mode === "new"
       ? "new"
-      : canEdit && mode === "edit" && id
-        ? "edit"
-        : id
-          ? "view"
-          : null;
+      : canEdit && mode === "bulk"
+        ? "bulk"
+        : canEdit && mode === "edit" && id
+          ? "edit"
+          : id
+            ? "view"
+            : null;
 
   return (
     <>
@@ -139,12 +144,20 @@ export default async function OperationsPage({
           title={t("title")}
           actions={
             canEdit ? (
-              <Link
-                href={{ pathname: "/operations", query: { ...query, mode: "new" } }}
-                className={newButton}
-              >
-                {t("new")}
-              </Link>
+              <>
+                <Link
+                  href={{ pathname: "/operations", query: { ...query, mode: "bulk" } }}
+                  className={bulkButton}
+                >
+                  {t("bulkPlan")}
+                </Link>
+                <Link
+                  href={{ pathname: "/operations", query: { ...query, mode: "new" } }}
+                  className={newButton}
+                >
+                  {t("new")}
+                </Link>
+              </>
             ) : undefined
           }
         />

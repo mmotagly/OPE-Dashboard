@@ -202,3 +202,46 @@ export function firstFieldErrors(
   }
   return out;
 }
+
+/**
+ * Bulk planning (Phase 5). A Planned row is (vehicle, date, shift) only —
+ * every other field is forbidden by fn_validate_operation_status for that
+ * status, so there's nothing else to collect here.
+ */
+const bulkPlanSchema = z.object({
+  operationDate: isoDate,
+  shiftTypeId: requiredId,
+  vehicleIds: z.array(requiredId).min(1, REQUIRED),
+});
+
+export type BulkPlanInput = z.infer<typeof bulkPlanSchema>;
+
+export function parseBulkPlanForm(formData: FormData) {
+  return bulkPlanSchema.safeParse({
+    operationDate: String(formData.get("operationDate") ?? ""),
+    shiftTypeId: String(formData.get("shiftTypeId") ?? ""),
+    vehicleIds: formData.getAll("vehicleIds").map(String),
+  });
+}
+
+/** One row's outcome. `reason` is a next-intl key under `operations.error.*`. */
+export type BulkPlanResult = {
+  vehicleId: string;
+  vehicleCode: string;
+  ok: boolean;
+  reason: string | null;
+};
+
+export type BulkPlanFormState = {
+  formError: string | null;
+  fieldErrors: Record<string, string>;
+  /** Present only when at least one row failed — the form renders the
+   * report instead of redirecting. Absent on the initial/empty state. */
+  results: BulkPlanResult[] | null;
+};
+
+export const EMPTY_BULK_PLAN_STATE: BulkPlanFormState = {
+  formError: null,
+  fieldErrors: {},
+  results: null,
+};

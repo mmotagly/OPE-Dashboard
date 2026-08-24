@@ -7,7 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 import { canWriteOps, requireUser } from "@/lib/auth";
 import {
   firstFieldErrors,
+  parseBulkPlanForm,
   parseOperationForm,
+  type BulkPlanFormState,
+  type BulkPlanResult,
   type OperationFormState,
   type OperationInput,
 } from "./schema";
@@ -208,4 +211,113 @@ export async function updateOperation(
     },
     locale: gate.locale,
   });
+}
+
+/**
+ * Bulk planning (Phase 5). A Planned row is (vehicle, date, shift) only —
+ * every other column stays null, matching what fn_validate_operation_status
+ * already requires for that status.
+ *
+ * Deliberately best-effort, not atomic: each vehicle is inserted
+ * independently (not one multi-row INSERT) so one collision — a vehicle
+ * that already has a row for that date/shift, the realistic failure mode
+ * here — doesn't cost the rest of the batch. Every row that succeeds stays
+ * created regardless of how the others go. Only a full-success batch
+ * redirects; any failure returns the per-row report instead so the form can
+ * show exactly what to retry.
+ */
+export async function createBulkPlanned(
+  _prev: BulkPlanFormState,
+  formData: FormData,
+): Promise<BulkPlanFormState> {
+  const gate = await guard();
+  if (isState(gate)) return { ...gate, results: null };
+
+  const parsed = parseBulkPlanForm(formData);
+  if (!parsed.success) {
+    return {
+      formError: null,
+      fieldErrors: firstFieldErrors(parsed.error),
+      results: null,
+    };
+  }
+
+  const supabase = await createClient();
+  const [statusCodeById, vehicleRows] = await Promise.all([
+    loadStatusCodeById(supabase),
+    supabase
+      .from("vehicles")
+      .select("id, vehicle_code")
+      .in("id", parsed.data.vehicleIds),
+  ]);
+
+  const plannedStatusId = Object.entries(statusCodeById).find(
+    ([, code]) => code === "planned",
+  )?.[0];
+  if (!plannedStatusId) {
+    return { formError: "saveFailed", fieldErrors: {}, results: null };
+  }
+
+  const codeByVehicleId = new Map(
+    (vehicleRows.data ?? []).map((v) => [v.id, v.vehicle_code as string]),
+  );
+
+  const results: BulkPlanResult[] = [];
+
+  for (const vehicleId of parsed.data.vehicleIds) {
+    const row = {
+      operation_date: parsed.data.operationDate,
+      shift_type_id: parsed.data.shiftTypeId,
+      vehicle_id: vehicleId,
+      status_id: plannedStatusId,
+      route_id: null,
+    };
+
+    let created = false;
+    let lastError: DbError | null = null;
+
+    for (let attempt = 0; attempt < 5 && !created; attempt++) {
+      const operation_code = await nextOperationCode(
+        supabase,
+        parsed.data.operationDate,
+        attempt,
+      );
+
+      const { error } = await supabase
+        .from("daily_vehicle_operations")
+        // status_id: same stale-generated-types gap as createOperation above.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert({ ...row, operation_code } as any);
+
+      if (!error) {
+        created = true;
+        break;
+      }
+
+      lastError = error;
+      if (!isCodeCollision(error)) break;
+    }
+
+    results.push({
+      vehicleId,
+      vehicleCode: codeByVehicleId.get(vehicleId) ?? vehicleId,
+      ok: created,
+      reason: created
+        ? null
+        : lastError?.code === UNIQUE_VIOLATION
+          ? "duplicate"
+          : "saveFailed",
+    });
+  }
+
+  revalidatePath("/[locale]/operations", "page");
+
+  if (results.every((r) => r.ok)) {
+    return redirect({
+      href: { pathname: "/operations", query: { date: parsed.data.operationDate } },
+      locale: gate.locale,
+    });
+  }
+
+  return { formError: null, fieldErrors: {}, results };
 }

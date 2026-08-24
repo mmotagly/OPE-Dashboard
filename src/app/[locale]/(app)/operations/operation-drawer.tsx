@@ -16,6 +16,7 @@ import {
   type ShiftOption,
 } from "./queries";
 import { OperationForm } from "./operation-form";
+import { BulkPlanForm } from "./bulk-plan-form";
 
 const PM_STATUS_KEY: Record<string, string> = {
   overdue: "overdue",
@@ -54,7 +55,7 @@ export async function OperationDrawer({
   filterDate,
   filterShift,
 }: {
-  mode: "view" | "new" | "edit";
+  mode: "view" | "new" | "edit" | "bulk";
   id?: string;
   shifts: ShiftOption[];
   closeHref: CloseHref;
@@ -74,6 +75,28 @@ export async function OperationDrawer({
     if (!shift) return null;
     return tShift.has(shift.code) ? tShift(shift.code) : shift.labelEn;
   };
+
+  /* ---- bulk plan ---- */
+
+  if (mode === "bulk") {
+    const options = await loadPickerOptions();
+    const today = new Date().toISOString().slice(0, 10);
+
+    return (
+      <Drawer
+        code={t("bulkPlanTitle")}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <BulkPlanForm
+          shifts={options.shifts}
+          vehicles={options.vehicles}
+          initialDate={filterDate || today}
+          backTo={closeHref.query}
+        />
+      </Drawer>
+    );
+  }
 
   /* ---- create / edit ---- */
 
