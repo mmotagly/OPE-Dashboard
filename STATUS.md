@@ -148,7 +148,10 @@ for that status, so that's all the form collects.
 - **Invoicing shift dimension (Phase 3)** — a real invoice generated through
   the live UI after migration `0014` ran; bus-day counts confirmed correct
   by the user (the both-shifts-same-day fix specifically).
-- **Bulk planning flow (Phase 5)** — confirmed by the user.
+- **Bulk planning flow (Phase 5)** — confirmed by the user through the live
+  UI, including the partial-failure path specifically (re-submitting an
+  overlapping vehicle/date/shift correctly reports it as a duplicate rather
+  than failing the whole batch or silently dropping it).
 
 ---
 
