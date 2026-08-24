@@ -81,7 +81,7 @@
     "searchVehicles": "Search plate number or vehicle code",
     "noVehicleMatch": "No vehicle matches that search.",
     "odometerNow": "Odometer {km}",
-    "operatingPct": "{pct}% operating",
+    "operatingPct": "{pct}% of shift",
     "pmLabel": "{part} · {km} km to next",
     "noSelection": "No record selected",
     "noSelectionHint": "Pick a row to see the full entry.",

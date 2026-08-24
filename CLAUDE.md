@@ -206,14 +206,19 @@ Dark theme. Tokens are in `globals.css`. Never hardcode a colour.
 | `--color-ink-2` | `#A3AAAE` | Labels |
 | `--color-ink-3` | `#6B7278` | Meta, placeholders |
 | `--color-hairline` | `#23282B` | Dividers, borders |
-| `--color-go` | `#22C55E` | Operating, ready, completed, paid |
-| `--color-warn` | `#F0B429` | Due soon, pending, late |
+| `--color-go` | `#22C55E` | Ready, completed, paid |
+| `--color-warn` | `#F0B429` | Due soon, pending, late, operating (in progress) |
 | `--color-stop` | `#F0554E` | Overdue, skipped, under repair |
 | `--color-idle` | `#2C3235` | Neutral pill, inactive |
 
 Rules:
 - Colour is **information, never decoration**. Green only for good states, amber
-  only for approaching-limit, red only for breached. Nothing else is coloured.
+  only for approaching-limit or in-progress, red only for breached. Nothing
+  else is coloured. `operating` uses amber rather than green specifically so a
+  dispatcher can tell "still running" apart from "finished" (`completed`, still
+  green) at a glance, not just from the pill text — a deliberate one-off
+  extension of "approaching-limit," not a general licence to use amber for
+  anything ongoing.
 - Depth comes from lightness steps plus a 1px light rim, not drop shadows.
 - On filled bright pills, text is near-black (`--color-on-accent`).
 - Typeface: **Rubik**, one family for Arabic and Latin. Codes are Rubik 600 with

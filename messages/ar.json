@@ -81,7 +81,7 @@
     "searchVehicles": "ابحث برقم اللوحة أو كود المركبة",
     "noVehicleMatch": "لا توجد مركبة مطابقة لهذا البحث.",
     "odometerNow": "العداد {km}",
-    "operatingPct": "{pct}% تشغيل",
+    "operatingPct": "{pct}% من الوردية",
     "pmLabel": "{part} · {km} كم حتى القادمة",
     "noSelection": "لم يتم اختيار سجل",
     "noSelectionHint": "اختر صفًا لعرض بياناته كاملة.",

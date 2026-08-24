@@ -84,16 +84,22 @@ export type PmStatus =
 export const pmTone = (s: PmStatus): "go" | "warn" | "stop" | "idle" =>
   s === "overdue" ? "stop" : s === "due_now" || s === "due_soon" ? "warn" : s === "ok" ? "go" : "idle";
 
-/** operation_status codes (0009). "Operating, ready, completed, paid" = go;
- * "Overdue, skipped, under repair" = stop, per the design system's own table —
- * under_maintenance is that table's "under repair" and cancelled_by_* is its
- * "skipped". Planned hasn't happened yet, so it's neutral rather than either. */
+/** operation_status codes (0009). `completed` = go ("completed, paid" in the
+ * design system's own table); `operating` = warn — a deliberate extension of
+ * that table (see CLAUDE.md §5) so a dispatcher can tell "still running"
+ * apart from "finished" at a glance, not just by reading the pill text; both
+ * were "go" before this. "Overdue, skipped, under repair" = stop, per that
+ * same table — under_maintenance is its "under repair" and cancelled_by_* is
+ * its "skipped". Planned hasn't happened yet, so it's neutral rather than
+ * either. */
 export const operationTone = (code: string): "go" | "warn" | "stop" | "idle" =>
-  code === "operating" || code === "completed"
+  code === "completed"
     ? "go"
-    : code === "under_maintenance" || code.startsWith("cancelled_by_")
-      ? "stop"
-      : "idle";
+    : code === "operating"
+      ? "warn"
+      : code === "under_maintenance" || code.startsWith("cancelled_by_")
+        ? "stop"
+        : "idle";
 
 /** operation_status codes (snake_case) -> next-intl keys under `status.*`. */
 export const OPERATION_STATUS_KEY: Record<string, string> = {
