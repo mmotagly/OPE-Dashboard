@@ -58,6 +58,60 @@ endKm-derived pseudo-status everywhere.
   - Operating % is now required when status is `Completed`, same
     required/forbidden pattern as KM/battery (migration `0013`).
 
+### Invoicing shift dimension (Phase 3)
+
+Billing moved from one invoice per vendor/month to one per vendor/month
+**per shift** (Morning/Night invoiced separately) — migration `0014`.
+
+- `vendor_invoices` gained `shift_type_id` (nullable — the one pre-existing
+  invoice row is left as a legacy whole-month record, untouched, no
+  backfill); unique constraint became `(vendor_id, period_month,
+  shift_type_id)`.
+- `v_vendor_monthly_bus_counts` now groups by shift too, and computes
+  `bus_days` as `sum(coalesce(operating_percentage, 100) / 100.0)` instead
+  of `count(distinct (vehicle_id, operation_date))`. This fixed a real
+  pre-existing bug: a bus running both Morning and Night on the same date
+  used to count as one bus-day instead of two. The view also gained a
+  billable-status filter (`operating`/`completed` only) it never had —
+  Planned/Cancelled/Under Maintenance rows were being counted before.
+- `fn_generate_invoice` takes a new `p_shift_type_id` parameter; the old
+  2-argument version was explicitly dropped (`CREATE OR REPLACE` doesn't
+  replace across a changed argument list — it overloads).
+- Scorecards are untouched — still month-level, shared across both
+  shift-invoices for a vendor/month.
+- App layer: shift picker on the generate form, shift shown in the
+  invoices table and drawer, `loadBusCounts` scoped by shift.
+- The first attempt at migration `0014` failed on its first run
+  (`name[] = text[]` — no such operator; a dynamic constraint-lookup query
+  compared Postgres's internal `name` type against a `text[]` literal
+  without a cast) before touching any data. Fixed with an explicit cast,
+  and the `ADD COLUMN`/`ADD CONSTRAINT` statements were made idempotent
+  while in there, since a money-critical migration needs to be safely
+  re-runnable. The corrected version ran clean.
+
+### Bulk planning flow (Phase 5)
+
+A fourth drawer mode (`?mode=bulk`) on Daily Operations, alongside the
+existing `view`/`new`/`edit` — not a new route, per `CLAUDE.md` hard rule 4.
+Pick a date and shift once, tick one or more vehicles, submit once, get N
+Planned rows. A Planned row is only `(vehicle, date, shift)` —
+`fn_validate_operation_status` already forbids driver/KM/battery/operating-%
+for that status, so that's all the form collects.
+
+- `createBulkPlanned` (in `operations/actions.ts`, reusing `guard()`,
+  `loadStatusCodeById()`, `nextOperationCode()`, and the
+  `UNIQUE_VIOLATION` constant directly from `createOperation`'s own module)
+  inserts each vehicle **independently**, not as one multi-row `INSERT` —
+  deliberately best-effort rather than atomic. A vehicle that already has a
+  row for that date/shift (the realistic collision) doesn't cost the rest
+  of the batch.
+- Full success redirects and closes the drawer, mirroring
+  `createOperation`'s existing success path. Any per-row failure returns a
+  results report instead — the form renders which vehicle, and why, so the
+  rest can be retried individually through the normal single-record form.
+- No schema/migration change — bulk-created rows go through the same
+  table and validation trigger a single Planned row already uses.
+
 ### Infrastructure
 
 - **Production 504 `MIDDLEWARE_INVOCATION_TIMEOUT` incident — resolved.**
@@ -91,14 +145,18 @@ endKm-derived pseudo-status everywhere.
 - Operating % required-for-Completed rule.
 - Zero 504 recurrences since the middleware deadline fix.
 - `dub1` confirmed as the live execution region via `X-Vercel-Id`.
+- **Invoicing shift dimension (Phase 3)** — a real invoice generated through
+  the live UI after migration `0014` ran; bus-day counts confirmed correct
+  by the user (the both-shifts-same-day fix specifically).
+- **Bulk planning flow (Phase 5)** — confirmed by the user.
 
 ---
 
 ## 3. Migration status
 
-All migrations through `0013` exist in `supabase/migrations/` **and have
+All migrations through `0014` exist in `supabase/migrations/` **and have
 been run** against the live Supabase project, confirmed by the user as of
-2026-08-23:
+2026-08-24:
 
 ```
 0001_init.sql
@@ -114,7 +172,14 @@ been run** against the live Supabase project, confirmed by the user as of
 0011_operation_battery_validation.sql
 0012_operation_status_lock.sql
 0013_operation_completed_requires_operating_pct.sql
+0014_invoice_shift_dimension.sql
 ```
+
+Note on `0014`: the file in the repo is the **corrected** version (a
+`name[] = text[]` type-mismatch bug was fixed after the first run attempt
+failed before touching any data — see §1). There was never a version of
+`0014` that ran successfully with the bug still in it, so there's nothing
+to reconcile.
 
 **Nothing pending.** If a future session sees a migration file with no
 corresponding entry in this list, treat its run-state as unknown — ask the
@@ -126,22 +191,17 @@ reports in conversation or from a query the user runs and reports back.
 
 ## 4. What's next
 
-Not started, in rough priority order:
+Not started:
 
-1. **Phase 3 — billing shift-dimension.** The Daily Operations status
-   rollout's original next phase, deferred behind Phase 4 so the status
-   picker UI could be verified first. Scope not yet re-investigated since
-   the reorder — re-read `CLAUDE.md` §2 "Invoicing" and the current
-   `fn_generate_invoice` before scoping.
-2. **Bulk planning flow** ("Phase 5" in earlier conversation, not yet
-   scoped in detail) — a faster way to create many Planned operations at
-   once (e.g. a week of shifts across the fleet) rather than one at a time
-   through the single-record form.
-3. **Day Board's proper status-aware redesign.** Currently only patched
-   with a correctness-preserving filter (§1, Phase 4). It still doesn't
-   visually represent all 7 statuses per row/card the way the rest of the
-   status feature now does — `HANDOVER.md` §8 item 9 also flags Day Board as
-   never having been redesigned to the table+drawer pattern at all.
+1. **Day Board's proper status-aware redesign.** Currently only patched
+   with a correctness-preserving filter (§1, Daily Operations status
+   feature Phase 4). It still doesn't visually represent all 7 statuses per
+   row/card the way the rest of the status feature now does —
+   `HANDOVER.md` §8 item 9 also flags Day Board as never having been
+   redesigned to the table+drawer pattern at all. This is now the only
+   item left from the original Daily Operations status rollout's phase
+   plan (Phases 1/2/4 shipped as that feature; Phase 3 billing and Phase 5
+   bulk planning have both shipped since — see §1).
 
 ---
 
