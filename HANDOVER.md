@@ -246,8 +246,12 @@ Ordered by how much they matter.
 8. **The `middleware` file convention is deprecated** in Next 16 in favour of
    `proxy`. There's a codemod: `npx @next/codemod@canary middleware-to-proxy .`
 
-9. **Day board** was never redesigned to the table + drawer pattern and still
-   uses `RecordCard`.
+9. ~~Day board was never redesigned to the table + drawer pattern~~ — revisited
+   and decided against. Day Board still uses `RecordCard`, deliberately: it's
+   read-only (no create/edit, so the drawer-for-forms rationale doesn't
+   apply), CLAUDE.md's "lists are tables" rule names its own scope and Day
+   Board isn't in it, and the card already surfaces more per-row detail than
+   a table row would without a click-through. See `STATUS.md`.
 
 10. **Sidebar "Fleet status" and "Insights"** may be dead links left from the
     original scaffold.

@@ -7,7 +7,15 @@ import { KmMeter } from "@/components/ui/km-meter";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
-import { km, money, percent, pmTone, operationTone, statusLabel, type PmStatus } from "@/lib/format";
+import {
+  km,
+  money,
+  percent,
+  pmBarTone,
+  pmLabelTone,
+  operationTone,
+  statusLabel,
+} from "@/lib/format";
 import {
   loadNearestPm,
   loadOperation,
@@ -25,17 +33,6 @@ const PM_STATUS_KEY: Record<string, string> = {
   never_serviced: "neverServiced",
   no_km_data: "noKmData",
   ok: "ok",
-};
-
-/** The meter bar only carries approaching-limit and breached. */
-const barTone = (status: PmStatus | null) => {
-  const tone = status ? pmTone(status) : null;
-  return tone === "stop" ? "stop" : tone === "warn" ? "warn" : "neutral";
-};
-
-const labelTone = (status: PmStatus | null) => {
-  const tone = status ? pmTone(status) : null;
-  return tone === null || tone === "idle" ? "neutral" : tone;
 };
 
 const actionLink =
@@ -219,14 +216,14 @@ export async function OperationDrawer({
               ? ((pm.intervalKm - pm.kmRemaining) / pm.intervalKm) * 100
               : null
           }
-          pmTone={barTone(pmStatus)}
+          pmTone={pmBarTone(pmStatus)}
           pmLabel={
             pm ? t("pmLabel", { part: pm.partName, km: km(pm.kmRemaining) }) : undefined
           }
         />
         {pm && (
           <div className="mt-2.5">
-            <Micro tone={labelTone(pmStatus)}>
+            <Micro tone={pmLabelTone(pmStatus)}>
               {tStatus.has(PM_STATUS_KEY[pm.status] ?? pm.status)
                 ? tStatus(PM_STATUS_KEY[pm.status] ?? pm.status)
                 : pm.status}

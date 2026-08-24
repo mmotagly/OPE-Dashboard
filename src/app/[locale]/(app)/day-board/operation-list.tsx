@@ -12,15 +12,21 @@ import {
 import { Pill } from "@/components/ui/pill";
 import { Micro } from "@/components/ui/micro";
 import { KmMeter } from "@/components/ui/km-meter";
-import { operationTone, statusLabel } from "@/lib/format";
-import type { OperationRow } from "../operations/queries";
+import { km, operationTone, pmBarTone, statusLabel } from "@/lib/format";
+import type { NearestPm, OperationRow } from "../operations/queries";
 
 /** Statuses fn_validate_operation_status allows real operational data for —
  * every other status forbids driver/KM/battery/operating-% entirely, so
  * there's nothing for the full card to show. */
 const HAS_OPERATIONAL_DATA = new Set(["operating", "completed"]);
 
-export function OperationList({ rows }: { rows: OperationRow[] }) {
+export function OperationList({
+  rows,
+  pmByVehicle,
+}: {
+  rows: OperationRow[];
+  pmByVehicle: Map<string, NearestPm>;
+}) {
   const t = useTranslations();
   const tStatus = useTranslations("status");
   const [selected, setSelected] = useState<string | null>(rows[0]?.id ?? null);
@@ -63,7 +69,11 @@ export function OperationList({ rows }: { rows: OperationRow[] }) {
           );
         }
 
-        const noEnd = r.endKm === null;
+        const pm = r.vehicleId ? pmByVehicle.get(r.vehicleId) ?? null : null;
+        const pmProgress =
+          pm && pm.intervalKm !== null && pm.intervalKm > 0 && pm.kmRemaining !== null
+            ? ((pm.intervalKm - pm.kmRemaining) / pm.intervalKm) * 100
+            : null;
 
         return (
           <RecordCard
@@ -93,16 +103,12 @@ export function OperationList({ rows }: { rows: OperationRow[] }) {
             </div>
 
             <div className="mt-2.5">
-              {/* pmProgress/pmTone are placeholder values, not real PM data —
-                  pre-existing, out of scope for this pass. Kept exactly as
-                  they were (tied to the same operating/completed split the
-                  old endKm-derived noEnd check happened to also match) so
-                  this redesign doesn't silently change that behavior. */}
               <KmMeter
                 startKm={r.startKm}
                 endKm={r.endKm}
-                pmProgress={noEnd ? 46 : 82}
-                pmTone={noEnd ? "warn" : "neutral"}
+                pmProgress={pmProgress}
+                pmTone={pmBarTone(pm?.status ?? null)}
+                pmLabel={pm ? t("operations.pmLabel", { part: pm.partName, km: km(pm.kmRemaining) }) : undefined}
                 right={
                   r.batteryStart !== null && r.batteryEnd !== null
                     ? `Battery ${r.batteryStart} → ${r.batteryEnd}%`

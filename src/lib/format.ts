@@ -84,6 +84,17 @@ export type PmStatus =
 export const pmTone = (s: PmStatus): "go" | "warn" | "stop" | "idle" =>
   s === "overdue" ? "stop" : s === "due_now" || s === "due_soon" ? "warn" : s === "ok" ? "go" : "idle";
 
+/** The meter bar only carries approaching-limit and breached. */
+export const pmBarTone = (s: PmStatus | null): "stop" | "warn" | "neutral" => {
+  const tone = s ? pmTone(s) : null;
+  return tone === "stop" ? "stop" : tone === "warn" ? "warn" : "neutral";
+};
+
+export const pmLabelTone = (s: PmStatus | null): "go" | "warn" | "stop" | "neutral" => {
+  const tone = s ? pmTone(s) : null;
+  return tone === null || tone === "idle" ? "neutral" : tone;
+};
+
 /** operation_status codes (0009). `completed` = go ("completed, paid" in the
  * design system's own table); `operating` = warn — a deliberate extension of
  * that table (see CLAUDE.md §5) so a dispatcher can tell "still running"

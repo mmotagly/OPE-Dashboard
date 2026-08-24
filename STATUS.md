@@ -86,10 +86,26 @@ endKm-derived pseudo-status everywhere.
     Also fixed a Day Board wording bug this surfaced: the Completed card's
     footer read "100% OPERATING" directly under a green `COMPLETED` pill —
     reworded to "100% of shift".
-  - `pmProgress`/`pmTone` on the Day Board card's KM meter are still
-    hardcoded placeholder values (`46`/`82`), not real PM data — pre-existing,
-    deliberately left out of scope for this redesign. Real follow-up item,
-    see §4.
+  - `pmProgress`/`pmTone` on the Day Board card's KM meter — was hardcoded
+    placeholder values (`46`/`82`); now wired to real PM data. Added
+    `loadNearestPmForVehicles` (`operations/queries.ts`) to fetch every
+    shown vehicle's nearest-due part in one query instead of one
+    `loadNearestPm` call per row, and lifted the `barTone`/`labelTone`
+    mapping the drawer already used correctly into `src/lib/format.ts`
+    (`pmBarTone`/`pmLabelTone`) so both places share one tone mapping.
+  - **Table+drawer conversion — investigated, decided against.** `HANDOVER.md`
+    §8 item 9 had flagged Day Board as never converted to the table+drawer
+    pattern the other 8 modules use. Kept the card layout: Day Board is
+    read-only (no create/edit, so `CLAUDE.md` hard rule 4's drawer-for-forms
+    rationale doesn't apply), `CLAUDE.md`'s "lists are tables" rule names its
+    own scope explicitly and Day Board isn't in it (§6 calls Day Board out
+    separately as the pre-existing "reference implementation" the other
+    modules copy the *shape* of, not an instance of the table pattern), and
+    the card already surfaces more per-row detail (driver, KM+PM bar,
+    battery, operating %) at a glance than a table row would without a
+    click-through. Today's redesign already gave Day Board the
+    scannability/filtering a conversion would nominally add (`StatBar`,
+    `FilterChips`) without changing row shape.
 
 ### Invoicing shift dimension (Phase 3)
 
@@ -232,22 +248,9 @@ reports in conversation or from a query the user runs and reports back.
 ## 4. What's next
 
 The Daily Operations status rollout's original phase plan is now fully
-shipped (Phases 1/2/4, Phase 3 billing, Phase 5 bulk planning, and the Day
-Board redesign — see §1). Not started:
-
-1. **Day Board's `KmMeter` PM progress is still hardcoded placeholder data**
-   (`pmProgress`/`pmTone` literally `46`/`82` depending on which card),
-   surfaced while doing the status-aware redesign but deliberately left out
-   of scope for that pass. Real periodic-maintenance data for this exists
-   at `v_periodic_maintenance` (see `operations/queries.ts`'s
-   `loadNearestPm`, already used the same way on the Operations drawer) —
-   wiring the Day Board card up to it the same way is the fix, not new
-   plumbing.
-2. **`HANDOVER.md` §8 item 9** also flags Day Board as never having been
-   redesigned to the table+drawer pattern every other module uses — still
-   true; the status-aware redesign kept the existing `RecordCard` layout
-   rather than converting it, since that was a separate, larger decision
-   not raised as part of this pass.
+shipped (Phases 1/2/4, Phase 3 billing, Phase 5 bulk planning, the Day
+Board redesign, its real-PM-data fix, and the table+drawer decision — see
+§1). **Nothing pending from this rollout.**
 
 ---
 

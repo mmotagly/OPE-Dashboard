@@ -308,3 +308,37 @@ export async function loadNearestPm(vehicleId: string): Promise<NearestPm | null
     scheduledKm: num(data.scheduled_km),
   };
 }
+
+/**
+ * Nearest due PM item for several vehicles in one query — avoids one
+ * `loadNearestPm` round trip per row on pages like Day Board that show many
+ * vehicles at once. Same source view and ordering as `loadNearestPm`.
+ */
+export async function loadNearestPmForVehicles(
+  vehicleIds: string[],
+): Promise<Map<string, NearestPm>> {
+  const result = new Map<string, NearestPm>();
+  if (vehicleIds.length === 0) return result;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("v_periodic_maintenance")
+    .select("vehicle_id, part_name, maintenance_status, km_remaining, interval_km, scheduled_km")
+    .in("vehicle_id", vehicleIds)
+    .not("km_remaining", "is", null)
+    .order("km_remaining", { ascending: true });
+
+  for (const row of data ?? []) {
+    const vehicleId = String(row.vehicle_id);
+    if (result.has(vehicleId)) continue;
+    result.set(vehicleId, {
+      partName: String(row.part_name),
+      status: row.maintenance_status as PmStatus,
+      kmRemaining: num(row.km_remaining),
+      intervalKm: num(row.interval_km),
+      scheduledKm: num(row.scheduled_km),
+    });
+  }
+
+  return result;
+}

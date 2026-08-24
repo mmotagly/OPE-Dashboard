@@ -4,7 +4,7 @@ import { Panel, PanelHead } from "@/components/ui/panel";
 import { StatBar, Stat } from "@/components/ui/stat";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { Empty } from "@/components/ui/empty";
-import { loadOperations } from "../operations/queries";
+import { loadOperations, loadNearestPmForVehicles } from "../operations/queries";
 import { OperationList } from "./operation-list";
 
 /** The four statuses the "Not running" chip/stat groups — same set
@@ -78,6 +78,9 @@ export default async function DayBoardPage({
 
   const { count: openRfrs } = await openRfrsQuery;
 
+  const vehicleIds = [...new Set(rows.map((r) => r.vehicleId).filter((v): v is string => v !== null))];
+  const pmByVehicle = await loadNearestPmForVehicles(vehicleIds);
+
   const chips: Chip[] = [
     { value: "", label: t("dayBoard.allStatuses"), count: all.length },
     { value: "operating", label: t("status.operating"), count: operatingCount, tone: "go" },
@@ -117,7 +120,7 @@ export default async function DayBoardPage({
       {rows.length === 0 ? (
         <Empty title={t("common.empty")} hint={t("common.emptyHint")} />
       ) : (
-        <OperationList rows={rows} />
+        <OperationList rows={rows} pmByVehicle={pmByVehicle} />
       )}
     </Panel>
   );
