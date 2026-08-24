@@ -24,17 +24,31 @@
 -- shift_type_id stays null on it. No backfill.
 
 -- ---- schema ----------------------------------------------------------------
+-- Idempotent throughout (IF NOT EXISTS / catalog existence checks) so this
+-- is safely re-runnable regardless of how much of a prior failed attempt
+-- actually committed.
 
 alter table vendor_invoices
-  add column shift_type_id uuid references lookups(id);
+  add column if not exists shift_type_id uuid references lookups(id);
 
-alter table vendor_invoices
-  add constraint vendor_invoices_shift_lookup
-  check (shift_type_id is null or lookup_in(shift_type_id, 'shift_type'));
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'vendor_invoices'::regclass
+      and conname = 'vendor_invoices_shift_lookup'
+  ) then
+    alter table vendor_invoices
+      add constraint vendor_invoices_shift_lookup
+      check (shift_type_id is null or lookup_in(shift_type_id, 'shift_type'));
+  end if;
+end $$;
 
 -- Drop the old 2-column unique constraint by looking up its actual name
 -- rather than guessing it, so this can't silently no-op against the live
--- schema.
+-- schema. attname is Postgres's internal `name` type, not `text` — array_agg
+-- over it needs an explicit cast before comparing against a text[] literal,
+-- since there's no name[] = text[] operator.
 do $$
 declare v_conname text;
 begin
@@ -43,7 +57,7 @@ begin
   where conrelid = 'vendor_invoices'::regclass
     and contype = 'u'
     and (
-      select array_agg(attname order by attnum)
+      select array_agg(attname order by attnum)::text[]
       from pg_attribute
       where attrelid = 'vendor_invoices'::regclass
         and attnum = any(conkey)
@@ -54,9 +68,18 @@ begin
   end if;
 end $$;
 
-alter table vendor_invoices
-  add constraint vendor_invoices_vendor_period_shift_key
-  unique (vendor_id, period_month, shift_type_id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'vendor_invoices'::regclass
+      and conname = 'vendor_invoices_vendor_period_shift_key'
+  ) then
+    alter table vendor_invoices
+      add constraint vendor_invoices_vendor_period_shift_key
+      unique (vendor_id, period_month, shift_type_id);
+  end if;
+end $$;
 
 -- ---- view: regroup by shift, fix the bus-day bug, add the status filter ---
 
