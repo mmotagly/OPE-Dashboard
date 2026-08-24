@@ -57,6 +57,13 @@ export function InvoicesTable({
       cell: (r) => <span className="tnum">{r.periodMonth.slice(0, 7)}</span>,
     },
     {
+      key: "shift",
+      header: t("field.shift"),
+      className: "hidden sm:table-cell",
+      sortValue: (r) => r.shiftLabel,
+      cell: (r) => orDash(r.shiftLabel),
+    },
+    {
       key: "basis",
       header: t("field.basis"),
       className: "hidden md:table-cell",

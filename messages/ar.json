@@ -602,6 +602,7 @@
     "generate": "إصدار",
     "generating": "جارٍ الإصدار",
     "chooseVendor": "اختر موردًا",
+    "chooseShift": "اختر وردية",
     "noVendorTerms": "لا يوجد مورد لديه شروط فوترة محددة.",
     "approve": "اعتماد",
     "reopen": "إرجاع إلى مسودة",
@@ -619,6 +620,7 @@
     "field": {
       "vendor": "المورد",
       "periodMonth": "الشهر",
+      "shift": "الوردية",
       "basis": "الأساس",
       "rate": "القيمة",
       "busQuantity": "الحافلات",

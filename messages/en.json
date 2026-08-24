@@ -602,6 +602,7 @@
     "generate": "Generate",
     "generating": "Generating",
     "chooseVendor": "Choose a vendor",
+    "chooseShift": "Choose a shift",
     "noVendorTerms": "No vendor has billing terms configured.",
     "approve": "Approve",
     "reopen": "Return to draft",
@@ -619,6 +620,7 @@
     "field": {
       "vendor": "Vendor",
       "periodMonth": "Month",
+      "shift": "Shift",
       "basis": "Basis",
       "rate": "Rate",
       "busQuantity": "Buses",

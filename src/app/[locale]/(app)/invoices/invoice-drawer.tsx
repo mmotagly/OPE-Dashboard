@@ -45,7 +45,11 @@ export async function InvoiceDrawer({
     );
   }
 
-  const counts = await loadBusCounts(invoice.vendorId, invoice.periodMonth);
+  const counts = await loadBusCounts(
+    invoice.vendorId,
+    invoice.periodMonth,
+    invoice.shiftTypeId,
+  );
 
   const perBusDay = invoice.billingBasis === "per_bus_day";
   const formula = perBusDay ? tFinance("formulaRental") : tFinance("formulaOwned");
@@ -55,7 +59,9 @@ export async function InvoiceDrawer({
   return (
     <Drawer
       code={invoice.vendorCode}
-      sub={`${invoice.vendorName} · ${invoice.periodMonth.slice(0, 7)}`}
+      sub={`${invoice.vendorName} · ${invoice.periodMonth.slice(0, 7)}${
+        invoice.shiftLabel ? ` · ${invoice.shiftLabel}` : ""
+      }`}
       pill={<Pill tone={STATUS_TONE[invoice.status]}>{t(`status.${invoice.status}`)}</Pill>}
       closeHref={closeHref}
       closeLabel={tCommon("cancel")}
@@ -76,6 +82,7 @@ export async function InvoiceDrawer({
 
       <Section title={t("inputs")}>
         <KeyValue>
+          <Row label={t("field.shift")}>{invoice.shiftLabel ?? "—"}</Row>
           <Row label={t("field.basis")}>{basisLabel}</Row>
           <Row label={perBusDay ? t("field.rate") : tFinance("ratePerBus")}>
             {invoice.rateAmount === null

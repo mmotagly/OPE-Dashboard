@@ -7,7 +7,12 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
 import { applyFilters, toControls, writeFilterState } from "@/lib/filters";
 import { resolveFilters } from "@/lib/filter-page";
-import { loadInvoiceVendors, loadInvoices, type InvoiceStatus } from "./queries";
+import {
+  loadInvoiceVendors,
+  loadInvoices,
+  loadShiftOptions,
+  type InvoiceStatus,
+} from "./queries";
 import { buildInvoiceFilters } from "./filters";
 import { InvoicesTable } from "./invoices-table";
 import { InvoiceDrawer } from "./invoice-drawer";
@@ -39,9 +44,10 @@ export default async function InvoicesPage({
   const t = await getTranslations("invoice");
   const canEdit = isSuper(user.role);
 
-  const [all, vendors, { state: filterState, saved }] = await Promise.all([
+  const [all, vendors, shifts, { state: filterState, saved }] = await Promise.all([
     loadInvoices(),
     loadInvoiceVendors(),
+    loadShiftOptions(),
     resolveFilters(MODULE, sp),
   ]);
 
@@ -99,7 +105,9 @@ export default async function InvoicesPage({
       <Panel clip={false}>
         <PanelHead
           title={t("title")}
-          actions={canEdit ? <GenerateInvoice vendors={vendors} /> : undefined}
+          actions={
+            canEdit ? <GenerateInvoice vendors={vendors} shifts={shifts} /> : undefined
+          }
         />
 
         <FilterBar
