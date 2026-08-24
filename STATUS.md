@@ -205,6 +205,9 @@ for that status, so that's all the form collects.
   live UI, including the color/wording follow-up specifically: Operating
   pills render amber, Completed stays green, and the Completed card's
   footer no longer contradicts its own status pill.
+- **Day Board's real PM data fix** — confirmed by the user through the live
+  UI: no more fake 46/82 values, and a vehicle with no PM schedule
+  configured correctly shows no bar at all rather than a placeholder one.
 
 ---
 
