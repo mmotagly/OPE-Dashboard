@@ -43,7 +43,8 @@ endKm-derived pseudo-status everywhere.
     end KM" stat cards had no status filter and would have started counting
     Planned/Cancelled/Under Maintenance rows as running or incomplete buses.
     Patched with a `runningStatuses` filter scoped to Operating/Completed —
-    this is a correctness patch, not the full redesign (see §4).
+    a correctness patch at the time, since superseded by the full redesign
+    below.
 - **Follow-up fixes** (three requested together, one more after):
   - Battery % required/forbidden by status, same pattern as KM
     (migration `0011`).
@@ -57,6 +58,38 @@ endKm-derived pseudo-status everywhere.
     conditionally required).
   - Operating % is now required when status is `Completed`, same
     required/forbidden pattern as KM/battery (migration `0013`).
+- **Day Board's status-aware redesign** — the last item from this feature's
+  original phase plan. Replaced the endKm-derived binary pill (which had a
+  real bug: it mislabeled every `Completed` row as green "Operating", since
+  `completed` always has a non-null `endKm` and the old logic never checked
+  status at all) with the real status. Now fetches every status for the day
+  via `loadOperations({ date })` — the same call and status resolution the
+  Operations module itself uses — instead of a separate pre-filtered inline
+  query, so the two pages can't drift on what a status means.
+  - Stat bar: Operating / Completed / Planned / Not running (Cancelled ×3 +
+    Under Maintenance combined, matching `operationTone()`'s own grouping) /
+    Open RFRs. Dropped "Missing end KM" as redundant with the new Operating
+    count (an `operating` row's `endKm` is always null by validation rule).
+  - Two card layouts: full card (driver, KM meter, battery, operating %) for
+    Operating/Completed; compact card (code, pill, route only) for the five
+    statuses that have every operational field null by validation rule.
+  - Added status filter chips, reusing `FilterChips` as-is (already used
+    identically on RFRs).
+  - **Follow-up**: `Operating` and `Completed` were both rendering identical
+    green (`operationTone()` mapped both to `go`) — indistinguishable except
+    by pill text. Gave `Operating` its own tone (`warn`/amber) so the two are
+    tellable apart at a glance; `Completed` stays `go`. `operationTone()` is
+    shared by Day Board, the Operations table, and the Operations drawer, so
+    one change applied everywhere consistently. Documented as a deliberate
+    one-off extension of `CLAUDE.md`'s color rules (`amber` was
+    "approaching-limit only") rather than a silent bend — see `CLAUDE.md` §5.
+    Also fixed a Day Board wording bug this surfaced: the Completed card's
+    footer read "100% OPERATING" directly under a green `COMPLETED` pill —
+    reworded to "100% of shift".
+  - `pmProgress`/`pmTone` on the Day Board card's KM meter are still
+    hardcoded placeholder values (`46`/`82`), not real PM data — pre-existing,
+    deliberately left out of scope for this redesign. Real follow-up item,
+    see §4.
 
 ### Invoicing shift dimension (Phase 3)
 
@@ -152,6 +185,10 @@ for that status, so that's all the form collects.
   UI, including the partial-failure path specifically (re-submitting an
   overlapping vehicle/date/shift correctly reports it as a duplicate rather
   than failing the whole batch or silently dropping it).
+- **Day Board's status-aware redesign** — confirmed by the user through the
+  live UI, including the color/wording follow-up specifically: Operating
+  pills render amber, Completed stays green, and the Completed card's
+  footer no longer contradicts its own status pill.
 
 ---
 
@@ -194,17 +231,23 @@ reports in conversation or from a query the user runs and reports back.
 
 ## 4. What's next
 
-Not started:
+The Daily Operations status rollout's original phase plan is now fully
+shipped (Phases 1/2/4, Phase 3 billing, Phase 5 bulk planning, and the Day
+Board redesign — see §1). Not started:
 
-1. **Day Board's proper status-aware redesign.** Currently only patched
-   with a correctness-preserving filter (§1, Daily Operations status
-   feature Phase 4). It still doesn't visually represent all 7 statuses per
-   row/card the way the rest of the status feature now does —
-   `HANDOVER.md` §8 item 9 also flags Day Board as never having been
-   redesigned to the table+drawer pattern at all. This is now the only
-   item left from the original Daily Operations status rollout's phase
-   plan (Phases 1/2/4 shipped as that feature; Phase 3 billing and Phase 5
-   bulk planning have both shipped since — see §1).
+1. **Day Board's `KmMeter` PM progress is still hardcoded placeholder data**
+   (`pmProgress`/`pmTone` literally `46`/`82` depending on which card),
+   surfaced while doing the status-aware redesign but deliberately left out
+   of scope for that pass. Real periodic-maintenance data for this exists
+   at `v_periodic_maintenance` (see `operations/queries.ts`'s
+   `loadNearestPm`, already used the same way on the Operations drawer) —
+   wiring the Day Board card up to it the same way is the fix, not new
+   plumbing.
+2. **`HANDOVER.md` §8 item 9** also flags Day Board as never having been
+   redesigned to the table+drawer pattern every other module uses — still
+   true; the status-aware redesign kept the existing `RecordCard` layout
+   rather than converting it, since that was a separate, larger decision
+   not raised as part of this pass.
 
 ---
 
