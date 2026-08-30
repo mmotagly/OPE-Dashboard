@@ -25,8 +25,8 @@ each item ships.
 | 3 | Notifications/alerts (PM-overdue, RFR-aging) | ✅ Done, pushed — migration `0016` not yet run |
 | 4 | Planning Manager dashboard/reporting | ✅ Done, pushed — migration `0017` not yet run |
 | 5 | Automated PM scheduling reminders | ✅ Done, pushed — reuses `0016`, no new migration |
-| 6 | Driver/vendor performance trend history | 🔜 Next |
-| 7 | Export to Excel/PDF | Not started |
+| 6 | Vendor KPI performance trend history (see note) | ✅ Done, pushed — migration `0018` not yet run |
+| 7 | Export to Excel (CSV) / PDF (print) | ✅ Done, pushed — no new migration |
 
 **Migrations written this session that still need to run**, in order:
 
@@ -41,10 +41,60 @@ each item ships.
 3. `0017_dashboard.sql` — v_pm_compliance_summary, v_rfr_resolution_summary,
    v_fleet_utilization_monthly. Depends on nothing from 0015/0016; only
    needs 0001/0014 (already run) for the tables/views it reads from.
+4. `0018_vendor_kpi_trend.sql` — v_vendor_kpi_trend, v_vendor_kpi_section_trend.
+   Only needs 0001 (already run); independent of 0015/0016/0017.
+
+All four (0015-0018) are purely additive — new tables/views/triggers/rows,
+no `alter`/`drop` on anything existing, no data migration. They can be run
+in any order relative to each other; the only real ordering constraint is
+"before the pages that read them are expected to show real data" (all four
+build and deploy fine either way — every new query is bridged with an
+`as any` cast exactly for this reason, so the app never breaks on a view
+that doesn't exist yet, it just returns empty results).
+
+**Once run**, regenerate types to remove the `as any` casts (all clearly
+commented, search `v_audit_log|v_pm_alerts|v_rfr_aging_alerts|v_pm_compliance_summary|v_rfr_resolution_summary|v_fleet_utilization_monthly|v_vendor_kpi_trend|v_vendor_kpi_section_trend`):
+```
+npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.ts
+```
+
+**Judgment calls made this session, flagged for explicit review** (proceeded
+on best guess per "don't wait for permission," each one documented at its
+source too):
+
+1. **RFR-aging alert threshold (0016) and RFR-resolution dashboard average
+   (0017) both use `fn_rfr_access_minutes`.** CLAUDE.md section 8 settles
+   that access time is deliberately compared against no target for the
+   Lead Time KPI specifically, and neither of these touches the KPI or
+   scorecards — but both sit close enough to that settled decision's
+   boundary that they're worth a second look, not an assumed-fine reading
+   of "well it's a different feature." If either feels like it's
+   reintroducing exactly what that decision ruled out, they're each one
+   `drop view` / one `app_settings` row away from removal.
+2. **"Driver/vendor performance trend" (item 6) was scoped to vendors
+   only.** This schema has no per-driver KPI/scorecard concept at all — only
+   vendors get scored. Building one would be new business logic invented
+   well beyond "add a trend view over scorecards," so it wasn't attempted.
+   If driver-level performance tracking is actually wanted, that's a real
+   scoping conversation (what would a driver KPI even measure here —
+   there's no accident/incident log, no customer feedback table), not a
+   quick follow-up.
+3. **Two new npm dev dependencies added without asking first**: `vitest`
+   (item 1, no test runner existed) and nothing else — every other item
+   used only what was already installed. Both are dev-only, zero
+   production bundle impact.
+4. **Alerts/dashboard/vendor-trends page visibility** was matched to the
+   closest existing capability helper (`canSeeMoney` for money-adjacent
+   pages, no gate beyond authentication for the PM/RFR alerts themselves
+   since RLS already governs what each role's query returns) rather than
+   inventing new role rules. Worth confirming these land where you'd
+   actually want them, especially the sidebar's new "Administration" entry
+   (Activity log, `super_admin` only) and "Overview" entry (Alerts, every
+   role).
 
 ---
 
-## 0. Design system pilot — Daily Operations (in progress, not yet deployed)
+## 0. Design system pilot — Daily Operations (shipped, pushed this session)
 
 A visual-only redesign per `DESIGN_SYSTEM.md`, piloted on the Daily Operations
 page before rolling out module by module. **Not yet committed/pushed** —
@@ -368,11 +418,15 @@ failed before touching any data — see §1). There was never a version of
 `0014` that ran successfully with the bug still in it, so there's nothing
 to reconcile.
 
-**Nothing pending.** If a future session sees a migration file with no
-corresponding entry in this list, treat its run-state as unknown — ask the
-user, don't assume either way. Claude has no direct database access on this
-project; migration-run status can only be established from what a user
-reports in conversation or from a query the user runs and reports back.
+**0001 through 0014 confirmed run** as of 2026-08-24, as above. **0015
+through 0018 (2026-08-30 autonomous session, see the top of this file) are
+written but NOT confirmed run** — no DB credentials in this environment, so
+they were never attempted. Same rule as always: if a future session sees a
+migration file with no corresponding "run" confirmation, treat its
+run-state as unknown — ask the user, don't assume either way. Claude has no
+direct database access on this project; migration-run status can only be
+established from what a user reports in conversation or from a query the
+user runs and reports back.
 
 ---
 
@@ -388,6 +442,14 @@ other module (Day board, Charging, RFRs, Work orders, Periodic maintenance,
 Vehicles/Drivers/Vendors/Routes, Scorecards, Invoices, Settings, plus the
 login page's logo badge — `HANDOVER.md` §8 item 11) still needs its own
 pass once the pilot is signed off.
+
+**Autonomous session roadmap (top of this file):** all 7 items shipped and
+pushed. Immediate next step is running migrations `0015`-`0018` in Supabase
+(any order — see the top of this file) so the four new pages
+(`/activity-log`, `/alerts`, `/dashboard`, `/vendor-trends`) actually show
+data instead of empty states, then regenerating types to drop the `as any`
+casts. Beyond that: review the four flagged judgment calls (top of this
+file) and decide whether any need adjusting.
 
 ---
 
