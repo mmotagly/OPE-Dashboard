@@ -38,7 +38,11 @@
     "settings": "Settings",
     "openMenu": "Open navigation menu",
     "closeMenu": "Close",
-    "menu": "Menu"
+    "menu": "Menu",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
   },
   "auth": {
     "signIn": "Sign in",

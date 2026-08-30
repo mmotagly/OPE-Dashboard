@@ -38,7 +38,11 @@
     "settings": "الإعدادات",
     "openMenu": "فتح قائمة التنقل",
     "closeMenu": "إغلاق",
-    "menu": "القائمة"
+    "menu": "القائمة",
+    "lightMode": "فاتح",
+    "darkMode": "داكن",
+    "switchToLight": "التبديل إلى الوضع الفاتح",
+    "switchToDark": "التبديل إلى الوضع الداكن"
   },
   "auth": {
     "signIn": "تسجيل الدخول",

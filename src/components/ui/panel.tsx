@@ -16,7 +16,7 @@ export function Panel({
 }) {
   return (
     <section
-      className={`${clip ? "overflow-hidden" : ""} rounded-[14px] bg-surface rim ${className}`}
+      className={`${clip ? "overflow-hidden" : ""} rounded-card bg-surface rim ${className}`}
     >
       {children}
     </section>
@@ -24,15 +24,23 @@ export function Panel({
 }
 
 export function PanelHead({
+  eyebrow,
   title,
   actions,
 }: {
+  /** Muted breadcrumb sitting above the title — DESIGN_SYSTEM.md's page header. */
+  eyebrow?: ReactNode;
   title: ReactNode;
   actions?: ReactNode;
 }) {
   return (
     <header className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
-      <h2 className="text-sm font-semibold tracking-[-0.01em]">{title}</h2>
+      <div className="min-w-0">
+        {eyebrow && (
+          <p className="text-eyebrow text-ink-3">{eyebrow}</p>
+        )}
+        <h2 className="text-page-title font-semibold tracking-[-0.01em]">{title}</h2>
+      </div>
       {actions && (
         <div className="ms-auto flex gap-3.5 text-xs text-ink-3">{actions}</div>
       )}
@@ -77,7 +85,7 @@ export function Section({
   return (
     <div className="border-t border-hairline px-4 py-4">
       {title && (
-        <h3 className="mb-3 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+        <h3 className="mb-3 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
           {title}
         </h3>
       )}

@@ -5,7 +5,100 @@ snapshot) this file is meant to be updated as work lands, so any session on
 any machine can `git pull` and know exactly where things stand. Read
 `CLAUDE.md` first for domain rules; this file is state, not spec.
 
-Last updated: 2026-08-24.
+Last updated: 2026-08-30.
+
+---
+
+## 0. Design system pilot — Daily Operations (in progress, not yet deployed)
+
+A visual-only redesign per `DESIGN_SYSTEM.md`, piloted on the Daily Operations
+page before rolling out module by module. **Not yet committed/pushed** —
+still local, pending final sign-off. No business logic, data fetching,
+Supabase queries, or routing changed; no other module's *files* were edited.
+
+- **Token layer** (`src/app/globals.css`): existing CSS variable names kept
+  (so the 24+ files already referencing `bg-canvas`, `text-ink`, `bg-go`,
+  etc. needed no changes), but every value retargeted to
+  `DESIGN_SYSTEM.md`'s palette, with light-mode overrides added under
+  `[data-theme="light"]` (dark is default — no cookie means no attribute
+  means the base dark values apply, so no existing session's view changes
+  unless they opt in). Two new tokens added (`accent`, `accent-bg`) since
+  the old `elev` token conflated "generic selected state" with "active nav,"
+  incompatible with the new rule that brand accent touches only the logo,
+  active nav, and primary buttons. A typography scale (`text-page-title`,
+  `text-table-header`, etc.) was added since none existed before — see
+  `DESIGN_SYSTEM.md`'s Typography section for the full token list.
+- **Manual light/dark toggle**: new `ThemeToggle` client component in the
+  sidebar, backed by a `theme` cookie (not `localStorage` — SSR needs to
+  read it before first paint to avoid a flash). Read server-side in both
+  `[locale]/layout.tsx` (sets `data-theme` on `<html>`) and `(app)/layout.tsx`
+  (threads the initial value down to `Topbar`/`Sidebar`/`MobileNav` so the
+  toggle renders correctly on first paint with no flash). Verified working
+  end-to-end via a real click in the browser, not just cookie injection.
+- **Inter font**: loaded globally via `next/font/google` in the root layout
+  (self-hosted, zero new npm dependency — same pattern as the existing Rubik
+  loader) but only actually applied within Daily Operations' own page markup
+  this pass (`font-inter` on a `display: contents` wrapper, so it cascades
+  to the page's content without disturbing the app shell's grid layout).
+  Everywhere else keeps rendering Rubik.
+- **Shared components reskinned in place** (a deliberate, explicit tradeoff
+  the user chose over forking a parallel v2 component set, since
+  `CLAUDE.md` already has a hard rule against forking a second table/drawer/
+  pill style): `Pill` (solid-filled → soft-tinted, matching the design doc's
+  status-badge spec and incidentally removing two hardcoded hex values that
+  predated this pass), `Button` (`primary` variant is now accent-filled;
+  every module's existing single-primary-button-per-form pattern already
+  satisfies the "max one primary per screen" rule, so this needed no usage
+  changes elsewhere), `Sidebar` (active nav item → `accent`/`accent-bg`,
+  typography scale, theme toggle added), `Topbar` (logo badge → accent —
+  the only other place brand color is allowed), `DataTable` (header/row
+  typography per spec), `Panel`/`PanelHead`/`Section` (radius token,
+  typography scale, new optional `eyebrow` prop for the breadcrumb), `Drawer`
+  (radius token) `Field` (radius token — used by every module's forms,
+  including Operations' own). Because these are genuinely shared, this
+  **will visually reskin every module app-wide** the moment it ships, not
+  just Daily Operations — accepted explicitly by the user as the tradeoff
+  for not forking components, with Daily Operations as what's actually been
+  reviewed and screenshotted first.
+- **Daily Operations page itself**: page header rebuilt with an eyebrow
+  breadcrumb + title (via `PanelHead`'s new `eyebrow` prop) and a single
+  accent-filled primary button ("New operation"); "Bulk plan" demoted to
+  secondary/neutral, matching "max one primary button per screen." Arbitrary
+  `rounded-[10px]` instances within the Operations module's own files
+  (`page.tsx`, `operation-form.tsx`, `operation-drawer.tsx`,
+  `bulk-plan-form.tsx`) replaced with the `rounded-control` token.
+- **Known, accepted seam**: only the specifically-touched shared components
+  and Daily Operations' own files got the radius-token/typography-token
+  treatment. Every other module's own inline styling (the ~25+ files with
+  hardcoded `border-ink bg-ink ... text-on-ink` "New X" buttons, hardcoded
+  `rounded-[10px]` elsewhere, etc.) is untouched — those files render with
+  the *new retargeted token colors* (automatic, since they reference the
+  same CSS variables) but the *old radius/typography* until each module
+  gets its own pass. Expect a visible radius/type seam between Operations
+  and everything else until the rollout continues.
+- **Known, logged gap**: the login page's own hardcoded logo badge (separate
+  markup from the shared `Topbar`, out of scope for this pass) is now
+  visually inconsistent with the rest of the signed-in app — see
+  `HANDOVER.md` §8 item 11.
+- **Contrast fix applied**: the flagged white-on-`accent` button contrast
+  gap (~3.08:1 dark / ~4.29:1 light, both under WCAG AA's 4.5:1) is
+  corrected. Added a second token, `accent-fill` (`#D2461E` light /
+  `#BA5A32` dark — same hue as `accent`, minimally darkened), used only
+  where accent fills a solid background behind white text (logo badge,
+  primary buttons): **4.53:1 light / 4.57:1 dark**, both now AA-compliant.
+  `accent` itself is unchanged, since it's also the *text* color on
+  `accent-bg` for the active nav item, where the original value already
+  cleared AA (~5.3:1) — darkening it directly would have silently broken
+  that pairing instead. See `DESIGN_SYSTEM.md`'s "Contrast fix" note for
+  the full reasoning.
+- **Verification**: `npm run typecheck`, `npm run lint`, `npm run build` all
+  pass. Confirmed live in a local dev server, both themes, via real browser
+  screenshots (before/after, dark/light) and a real click on the toggle (not
+  just cookie injection) — a genuine `git stash`/`pop` round-trip was used to
+  capture true "before" screenshots of the pre-pilot design for comparison,
+  since no such screenshots existed from before the code changes were made.
+  Shipped autonomously (user away ~3h, pre-authorized): committed and
+  pushed once the contrast fix above landed and re-verification passed.
 
 ---
 
@@ -254,6 +347,12 @@ The Daily Operations status rollout's original phase plan is now fully
 shipped (Phases 1/2/4, Phase 3 billing, Phase 5 bulk planning, the Day
 Board redesign, its real-PM-data fix, and the table+drawer decision — see
 §1). **Nothing pending from this rollout.**
+
+**Design system rollout (see §0):** Daily Operations is the pilot; every
+other module (Day board, Charging, RFRs, Work orders, Periodic maintenance,
+Vehicles/Drivers/Vendors/Routes, Scorecards, Invoices, Settings, plus the
+login page's logo badge — `HANDOVER.md` §8 item 11) still needs its own
+pass once the pilot is signed off.
 
 ---
 

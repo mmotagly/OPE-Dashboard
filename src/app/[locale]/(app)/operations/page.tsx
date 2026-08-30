@@ -14,11 +14,13 @@ import { OperationDrawer } from "./operation-drawer";
 
 const MODULE = "operations";
 
+/** The one primary (accent-filled) action on this screen — DESIGN_SYSTEM.md
+ * allows at most one per screen. "Bulk plan" stays secondary/neutral. */
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 const bulkButton =
-  "rounded-[10px] border border-hairline bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:bg-raise";
+  "rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise";
 
 /**
  * Daily operations. One dense table across the content region; the drawer
@@ -49,6 +51,7 @@ export default async function OperationsPage({
   const dir = one("dir") || "asc";
 
   const t = await getTranslations("operations");
+  const tNav = await getTranslations("nav");
   const tStatus = await getTranslations("status");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
@@ -138,9 +141,10 @@ export default async function OperationsPage({
             : null;
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("operations")}
           title={t("title")}
           actions={
             canEdit ? (
@@ -201,6 +205,6 @@ export default async function OperationsPage({
           filterShift={prefillShift}
         />
       )}
-    </>
+    </div>
   );
 }

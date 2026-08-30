@@ -4,15 +4,21 @@ import { SignOut } from "./sign-out";
 import { MobileNav } from "./mobile-nav";
 import type { CurrentUser } from "@/lib/auth";
 
-export async function Topbar({ user }: { user: CurrentUser }) {
+export async function Topbar({
+  user,
+  initialTheme,
+}: {
+  user: CurrentUser;
+  initialTheme: "light" | "dark";
+}) {
   const t = await getTranslations();
 
   return (
     <header className="sticky top-0 z-40 flex flex-wrap items-center gap-2 overscroll-x-none border-b border-hairline bg-canvas/85 px-5 py-3 backdrop-blur-md sm:gap-4">
-      <MobileNav role={user.role} />
+      <MobileNav role={user.role} initialTheme={initialTheme} />
 
       <div className="flex items-center gap-2.5 font-semibold tracking-[-0.01em]">
-        <span className="grid h-6.5 w-6.5 shrink-0 place-items-center rounded-lg bg-ink text-[12px] font-bold text-on-ink">
+        <span className="grid h-6.5 w-6.5 shrink-0 place-items-center rounded-lg bg-accent-fill text-[12px] font-bold text-on-accent">
           P
         </span>
         <span className="hidden sm:inline">{t("brand")}</span>

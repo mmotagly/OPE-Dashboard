@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/lib/i18n/routing";
 import { canSeeMoney, isSuper, type AppRole } from "@/lib/roles";
+import { ThemeToggle } from "./theme-toggle";
 
 type Item = { href: string; label: string; count?: number };
 type Group = { label: string; items: Item[] };
@@ -22,10 +23,12 @@ export function Sidebar({
   role,
   variant = "desktop",
   onNavigate,
+  initialTheme,
 }: {
   role: AppRole;
   variant?: "desktop" | "mobile";
   onNavigate?: () => void;
+  initialTheme: "light" | "dark";
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -93,7 +96,7 @@ export function Sidebar({
     <nav className={navClass}>
       {groups.map((g) => (
         <div key={g.label}>
-          <p className="px-2.5 pb-1.5 pt-3.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+          <p className="px-2.5 pb-1.5 pt-3.5 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
             {g.label}
           </p>
           {g.items.map((item) => {
@@ -106,9 +109,9 @@ export function Sidebar({
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-[13.5px] transition-colors ${
+                className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-nav-item transition-colors ${
                   isActive
-                    ? "bg-elev font-medium text-ink"
+                    ? "bg-accent-bg font-medium text-accent"
                     : "text-ink-2 hover:bg-raise"
                 }`}
               >
@@ -123,6 +126,10 @@ export function Sidebar({
           })}
         </div>
       ))}
+
+      <div className="mt-3.5 border-t border-hairline pt-1.5">
+        <ThemeToggle initialTheme={initialTheme} />
+      </div>
     </nav>
   );
 }

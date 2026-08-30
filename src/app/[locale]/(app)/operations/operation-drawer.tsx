@@ -36,7 +36,7 @@ const PM_STATUS_KEY: Record<string, string> = {
 };
 
 const actionLink =
-  "rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise";
+  "rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise";
 
 /**
  * The operations drawer: view, create and edit in the one overlay, chosen by

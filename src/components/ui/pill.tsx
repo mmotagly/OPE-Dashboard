@@ -2,11 +2,12 @@ import type { ReactNode } from "react";
 
 export type Tone = "go" | "warn" | "stop" | "idle" | "ghost";
 
+/** Semantic tinted pairs — never brand accent (DESIGN_SYSTEM.md). */
 const TONE: Record<Tone, string> = {
-  go: "bg-go text-on-accent",
-  warn: "bg-warn text-[#2A1E02]",
-  stop: "bg-stop text-[#2A0B09]",
-  idle: "bg-idle text-ink",
+  go: "bg-go-soft text-go-text",
+  warn: "bg-warn-soft text-warn-text",
+  stop: "bg-stop-soft text-stop-text",
+  idle: "bg-idle text-ink-2",
   ghost: "bg-idle text-ink-2",
 };
 

@@ -83,7 +83,7 @@ export function BulkPlanForm({
           {state.results.map((r) => (
             <li
               key={r.vehicleId}
-              className="flex items-center justify-between gap-2.5 rounded-[10px] border border-hairline px-3 py-2.5"
+              className="flex items-center justify-between gap-2.5 rounded-control border border-hairline px-3 py-2.5"
             >
               <span className="tnum text-[13.5px] font-medium">{r.vehicleCode}</span>
               {r.ok ? (
@@ -115,7 +115,7 @@ export function BulkPlanForm({
           </Button>
           <Link
             href={{ pathname: "/operations", query: backTo }}
-            className="rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-center text-[13px] font-medium text-ink transition-colors hover:bg-raise"
+            className="rounded-control border border-hairline bg-surface px-3.5 py-2 text-center text-[13px] font-medium text-ink transition-colors hover:bg-raise"
           >
             {tCommon("cancel")}
           </Link>
@@ -185,7 +185,7 @@ export function BulkPlanForm({
           </button>
         </div>
 
-        <div className="mt-1.5 max-h-72 overflow-y-auto rounded-[10px] border border-hairline">
+        <div className="mt-1.5 max-h-72 overflow-y-auto rounded-control border border-hairline">
           {matches.length === 0 ? (
             <p className="px-3 py-4 text-center text-[13px] text-ink-3">
               {t("noVehicleMatch")}
@@ -232,7 +232,7 @@ export function BulkPlanForm({
         </Button>
         <Link
           href={{ pathname: "/operations", query: backTo }}
-          className="rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-center text-[13px] font-medium text-ink transition-colors hover:bg-raise"
+          className="rounded-control border border-hairline bg-surface px-3.5 py-2 text-center text-[13px] font-medium text-ink transition-colors hover:bg-raise"
         >
           {tCommon("cancel")}
         </Link>

@@ -1,36 +1,93 @@
 @import "tailwindcss";
 
+/**
+ * Token layer — Pyramids Ops design system v1 (see DESIGN_SYSTEM.md).
+ * Dark is the default and needs no attribute; [data-theme="light"] below
+ * overrides every color token for the light palette. Radius/typography/font
+ * tokens are flat (no light/dark variant).
+ */
 @theme {
-  --color-canvas: #0B0D0E;
-  --color-surface: #141719;
-  --color-raise: #1A1E20;
-  --color-elev: #1E2325;
+  --color-canvas: #131313;
+  --color-surface: #1A1A1B;
+  --color-raise: #202022;
+  --color-elev: #242426;
 
-  --color-ink: #F1F3F3;
-  --color-ink-2: #A3AAAE;
-  --color-ink-3: #6B7278;
-  --color-hairline: #23282B;
+  --color-ink: #EDEDEB;
+  --color-ink-2: #8C8B88;
+  --color-ink-3: #5F5E5B;
+  --color-hairline: #28282A;
 
-  --color-go: #22C55E;
-  --color-go-soft: #0E2A19;
-  --color-go-text: #4ED07F;
+  --color-go: #5DCAA5;
+  --color-go-soft: #0E2B24;
+  --color-go-text: #5DCAA5;
 
-  --color-warn: #F0B429;
-  --color-warn-soft: #2C2109;
-  --color-warn-text: #E8B94E;
+  --color-warn: #E3A84E;
+  --color-warn-soft: #332309;
+  --color-warn-text: #E3A84E;
 
-  --color-stop: #F0554E;
-  --color-stop-soft: #2E1413;
-  --color-stop-text: #F07D77;
+  --color-stop: #E29393;
+  --color-stop-soft: #341313;
+  --color-stop-text: #E29393;
 
-  --color-idle: #2C3235;
-  --color-on-accent: #08130C;
+  --color-idle: #28282A;
+  --color-on-accent: #FFFFFF;
   --color-on-ink: #0B0D0E;
 
-  --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
+  --color-accent: #E8703F;
+  --color-accent-bg: #2E1B12;
+  /* Darkened variant of `accent`, same hue, for white-on-solid-fill uses
+     (logo badge, primary button) — `accent` itself stays at its original,
+     more vivid value because it also serves as *text* color on `accent-bg`
+     (active nav item), where the original value already clears AA (~5.3:1)
+     and darkening it there would have broken that pairing as a side effect. */
+  --color-accent-fill: #BA5A32;
 
-  --radius-card: 14px;
-  --radius-control: 10px;
+  --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 10px;
+  --radius-control: 7px;
+
+  /* Typography scale — DESIGN_SYSTEM.md's Typography table. */
+  --text-eyebrow: 10px;
+  --text-page-title: 14px;
+  --text-section-label: 10px;
+  --text-table-header: 10px;
+  --text-body: 12px;
+  --text-metric: 16px;
+  --text-nav-item: 12px;
+  --text-button: 11.5px;
+}
+
+[data-theme="light"] {
+  --color-canvas: #F7F6F4;
+  --color-surface: #FFFFFF;
+  --color-raise: #F1EFEC;
+  --color-elev: #EAE8E4;
+
+  --color-ink: #1C1C1A;
+  --color-ink-2: #83817B;
+  --color-ink-3: #A8A6A0;
+  --color-hairline: #E7E5E1;
+
+  --color-go: #0F6E56;
+  --color-go-soft: #E4F3EE;
+  --color-go-text: #0F6E56;
+
+  --color-warn: #8A5A0B;
+  --color-warn-soft: #FBF0DC;
+  --color-warn-text: #8A5A0B;
+
+  --color-stop: #A32D2D;
+  --color-stop-soft: #FCECEC;
+  --color-stop-text: #A32D2D;
+
+  --color-idle: #E7E5E1;
+  --color-on-ink: #F5F4F2;
+
+  --color-accent: #D9481F;
+  --color-accent-bg: #FBEAE3;
+  --color-accent-fill: #D2461E;
 }
 
 @layer base {
@@ -68,6 +125,15 @@
       0 0 0 1px rgb(255 255 255 / 0.1),
       0 18px 44px rgb(0 0 0 / 0.55);
   }
+}
+
+[data-theme="light"] .rim {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+[data-theme="light"] .rim-float {
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 18px 44px rgb(0 0 0 / 0.14);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -29,7 +29,13 @@ import type { AppRole } from "@/lib/roles";
  * Fix: portal the scrim + sheet straight into `document.body`, escaping the
  * header's containing block entirely.
  */
-export function MobileNav({ role }: { role: AppRole }) {
+export function MobileNav({
+  role,
+  initialTheme,
+}: {
+  role: AppRole;
+  initialTheme: "light" | "dark";
+}) {
   const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
 
@@ -81,7 +87,12 @@ export function MobileNav({ role }: { role: AppRole }) {
               aria-label={t("openMenu")}
               className="fixed bottom-0 start-0 top-[68px] z-50 flex w-[min(300px,84vw)] flex-col overflow-y-auto border-e border-hairline bg-surface shadow-[0_0_60px_rgb(0_0_0/0.6)] xl:hidden"
             >
-              <Sidebar role={role} variant="mobile" onNavigate={() => setOpen(false)} />
+              <Sidebar
+                role={role}
+                variant="mobile"
+                onNavigate={() => setOpen(false)}
+                initialTheme={initialTheme}
+              />
             </aside>
           </>,
           document.body,

@@ -69,7 +69,7 @@ export function Drawer({
           <Link
             href={closeHref}
             aria-label={closeLabel}
-            className="ms-auto grid h-8 w-8 shrink-0 place-items-center rounded-[8px] border border-hairline text-[15px] text-ink-2 transition-colors hover:bg-raise hover:text-ink"
+            className="ms-auto grid h-8 w-8 shrink-0 place-items-center rounded-control border border-hairline text-[15px] text-ink-2 transition-colors hover:bg-raise hover:text-ink"
           >
             ×
           </Link>

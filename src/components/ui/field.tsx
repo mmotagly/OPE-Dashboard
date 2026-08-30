@@ -11,7 +11,7 @@ import type {
  * size from `sm` up.
  */
 const CONTROL =
-  "w-full rounded-[10px] border border-hairline bg-canvas px-3 py-3 text-[15px] text-ink transition-colors focus:border-ink-3 disabled:opacity-50 sm:py-2 sm:text-[13.5px]";
+  "w-full rounded-control border border-hairline bg-canvas px-3 py-3 text-[15px] text-ink transition-colors focus:border-ink-3 disabled:opacity-50 sm:py-2 sm:text-[13.5px]";
 
 export function Field({
   label,
