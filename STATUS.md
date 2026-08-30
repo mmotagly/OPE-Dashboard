@@ -157,10 +157,11 @@ Supabase queries, or routing changed; no other module's *files* were edited.
   same CSS variables) but the *old radius/typography* until each module
   gets its own pass. Expect a visible radius/type seam between Operations
   and everything else until the rollout continues.
-- **Known, logged gap**: the login page's own hardcoded logo badge (separate
-  markup from the shared `Topbar`, out of scope for this pass) is now
-  visually inconsistent with the rest of the signed-in app — see
-  `HANDOVER.md` §8 item 11.
+- **Login page logo badge / card radius — fixed** (follow-up, same day). The
+  login page's own hardcoded logo markup (separate from the shared
+  `Topbar`) was flagged as a known gap, then closed out: `bg-accent-fill
+  text-on-accent` (matching `Topbar`'s logo) and `rounded-card` on the card
+  container. `HANDOVER.md` §8 item 11 updated accordingly.
 - **Contrast fix applied**: the flagged white-on-`accent` button contrast
   gap (~3.08:1 dark / ~4.29:1 light, both under WCAG AA's 4.5:1) is
   corrected. Added a second token, `accent-fill` (`#D2461E` light /
@@ -438,9 +439,10 @@ Board redesign, its real-PM-data fix, and the table+drawer decision — see
 
 **Design system rollout (see §0):** Daily Operations is the pilot; every
 other module (Day board, Charging, RFRs, Work orders, Periodic maintenance,
-Vehicles/Drivers/Vendors/Routes, Scorecards, Invoices, Settings, plus the
-login page's logo badge — `HANDOVER.md` §8 item 11) still needs its own
-pass once the pilot is signed off.
+Vehicles/Drivers/Vendors/Routes, Scorecards, Invoices, Settings) still needs
+its own pass once the pilot is signed off. The login page's logo badge
+(`HANDOVER.md` §8 item 11) was fixed as a small follow-up rather than left
+queued — see §0.
 
 **Autonomous session roadmap (top of this file):** all 7 items shipped,
 pushed, migrations `0015`-`0018` run, types regenerated, `as any` casts

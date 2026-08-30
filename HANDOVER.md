@@ -256,17 +256,11 @@ Ordered by how much they matter.
 10. **Sidebar "Fleet status" and "Insights"** may be dead links left from the
     original scaffold.
 
-11. **The login page's logo badge is now inconsistent with the rest of the
-    app.** The design-system pilot (see `STATUS.md`) moved brand accent color
-    to the logo, active nav item, and primary buttons only, and updated the
-    shared `Topbar`'s logo accordingly — but `src/app/[locale]/login/page.tsx`
-    has its own separate, hardcoded logo markup (`bg-ink text-on-ink`) that
-    the pilot deliberately left untouched as out of scope (it's not part of
-    the app shell, and the pilot was scoped to Daily Operations + the shared
-    components it depends on). Once signed in, the logo is accent-orange
-    everywhere; on the login screen itself, it's still the old neutral
-    styling. Fix in a later pass by pointing it at the same `bg-accent
-    text-on-accent` treatment `Topbar` now uses.
+11. ~~The login page's logo badge was inconsistent with the rest of the
+    app~~ — fixed. `src/app/[locale]/login/page.tsx`'s separate, hardcoded
+    logo markup now uses `bg-accent-fill text-on-accent` (the same treatment
+    `Topbar`'s logo uses) and its card container's radius was aligned to
+    `rounded-card` while in the file. See `STATUS.md`.
 
 ---
 

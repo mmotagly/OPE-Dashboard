@@ -6,9 +6,9 @@ export default async function LoginPage() {
 
   return (
     <main className="grid min-h-dvh place-items-center px-5">
-      <div className="w-full max-w-sm rounded-[14px] bg-surface p-7 rim">
+      <div className="w-full max-w-sm rounded-card bg-surface p-7 rim">
         <div className="mb-6 flex items-center gap-2.5">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-ink text-[13px] font-bold text-on-ink">
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent-fill text-[13px] font-bold text-on-accent">
             P
           </span>
           <span className="font-semibold tracking-[-0.01em]">Pyramids Ops</span>
