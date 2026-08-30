@@ -67,14 +67,11 @@ export async function generateInvoice(
   }
 
   const supabase = await createClient();
-  // p_shift_type_id is real (migration 0014) but the checked-in generated
-  // types predate it until `supabase gen types` runs again — same scoped
-  // staleness workaround as src/lib/saved-filters-db.ts.
   const { data, error } = await supabase.rpc("fn_generate_invoice", {
     p_vendor_id: parsed.data.vendorId,
     p_month: parsed.data.month,
     p_shift_type_id: parsed.data.shiftTypeId,
-  } as unknown as { p_vendor_id: string; p_month: string });
+  });
 
   if (error) {
     if (error.code === "P0001") {

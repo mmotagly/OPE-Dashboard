@@ -5,7 +5,7 @@ snapshot) this file is meant to be updated as work lands, so any session on
 any machine can `git pull` and know exactly where things stand. Read
 `CLAUDE.md` first for domain rules; this file is state, not spec.
 
-Last updated: 2026-08-30.
+Last updated: 2026-08-31.
 
 ---
 
@@ -21,42 +21,38 @@ each item ships.
 |---|---|---|
 | 0 | Design system contrast fix (`accent-fill` token) | ✅ Done, pushed |
 | 1 | Automated tests — RFR stage transitions + operation status | ✅ Done, pushed |
-| 2 | Audit log / activity history | ✅ Done, pushed — migration `0015` not yet run |
-| 3 | Notifications/alerts (PM-overdue, RFR-aging) | ✅ Done, pushed — migration `0016` not yet run |
-| 4 | Planning Manager dashboard/reporting | ✅ Done, pushed — migration `0017` not yet run |
-| 5 | Automated PM scheduling reminders | ✅ Done, pushed — reuses `0016`, no new migration |
-| 6 | Vendor KPI performance trend history (see note) | ✅ Done, pushed — migration `0018` not yet run |
-| 7 | Export to Excel (CSV) / PDF (print) | ✅ Done, pushed — no new migration |
+| 2 | Audit log / activity history | ✅ Done, pushed, migration run |
+| 3 | Notifications/alerts (PM-overdue, RFR-aging) | ✅ Done, pushed, migration run |
+| 4 | Planning Manager dashboard/reporting | ✅ Done, pushed, migration run |
+| 5 | Automated PM scheduling reminders | ✅ Done, pushed — reuses `0016` |
+| 6 | Vendor KPI performance trend history (see note) | ✅ Done, pushed, migration run |
+| 7 | Export to Excel (CSV) / PDF (print) | ✅ Done, pushed — no migration needed |
 
-**Migrations written this session that still need to run**, in order:
+**Migrations `0015`-`0018` — all four run, confirmed by the user 2026-08-31.**
+Types regenerated the same day (`npx supabase gen types typescript
+--project-id zvcfnavmrrbcfrszuxie > src/lib/supabase/types.ts`) and every
+`as any` bridge this session had added — `v_audit_log`, `v_pm_alerts`,
+`v_rfr_aging_alerts`, `v_pm_compliance_summary`, `v_rfr_resolution_summary`,
+`v_fleet_utilization_monthly`, `v_vendor_kpi_trend`,
+`v_vendor_kpi_section_trend` — removed now that the real types cover them.
 
-1. `0015_audit_log.sql` — audit_log table, 3 logging triggers, v_audit_log
-   view. Safe to run any time; purely additive, no data migration.
-2. `0016_alerts.sql` — new app_settings row (`rfr_aging_alert_hours`,
-   idempotent `on conflict do nothing`), v_pm_alerts view, v_rfr_aging_alerts
-   view. Depends on nothing from 0015; order between them doesn't matter,
-   only that both run before /activity-log or /alerts are expected to show
-   real data. Also backs roadmap item 5 (proactive reminders) — no separate
-   migration for that item.
-3. `0017_dashboard.sql` — v_pm_compliance_summary, v_rfr_resolution_summary,
-   v_fleet_utilization_monthly. Depends on nothing from 0015/0016; only
-   needs 0001/0014 (already run) for the tables/views it reads from.
-4. `0018_vendor_kpi_trend.sql` — v_vendor_kpi_trend, v_vendor_kpi_section_trend.
-   Only needs 0001 (already run); independent of 0015/0016/0017.
+Regenerating also surfaced two **older, unrelated** stale-types casts
+(predating this session, tied to migration 0014) that had been silently
+masking a real bug: `invoices/actions.ts`'s call to `fn_generate_invoice`
+was force-cast to the function's old 2-argument type, so — even though the
+actual object literal correctly passed all 3 arguments including
+`p_shift_type_id` — TypeScript could no longer see that once the real
+3-argument signature loaded, and typecheck failed until the cast was
+removed. `invoices/queries.ts` had a matching `"shift_type_id" as
+"vendor_id"` trick on `v_vendor_monthly_bus_counts` for the same reason,
+also cleaned up. Neither was a behavior change — both already worked
+correctly at runtime — but both are now type-checked for real instead of
+silently trusted.
 
-All four (0015-0018) are purely additive — new tables/views/triggers/rows,
-no `alter`/`drop` on anything existing, no data migration. They can be run
-in any order relative to each other; the only real ordering constraint is
-"before the pages that read them are expected to show real data" (all four
-build and deploy fine either way — every new query is bridged with an
-`as any` cast exactly for this reason, so the app never breaks on a view
-that doesn't exist yet, it just returns empty results).
-
-**Once run**, regenerate types to remove the `as any` casts (all clearly
-commented, search `v_audit_log|v_pm_alerts|v_rfr_aging_alerts|v_pm_compliance_summary|v_rfr_resolution_summary|v_fleet_utilization_monthly|v_vendor_kpi_trend|v_vendor_kpi_section_trend`):
-```
-npx supabase gen types typescript --project-id <ref> > src/lib/supabase/types.ts
-```
+One further pre-existing cast, **`src/lib/saved-filters-db.ts`'s `as any`
+for `saved_filters`** (migration 0002, unrelated to this session), is also
+now removable — `saved_filters` is in the regenerated types too — but
+wasn't touched since it's outside what this cleanup was asked to cover.
 
 **Judgment calls made this session, flagged for explicit review** (proceeded
 on best guess per "don't wait for permission," each one documented at its
@@ -410,6 +406,10 @@ been run** against the live Supabase project, confirmed by the user as of
 0012_operation_status_lock.sql
 0013_operation_completed_requires_operating_pct.sql
 0014_invoice_shift_dimension.sql
+0015_audit_log.sql
+0016_alerts.sql
+0017_dashboard.sql
+0018_vendor_kpi_trend.sql
 ```
 
 Note on `0014`: the file in the repo is the **corrected** version (a
@@ -418,10 +418,9 @@ failed before touching any data — see §1). There was never a version of
 `0014` that ran successfully with the bug still in it, so there's nothing
 to reconcile.
 
-**0001 through 0014 confirmed run** as of 2026-08-24, as above. **0015
-through 0018 (2026-08-30 autonomous session, see the top of this file) are
-written but NOT confirmed run** — no DB credentials in this environment, so
-they were never attempted. Same rule as always: if a future session sees a
+**0001 through 0018 all confirmed run** — 0001-0014 as of 2026-08-24,
+0015-0018 as of 2026-08-31 (autonomous session, see the top of this file;
+types regenerated the same day). Same rule as always: if a future session sees a
 migration file with no corresponding "run" confirmation, treat its
 run-state as unknown — ask the user, don't assume either way. Claude has no
 direct database access on this project; migration-run status can only be
@@ -443,13 +442,11 @@ Vehicles/Drivers/Vendors/Routes, Scorecards, Invoices, Settings, plus the
 login page's logo badge — `HANDOVER.md` §8 item 11) still needs its own
 pass once the pilot is signed off.
 
-**Autonomous session roadmap (top of this file):** all 7 items shipped and
-pushed. Immediate next step is running migrations `0015`-`0018` in Supabase
-(any order — see the top of this file) so the four new pages
-(`/activity-log`, `/alerts`, `/dashboard`, `/vendor-trends`) actually show
-data instead of empty states, then regenerating types to drop the `as any`
-casts. Beyond that: review the four flagged judgment calls (top of this
-file) and decide whether any need adjusting.
+**Autonomous session roadmap (top of this file):** all 7 items shipped,
+pushed, migrations `0015`-`0018` run, types regenerated, `as any` casts
+removed — nothing pending from this roadmap. Next step is just reviewing
+the four flagged judgment calls (top of this file) and deciding whether any
+need adjusting.
 
 ---
 

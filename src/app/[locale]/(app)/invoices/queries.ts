@@ -129,15 +129,12 @@ export async function loadBusCounts(
   if (shiftTypeId === null) return null;
 
   const supabase = await createClient();
-  // shift_type_id is a real column on the view (migration 0014) but the
-  // checked-in generated types predate it — same staleness workaround as
-  // fn_generate_invoice's call above.
   const { data } = await supabase
     .from("v_vendor_monthly_bus_counts")
     .select("bus_days, operating_days, avg_daily_buses")
     .eq("vendor_id", vendorId)
     .eq("period_month", periodMonth)
-    .eq("shift_type_id" as "vendor_id", shiftTypeId)
+    .eq("shift_type_id", shiftTypeId)
     .maybeSingle();
 
   if (!data) return null;

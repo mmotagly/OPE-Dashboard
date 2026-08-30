@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -31,6 +31,44 @@ export type Database = {
           value?: number
         }
         Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          entity_id: string
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id: string
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          entity_id?: string
+          entity_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chargers: {
         Row: {
@@ -164,6 +202,13 @@ export type Database = {
             foreignKeyName: "charging_sessions_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "v_pm_alerts"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "charging_sessions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -174,7 +219,7 @@ export type Database = {
           battery_consumed_pct: number | null
           created_at: string
           created_by: string | null
-          driver_id: string
+          driver_id: string | null
           driver_tips: number | null
           ending_battery_pct: number | null
           ending_odometer_km: number | null
@@ -186,7 +231,8 @@ export type Database = {
           route_id: string | null
           shift_type_id: string
           starting_battery_pct: number | null
-          starting_odometer_km: number
+          starting_odometer_km: number | null
+          status_id: string
           total_distance_km: number | null
           updated_at: string
           vehicle_id: string
@@ -196,7 +242,7 @@ export type Database = {
           battery_consumed_pct?: number | null
           created_at?: string
           created_by?: string | null
-          driver_id: string
+          driver_id?: string | null
           driver_tips?: number | null
           ending_battery_pct?: number | null
           ending_odometer_km?: number | null
@@ -208,7 +254,8 @@ export type Database = {
           route_id?: string | null
           shift_type_id: string
           starting_battery_pct?: number | null
-          starting_odometer_km: number
+          starting_odometer_km?: number | null
+          status_id?: string
           total_distance_km?: number | null
           updated_at?: string
           vehicle_id: string
@@ -218,7 +265,7 @@ export type Database = {
           battery_consumed_pct?: number | null
           created_at?: string
           created_by?: string | null
-          driver_id?: string
+          driver_id?: string | null
           driver_tips?: number | null
           ending_battery_pct?: number | null
           ending_odometer_km?: number | null
@@ -230,7 +277,8 @@ export type Database = {
           route_id?: string | null
           shift_type_id?: string
           starting_battery_pct?: number | null
-          starting_odometer_km?: number
+          starting_odometer_km?: number | null
+          status_id?: string
           total_distance_km?: number | null
           updated_at?: string
           vehicle_id?: string
@@ -266,10 +314,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "daily_vehicle_operations_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "lookups"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "daily_vehicle_operations_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "v_periodic_maintenance"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "daily_vehicle_operations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "v_pm_alerts"
             referencedColumns: ["vehicle_id"]
           },
           {
@@ -567,6 +629,13 @@ export type Database = {
             referencedColumns: ["rfr_id"]
           },
           {
+            foreignKeyName: "rfr_issues_rfr_id_fkey"
+            columns: ["rfr_id"]
+            isOneToOne: false
+            referencedRelation: "v_rfr_aging_alerts"
+            referencedColumns: ["rfr_id"]
+          },
+          {
             foreignKeyName: "rfr_issues_skip_reason_id_fkey"
             columns: ["skip_reason_id"]
             isOneToOne: false
@@ -617,6 +686,13 @@ export type Database = {
             columns: ["rfr_id"]
             isOneToOne: false
             referencedRelation: "v_rfr_access_time"
+            referencedColumns: ["rfr_id"]
+          },
+          {
+            foreignKeyName: "rfr_stage_history_rfr_id_fkey"
+            columns: ["rfr_id"]
+            isOneToOne: false
+            referencedRelation: "v_rfr_aging_alerts"
             referencedColumns: ["rfr_id"]
           },
           {
@@ -717,6 +793,13 @@ export type Database = {
             foreignKeyName: "rfrs_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "v_pm_alerts"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "rfrs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -805,6 +888,47 @@ export type Database = {
           },
         ]
       }
+      saved_filters: {
+        Row: {
+          created_at: string
+          filter_state: Json
+          id: string
+          is_default: boolean
+          module: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filter_state?: Json
+          id?: string
+          is_default?: boolean
+          module: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filter_state?: Json
+          id?: string
+          is_default?: boolean
+          module?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_filters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scorecard_lines: {
         Row: {
           achieved_points: number | null
@@ -871,6 +995,13 @@ export type Database = {
             columns: ["scorecard_id"]
             isOneToOne: false
             referencedRelation: "v_scorecard_totals"
+            referencedColumns: ["scorecard_id"]
+          },
+          {
+            foreignKeyName: "scorecard_sections_scorecard_id_fkey"
+            columns: ["scorecard_id"]
+            isOneToOne: false
+            referencedRelation: "v_vendor_kpi_trend"
             referencedColumns: ["scorecard_id"]
           },
           {
@@ -990,6 +1121,13 @@ export type Database = {
             foreignKeyName: "vehicle_part_schedules_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "v_pm_alerts"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "vehicle_part_schedules_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -1097,6 +1235,7 @@ export type Database = {
           period_month: string
           rate_amount: number | null
           scorecard_id: string | null
+          shift_type_id: string | null
           status: string
           updated_at: string
           vendor_id: string
@@ -1115,6 +1254,7 @@ export type Database = {
           period_month: string
           rate_amount?: number | null
           scorecard_id?: string | null
+          shift_type_id?: string | null
           status?: string
           updated_at?: string
           vendor_id: string
@@ -1133,6 +1273,7 @@ export type Database = {
           period_month?: string
           rate_amount?: number | null
           scorecard_id?: string | null
+          shift_type_id?: string | null
           status?: string
           updated_at?: string
           vendor_id?: string
@@ -1156,7 +1297,21 @@ export type Database = {
             foreignKeyName: "vendor_invoices_scorecard_id_fkey"
             columns: ["scorecard_id"]
             isOneToOne: false
+            referencedRelation: "v_vendor_kpi_trend"
+            referencedColumns: ["scorecard_id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_scorecard_id_fkey"
+            columns: ["scorecard_id"]
+            isOneToOne: false
             referencedRelation: "vendor_scorecards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invoices_shift_type_id_fkey"
+            columns: ["shift_type_id"]
+            isOneToOne: false
+            referencedRelation: "lookups"
             referencedColumns: ["id"]
           },
           {
@@ -1472,6 +1627,13 @@ export type Database = {
             referencedColumns: ["rfr_id"]
           },
           {
+            foreignKeyName: "work_orders_rfr_id_fkey"
+            columns: ["rfr_id"]
+            isOneToOne: false
+            referencedRelation: "v_rfr_aging_alerts"
+            referencedColumns: ["rfr_id"]
+          },
+          {
             foreignKeyName: "work_orders_skip_reason_id_fkey"
             columns: ["skip_reason_id"]
             isOneToOne: false
@@ -1489,6 +1651,36 @@ export type Database = {
       }
     }
     Views: {
+      v_audit_log: {
+        Row: {
+          action: string | null
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string | null
+          detail: Json | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_fleet_utilization_monthly: {
+        Row: {
+          active_vehicle_count: number | null
+          fleet_size: number | null
+          period_month: string | null
+          utilization_pct: number | null
+        }
+        Relationships: []
+      }
       v_periodic_maintenance: {
         Row: {
           actual_km: number | null
@@ -1504,6 +1696,32 @@ export type Database = {
           scheduled_km: number | null
           vehicle_code: string | null
           vehicle_id: string | null
+        }
+        Relationships: []
+      }
+      v_pm_alerts: {
+        Row: {
+          actual_km: number | null
+          current_odometer_date: string | null
+          interval_km: number | null
+          km_remaining: number | null
+          last_service_km: number | null
+          maintenance_status: string | null
+          part_code: string | null
+          part_name: string | null
+          plate_number: string | null
+          schedule_id: string | null
+          scheduled_km: number | null
+          vehicle_code: string | null
+          vehicle_id: string | null
+        }
+        Relationships: []
+      }
+      v_pm_compliance_summary: {
+        Row: {
+          compliance_pct: number | null
+          ok_count: number | null
+          total_count: number | null
         }
         Relationships: []
       }
@@ -1541,12 +1759,100 @@ export type Database = {
             foreignKeyName: "rfrs_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "v_pm_alerts"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "rfrs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
       }
+      v_rfr_aging_alerts: {
+        Row: {
+          access_display: string | null
+          access_minutes: number | null
+          description: string | null
+          plate_number: string | null
+          request_at: string | null
+          rfr_id: string | null
+          rfr_number: string | null
+          vehicle_code: string | null
+          vehicle_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfrs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "v_periodic_maintenance"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "rfrs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "v_pm_alerts"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "rfrs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_rfr_resolution_summary: {
+        Row: {
+          avg_access_minutes: number | null
+          completed_count: number | null
+          median_access_minutes: number | null
+          period_month: string | null
+        }
+        Relationships: []
+      }
       v_scorecard_totals: {
+        Row: {
+          period_month: string | null
+          scorecard_id: string | null
+          sections_weight_total: number | null
+          total_achieved_pct: number | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_scorecards_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_vendor_kpi_section_trend: {
+        Row: {
+          period_month: string | null
+          section_name: string | null
+          section_score_pct: number | null
+          section_weight: number | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_scorecards_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_vendor_kpi_trend: {
         Row: {
           period_month: string | null
           scorecard_id: string | null
@@ -1570,9 +1876,17 @@ export type Database = {
           bus_days: number | null
           operating_days: number | null
           period_month: string | null
+          shift_type_id: string | null
           vendor_id: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "daily_vehicle_operations_shift_type_id_fkey"
+            columns: ["shift_type_id"]
+            isOneToOne: false
+            referencedRelation: "lookups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "daily_vehicle_operations_vendor_id_fkey"
             columns: ["vendor_id"]
@@ -1605,6 +1919,13 @@ export type Database = {
             foreignKeyName: "rfrs_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "v_pm_alerts"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "rfrs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -1619,6 +1940,14 @@ export type Database = {
       }
     }
     Functions: {
+      access_display: {
+        Args: { r: Database["public"]["Tables"]["rfrs"]["Row"] }
+        Returns: string
+      }
+      access_minutes: {
+        Args: { r: Database["public"]["Tables"]["rfrs"]["Row"] }
+        Returns: number
+      }
       can_read: { Args: never; Returns: boolean }
       can_see_money: { Args: never; Returns: boolean }
       can_write_master: { Args: never; Returns: boolean }
@@ -1627,9 +1956,10 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      fn_default_operation_status: { Args: never; Returns: string }
       fn_format_minutes: { Args: { p_minutes: number }; Returns: string }
       fn_generate_invoice: {
-        Args: { p_month: string; p_vendor_id: string }
+        Args: { p_month: string; p_shift_type_id: string; p_vendor_id: string }
         Returns: string
       }
       fn_init_pm_schedules: { Args: { p_vehicle_id: string }; Returns: number }
@@ -1641,6 +1971,16 @@ export type Database = {
         Args: { p_date: string; p_vehicle_id: string }
         Returns: number
       }
+      fn_log_audit: {
+        Args: {
+          p_action: string
+          p_detail: Json
+          p_entity_id: string
+          p_entity_type: string
+        }
+        Returns: undefined
+      }
+      fn_lookup_code: { Args: { p_id: string }; Returns: string }
       fn_odometer_on_date: {
         Args: { p_date: string; p_vehicle_id: string }
         Returns: number
@@ -1663,6 +2003,10 @@ export type Database = {
         Returns: number
       }
       fn_rfr_access_minutes: { Args: { p_rfr_id: string }; Returns: number }
+      fn_rfr_stage_transition_allowed: {
+        Args: { p_from: string; p_to: string }
+        Returns: boolean
+      }
       is_super: { Args: never; Returns: boolean }
       lookup_in: {
         Args: { p_category: string; p_id: string }

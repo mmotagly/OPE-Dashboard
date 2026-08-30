@@ -5,14 +5,7 @@ import { createClient } from "@/lib/supabase/server";
  * everyone else, matching Settings' own scoping (same "Administration" area).
  * Reads v_audit_log (supabase/migrations/0015_audit_log.sql), never computes
  * anything here — the view already resolves the actor's name.
- *
- * `v_audit_log` ships in migration 0015, newer than the checked-in generated
- * types, so the typed client does not know it exists yet — same gap and same
- * one-line-wide `as any` bridge as `saved_filters` in
- * src/lib/saved-filters-db.ts. Running the migration and regenerating types
- * makes the cast removable.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type EntityType = "rfr" | "operation" | "invoice";
 
@@ -32,7 +25,7 @@ const LIMIT = 300;
 export async function loadAuditLog(entityType: string): Promise<AuditLogRow[]> {
   const supabase = await createClient();
 
-  let query = (supabase as any)
+  let query = supabase
     .from("v_audit_log")
     .select("id, entity_type, entity_id, action, actor_id, actor_name, detail, created_at")
     .order("created_at", { ascending: false })
@@ -43,15 +36,17 @@ export async function loadAuditLog(entityType: string): Promise<AuditLogRow[]> {
   const { data, error } = await query;
   if (error) throw error;
 
-  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
-    id: r.id as string,
-    entityType: r.entity_type as string,
-    entityId: r.entity_id as string,
-    action: r.action as string,
-    actorId: (r.actor_id ?? null) as string | null,
-    actorName: (r.actor_name ?? null) as string | null,
+  // Every column is non-null in practice — audit_log's own columns are all
+  // `not null` except actor_id (0015), the view just can't express that in
+  // its generated types, since PostgREST types every view column nullable.
+  return (data ?? []).map((r) => ({
+    id: r.id!,
+    entityType: r.entity_type!,
+    entityId: r.entity_id!,
+    action: r.action!,
+    actorId: r.actor_id,
+    actorName: r.actor_name,
     detail: (r.detail ?? {}) as Record<string, unknown>,
-    createdAt: r.created_at as string,
+    createdAt: r.created_at!,
   }));
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */

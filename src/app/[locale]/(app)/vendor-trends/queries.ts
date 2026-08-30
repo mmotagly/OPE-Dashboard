@@ -7,12 +7,7 @@ import { createClient } from "@/lib/supabase/server";
  * sorting/comparing already-computed DB rows, not by recomputing any KPI
  * math; total_achieved_pct and section_score_pct both come straight from
  * the DB exactly as CLAUDE.md's formulas define them.
- *
- * Neither view is in the checked-in generated types yet — same one-line
- * `as any` bridge as v_audit_log / v_pm_alerts / saved_filters. Removable
- * once 0018 runs and types are regenerated.
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type VendorKpiTrendRow = {
   id: string;
@@ -55,23 +50,23 @@ async function vendorLookup() {
 export async function loadVendorKpiTrend(): Promise<VendorKpiTrendRow[]> {
   const supabase = await createClient();
   const [{ data, error }, vendors] = await Promise.all([
-    (supabase as any)
+    supabase
       .from("v_vendor_kpi_trend")
       .select("scorecard_id, vendor_id, period_month, total_achieved_pct"),
     vendorLookup(),
   ]);
   if (error) throw error;
 
-  return ((data ?? []) as Record<string, unknown>[]).map((r) => {
-    const vendorId = r.vendor_id as string;
+  return (data ?? []).map((r) => {
+    const vendorId = r.vendor_id!;
     return {
-      id: r.scorecard_id as string,
-      scorecardId: r.scorecard_id as string,
+      id: r.scorecard_id!,
+      scorecardId: r.scorecard_id!,
       vendorId,
       vendorName: vendors.get(vendorId)?.name ?? vendorId,
       vendorCode: vendors.get(vendorId)?.code ?? "",
-      periodMonth: r.period_month as string,
-      totalAchievedPct: (r.total_achieved_pct ?? null) as number | null,
+      periodMonth: r.period_month!,
+      totalAchievedPct: r.total_achieved_pct,
     };
   });
 }
@@ -118,19 +113,18 @@ export async function loadVendorKpiSectionTrend(
   vendorId: string,
 ): Promise<VendorKpiSectionTrendRow[]> {
   const supabase = await createClient();
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("v_vendor_kpi_section_trend")
     .select("vendor_id, period_month, section_name, section_weight, section_score_pct")
     .eq("vendor_id", vendorId);
   if (error) throw error;
 
-  return ((data ?? []) as Record<string, unknown>[]).map((r, i) => ({
+  return (data ?? []).map((r, i) => ({
     id: `${r.section_name}-${r.period_month}-${i}`,
-    vendorId: r.vendor_id as string,
-    periodMonth: r.period_month as string,
-    sectionName: r.section_name as string,
-    sectionWeight: r.section_weight as number,
-    sectionScorePct: (r.section_score_pct ?? null) as number | null,
+    vendorId: r.vendor_id!,
+    periodMonth: r.period_month!,
+    sectionName: r.section_name!,
+    sectionWeight: r.section_weight!,
+    sectionScorePct: r.section_score_pct,
   }));
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
