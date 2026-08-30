@@ -33,6 +33,7 @@
     "vendors": "Vendors",
     "routes": "Routes & stations",
     "finance": "Finance",
+    "dashboard": "Dashboard",
     "scorecards": "Scorecards",
     "invoices": "Invoices",
     "admin": "Administration",
@@ -660,6 +661,31 @@
       "stillReferenced": "Other records still point at this one."
     },
     "searchPlaceholder": "Search vendor or code"
+  },
+  "dashboard": {
+    "eyebrow": "Finance",
+    "title": "Planning dashboard",
+    "stat": {
+      "pmCompliance": "PM compliance",
+      "fleetUtilization": "Fleet utilization",
+      "avgResolution": "Avg RFR resolution",
+      "totalBusDays": "Bus-days ({month})"
+    },
+    "section": {
+      "busDaysByVendor": "Bus-days billed by vendor ({month})",
+      "rfrResolution": "RFR resolution time by month",
+      "fleetUtilization": "Fleet utilization by month"
+    },
+    "field": {
+      "vendor": "Vendor",
+      "busDays": "Bus-days",
+      "month": "Month",
+      "completedCount": "Completed",
+      "avgResolution": "Avg resolution",
+      "medianResolution": "Median resolution",
+      "activeVehicles": "Active / fleet",
+      "utilization": "Utilization"
+    }
   },
   "alerts": {
     "eyebrow": "Overview",

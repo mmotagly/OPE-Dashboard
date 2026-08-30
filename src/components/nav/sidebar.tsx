@@ -77,6 +77,7 @@ export function Sidebar({
     groups.push({
       label: t("finance"),
       items: [
+        { href: "/dashboard", label: t("dashboard") },
         { href: "/scorecards", label: t("scorecards") },
         { href: "/invoices", label: t("invoices") },
       ],

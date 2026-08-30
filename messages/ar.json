@@ -33,6 +33,7 @@
     "vendors": "الموردون",
     "routes": "المسارات والمحطات",
     "finance": "المالية",
+    "dashboard": "لوحة المعلومات",
     "scorecards": "بطاقات الأداء",
     "invoices": "الفواتير",
     "admin": "الإدارة",
@@ -660,6 +661,31 @@
       "stillReferenced": "ما زالت هناك سجلات أخرى مرتبطة بهذا السجل."
     },
     "searchPlaceholder": "ابحث بالمورد أو الكود"
+  },
+  "dashboard": {
+    "eyebrow": "المالية",
+    "title": "لوحة التخطيط",
+    "stat": {
+      "pmCompliance": "التزام الصيانة",
+      "fleetUtilization": "استخدام الأسطول",
+      "avgResolution": "متوسط زمن حل الطلبات",
+      "totalBusDays": "أيام التشغيل ({month})"
+    },
+    "section": {
+      "busDaysByVendor": "أيام التشغيل المفوترة حسب المورد ({month})",
+      "rfrResolution": "زمن حل طلبات الإصلاح شهريًا",
+      "fleetUtilization": "استخدام الأسطول شهريًا"
+    },
+    "field": {
+      "vendor": "المورد",
+      "busDays": "أيام التشغيل",
+      "month": "الشهر",
+      "completedCount": "مكتملة",
+      "avgResolution": "متوسط الحل",
+      "medianResolution": "الوسيط",
+      "activeVehicles": "نشطة / الأسطول",
+      "utilization": "نسبة الاستخدام"
+    }
   },
   "alerts": {
     "eyebrow": "نظرة عامة",
