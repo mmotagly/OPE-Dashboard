@@ -90,6 +90,29 @@ source too):
 
 ---
 
+## Test data seed — bug found and fixed (2026-09-01)
+
+`supabase/seed/test_data.sql`'s vendor KPI scorecard template had a real
+units bug, found while visually verifying the design system rollout
+against seeded data (not a redesign issue): each section's 2 lines were
+weighted to sum to that section's own `section_weight` (e.g. Safety &
+Compliance = 40, lines 20+20), but `v_scorecard_totals` computes section
+score % as `(sum of that section's line points) / 100` — a fixed 100, not
+the section's own weight — then blends sections via `section_weight`
+afterward. Lines summing to 40 instead of 100 silently capped every
+section's score near `section_weight% of the intended fraction` — a vendor
+seeded to hit ~90% actually landed around ~31%, and it fed straight into
+`fn_generate_invoice`'s `net_amount` for `apply_kpi` vendors too (visibly
+wrong invoice totals, not just a scorecard display issue).
+
+Fixed by changing each section's line weights to sum to 100: Safety &
+Compliance 60+40, Service Quality 55+45, Vehicle Condition 50+50 (was
+20+20, 20+15, 15+10). Since the bug was in the *data*, not just its
+display, the fix requires a full reseed — `test_data_cleanup.sql` then
+the corrected `test_data.sql` — not a patch over what's already there.
+
+---
+
 ## 0. Design system pilot — Daily Operations (shipped, pushed this session)
 
 A visual-only redesign per `DESIGN_SYSTEM.md`, piloted on the Daily Operations

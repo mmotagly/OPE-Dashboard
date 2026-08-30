@@ -513,8 +513,9 @@ where vps.vehicle_id = vh.id and vps.part_id = p.id;
 -- ============================================================================
 -- Identical KPI framework across test vendors (CLAUDE.md allows per-vendor
 -- customisation but doesn't require it) — 3 sections summing to 100 weight,
--- 2 lines per section summing to that section's weight, matching the
--- section-score-%/total-%-formula CLAUDE.md documents exactly.
+-- 2 lines per section summing to 100 (each section's own 0-100 scale, per
+-- v_scorecard_totals: section score % = sum of that section's line points
+-- / 100 — see the comment at the lines VALUES list below).
 
 with tpl as (
   insert into vendor_scorecards (vendor_id, period_month, status, created_by)
@@ -537,12 +538,18 @@ insert into scorecard_lines (section_id, kpi_name, metric_weight, sort_order)
 select sec.id, l.name, l.weight, l.sort
 from sections sec
 join (values
-  ('Safety & Compliance', 'Incident-Free Operation',      20, 1),
-  ('Safety & Compliance', 'Driver Conduct Compliance',    20, 2),
-  ('Service Quality',     'On-board Cleanliness',         20, 1),
-  ('Service Quality',     'Passenger Feedback Score',     15, 2),
-  ('Vehicle Condition',   'PM Compliance',                15, 1),
-  ('Vehicle Condition',   'Breakdown Rate',                10, 2)
+  -- Each section's own lines sum to 100, not to the section's weight —
+  -- v_scorecard_totals computes section score % as (sum of that section's
+  -- line points) / 100, then blends sections via section_weight afterward.
+  -- Summing lines to the section's weight instead (the first version of
+  -- this script did) silently caps every section's score near
+  -- section_weight% of the intended achieved fraction. See STATUS.md.
+  ('Safety & Compliance', 'Incident-Free Operation',      60, 1),
+  ('Safety & Compliance', 'Driver Conduct Compliance',    40, 2),
+  ('Service Quality',     'On-board Cleanliness',         55, 1),
+  ('Service Quality',     'Passenger Feedback Score',     45, 2),
+  ('Vehicle Condition',   'PM Compliance',                50, 1),
+  ('Vehicle Condition',   'Breakdown Rate',                50, 2)
 ) as l(section_name, name, weight, sort) on l.section_name = sec.section_name;
 
 -- ---- open monthly snapshots + set achieved points --------------------------
