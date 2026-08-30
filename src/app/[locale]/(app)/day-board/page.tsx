@@ -35,6 +35,7 @@ export default async function DayBoardPage({
   searchParams: Promise<{ date?: string; status?: string }>;
 }) {
   const t = await getTranslations();
+  const tNav = await getTranslations("nav");
   const { date, status } = await searchParams;
   const day = date ?? new Date().toISOString().slice(0, 10);
 
@@ -95,33 +96,35 @@ export default async function DayBoardPage({
   ];
 
   return (
-    <Panel clip={false}>
-      <PanelHead title={`${t("dayBoard.title")} · ${day}`} />
-      <StatBar>
-        <Stat label={t("status.operating")} value={operatingCount} tone="go" />
-        <Stat label={t("status.completed")} value={completedCount} tone="go" />
-        <Stat label={t("status.planned")} value={plannedCount} tone="neutral" />
-        <Stat label={t("dayBoard.notRunning")} value={notRunningCount} tone="stop" />
-        <Stat
-          label={t("dayBoard.openRfrs")}
-          value={openRfrs ?? 0}
-          tone={(openRfrs ?? 0) > 0 ? "stop" : "neutral"}
+    <div className="font-inter contents">
+      <Panel clip={false}>
+        <PanelHead eyebrow={tNav("overview")} title={`${t("dayBoard.title")} · ${day}`} />
+        <StatBar>
+          <Stat label={t("status.operating")} value={operatingCount} tone="go" />
+          <Stat label={t("status.completed")} value={completedCount} tone="go" />
+          <Stat label={t("status.planned")} value={plannedCount} tone="neutral" />
+          <Stat label={t("dayBoard.notRunning")} value={notRunningCount} tone="stop" />
+          <Stat
+            label={t("dayBoard.openRfrs")}
+            value={openRfrs ?? 0}
+            tone={(openRfrs ?? 0) > 0 ? "stop" : "neutral"}
+          />
+        </StatBar>
+
+        <FilterChips
+          chips={chips}
+          active={status ?? ""}
+          param="status"
+          pathname="/day-board"
+          extraQuery={date ? { date } : {}}
         />
-      </StatBar>
 
-      <FilterChips
-        chips={chips}
-        active={status ?? ""}
-        param="status"
-        pathname="/day-board"
-        extraQuery={date ? { date } : {}}
-      />
-
-      {rows.length === 0 ? (
-        <Empty title={t("common.empty")} hint={t("common.emptyHint")} />
-      ) : (
-        <OperationList rows={rows} pmByVehicle={pmByVehicle} />
-      )}
-    </Panel>
+        {rows.length === 0 ? (
+          <Empty title={t("common.empty")} hint={t("common.emptyHint")} />
+        ) : (
+          <OperationList rows={rows} pmByVehicle={pmByVehicle} />
+        )}
+      </Panel>
+    </div>
   );
 }

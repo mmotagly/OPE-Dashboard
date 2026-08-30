@@ -22,7 +22,7 @@ import { ThresholdsForm } from "./settings-forms";
 import { SettingsDrawer } from "./settings-drawer";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 /**
  * Settings — users, PM thresholds and the lookup lists. `super_admin` only,
@@ -59,6 +59,7 @@ export default async function SettingsPage({
   if (!isSuper(user.role)) notFound();
 
   const t = await getTranslations("settings");
+  const tNav = await getTranslations("nav");
 
   const entity: SettingsEntity =
     entityParam === "lookups" ? "lookups" : entityParam === "thresholds" ? "thresholds" : "users";
@@ -118,9 +119,10 @@ export default async function SettingsPage({
         : t("usersTitle");
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("admin")}
           title={title}
           actions={
             entity === "lookups" ? (
@@ -194,6 +196,6 @@ export default async function SettingsPage({
           closeHref={{ pathname: "/settings", query }}
         />
       )}
-    </>
+    </div>
   );
 }
