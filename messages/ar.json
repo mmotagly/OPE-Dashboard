@@ -35,6 +35,7 @@
     "scorecards": "بطاقات الأداء",
     "invoices": "الفواتير",
     "admin": "الإدارة",
+    "activityLog": "سجل النشاط",
     "settings": "الإعدادات",
     "openMenu": "فتح قائمة التنقل",
     "closeMenu": "إغلاق",
@@ -658,6 +659,23 @@
       "stillReferenced": "ما زالت هناك سجلات أخرى مرتبطة بهذا السجل."
     },
     "searchPlaceholder": "ابحث بالمورد أو الكود"
+  },
+  "activityLog": {
+    "eyebrow": "الإدارة",
+    "title": "سجل النشاط",
+    "all": "الكل",
+    "entity": {
+      "rfr": "طلب إصلاح",
+      "operation": "عملية تشغيل",
+      "invoice": "فاتورة"
+    },
+    "field": {
+      "when": "الوقت",
+      "actor": "بواسطة",
+      "entity": "النوع",
+      "action": "الإجراء",
+      "detail": "التفاصيل"
+    }
   },
   "settings": {
     "usersTitle": "المستخدمون والصلاحيات",

@@ -83,7 +83,10 @@ export function Sidebar({
   if (isSuper(role)) {
     groups.push({
       label: t("admin"),
-      items: [{ href: "/settings", label: t("settings") }],
+      items: [
+        { href: "/activity-log", label: t("activityLog") },
+        { href: "/settings", label: t("settings") },
+      ],
     });
   }
 

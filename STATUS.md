@@ -9,6 +9,30 @@ Last updated: 2026-08-30.
 
 ---
 
+## Autonomous session roadmap (2026-08-30, user away ~3h, pre-authorized)
+
+User asked for the design system contrast fix, then a 7-item roadmap,
+worked through in priority order with no per-step approval — only hard
+stop is running a migration against the live DB (no credentials for that
+anyway; migration files get written and flagged, not run). Updated after
+each item ships.
+
+| # | Item | Status |
+|---|---|---|
+| 0 | Design system contrast fix (`accent-fill` token) | ✅ Done, pushed |
+| 1 | Automated tests — RFR stage transitions + operation status | ✅ Done, pushed |
+| 2 | Audit log / activity history | 🔜 Next |
+| 3 | Notifications/alerts (PM-overdue, RFR-aging) | Not started |
+| 4 | Planning Manager dashboard/reporting | Not started |
+| 5 | Automated PM scheduling reminders | Not started |
+| 6 | Driver/vendor performance trend history | Not started |
+| 7 | Export to Excel/PDF | Not started |
+
+**Migrations written this session that still need to run** (tracked here
+as each lands; empty so far).
+
+---
+
 ## 0. Design system pilot — Daily Operations (in progress, not yet deployed)
 
 A visual-only redesign per `DESIGN_SYSTEM.md`, piloted on the Daily Operations

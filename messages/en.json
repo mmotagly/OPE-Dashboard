@@ -35,6 +35,7 @@
     "scorecards": "Scorecards",
     "invoices": "Invoices",
     "admin": "Administration",
+    "activityLog": "Activity log",
     "settings": "Settings",
     "openMenu": "Open navigation menu",
     "closeMenu": "Close",
@@ -658,6 +659,23 @@
       "stillReferenced": "Other records still point at this one."
     },
     "searchPlaceholder": "Search vendor or code"
+  },
+  "activityLog": {
+    "eyebrow": "Administration",
+    "title": "Activity log",
+    "all": "All",
+    "entity": {
+      "rfr": "RFR",
+      "operation": "Operation",
+      "invoice": "Invoice"
+    },
+    "field": {
+      "when": "When",
+      "actor": "By",
+      "entity": "Entity",
+      "action": "Action",
+      "detail": "Detail"
+    }
   },
   "settings": {
     "usersTitle": "Users and roles",
