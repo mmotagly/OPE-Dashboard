@@ -43,13 +43,6 @@ function toState(raw: unknown): FilterState {
   return { q: typeof record.q === "string" ? record.q : "", rows };
 }
 
-type SavedViewRecord = {
-  id: string;
-  name: string;
-  is_default: boolean;
-  filter_state: unknown;
-};
-
 export async function loadSavedViews(module: string): Promise<SavedView[]> {
   const table = await savedFiltersTable();
   const { data, error } = await table
@@ -65,7 +58,7 @@ export async function loadSavedViews(module: string): Promise<SavedView[]> {
     console.error(`loadSavedViews(${module}) failed:`, error);
   }
 
-  return ((data ?? []) as SavedViewRecord[]).map((v) => ({
+  return (data ?? []).map((v) => ({
     id: v.id,
     name: v.name,
     isDefault: v.is_default,
