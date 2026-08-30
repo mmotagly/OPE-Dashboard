@@ -21,15 +21,17 @@ each item ships.
 |---|---|---|
 | 0 | Design system contrast fix (`accent-fill` token) | ✅ Done, pushed |
 | 1 | Automated tests — RFR stage transitions + operation status | ✅ Done, pushed |
-| 2 | Audit log / activity history | 🔜 Next |
-| 3 | Notifications/alerts (PM-overdue, RFR-aging) | Not started |
+| 2 | Audit log / activity history | ✅ Done, pushed — migration `0015` not yet run |
+| 3 | Notifications/alerts (PM-overdue, RFR-aging) | 🔜 Next |
 | 4 | Planning Manager dashboard/reporting | Not started |
 | 5 | Automated PM scheduling reminders | Not started |
 | 6 | Driver/vendor performance trend history | Not started |
 | 7 | Export to Excel/PDF | Not started |
 
-**Migrations written this session that still need to run** (tracked here
-as each lands; empty so far).
+**Migrations written this session that still need to run**, in order:
+
+1. `0015_audit_log.sql` — audit_log table, 3 logging triggers, v_audit_log
+   view. Safe to run any time; purely additive, no data migration.
 
 ---
 

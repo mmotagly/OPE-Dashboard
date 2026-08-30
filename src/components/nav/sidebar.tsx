@@ -40,7 +40,10 @@ export function Sidebar({
   const groups: Group[] = [
     {
       label: t("overview"),
-      items: [{ href: "/day-board", label: t("dayBoard") }],
+      items: [
+        { href: "/day-board", label: t("dayBoard") },
+        { href: "/alerts", label: t("alerts") },
+      ],
     },
     {
       label: t("operations"),

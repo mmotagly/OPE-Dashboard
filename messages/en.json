@@ -18,6 +18,7 @@
   "nav": {
     "overview": "Overview",
     "dayBoard": "Day board",
+    "alerts": "Alerts",
     "fleetStatus": "Fleet status",
     "operations": "Operations",
     "dailyOperations": "Daily operations",
@@ -659,6 +660,24 @@
       "stillReferenced": "Other records still point at this one."
     },
     "searchPlaceholder": "Search vendor or code"
+  },
+  "alerts": {
+    "eyebrow": "Overview",
+    "pmTitle": "Maintenance due",
+    "rfrTitle": "RFRs aging",
+    "noPmAlerts": "Nothing due",
+    "noRfrAlerts": "Nothing aging",
+    "field": {
+      "vehicle": "Vehicle",
+      "part": "Part",
+      "actualKm": "Current KM",
+      "scheduledKm": "Scheduled KM",
+      "kmRemaining": "KM remaining",
+      "status": "Status",
+      "rfr": "RFR",
+      "description": "Description",
+      "accessTime": "Active for"
+    }
   },
   "activityLog": {
     "eyebrow": "Administration",
