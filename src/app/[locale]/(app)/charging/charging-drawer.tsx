@@ -85,7 +85,7 @@ export async function ChargingDrawer({
               pathname: "/charging",
               query: { ...closeHref.query, mode: "edit", id: session.id },
             }}
-            className="rounded-[10px] border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
           >
             {tCommon("edit")}
           </Link>

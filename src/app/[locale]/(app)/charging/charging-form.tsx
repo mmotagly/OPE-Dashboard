@@ -84,7 +84,7 @@ export function ChargingForm({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`, state.formErrorValues)}
         </p>
@@ -239,7 +239,7 @@ export function ChargingForm({
         </Button>
         <Link
           href={{ pathname: "/charging", query: backTo }}
-          className="flex flex-1 items-center justify-center rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none"
+          className="flex flex-1 items-center justify-center rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none"
         >
           {tCommon("cancel")}
         </Link>

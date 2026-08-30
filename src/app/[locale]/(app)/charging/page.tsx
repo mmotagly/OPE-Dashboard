@@ -14,7 +14,7 @@ import { ChargingDrawer } from "./charging-drawer";
 const MODULE = "charging";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 export default async function ChargingPage({
   params,
@@ -35,6 +35,7 @@ export default async function ChargingPage({
   const dir = one("dir") || "asc";
 
   const t = await getTranslations("charging");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
 
@@ -88,9 +89,10 @@ export default async function ChargingPage({
           : null;
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("operations")}
           title={t("title")}
           actions={
             canEdit ? (
@@ -138,6 +140,6 @@ export default async function ChargingPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }
