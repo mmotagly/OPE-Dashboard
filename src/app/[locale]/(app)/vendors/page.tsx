@@ -15,7 +15,7 @@ import { VendorDrawer } from "./vendor-drawer";
 const MODULE = "vendors";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 export default async function VendorsPage({
   params,
@@ -37,6 +37,7 @@ export default async function VendorsPage({
 
   const t = await getTranslations("master");
   const tFinance = await getTranslations("finance");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -84,9 +85,10 @@ export default async function VendorsPage({
           : null;
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("fleet")}
           title={t("vendorsTitle")}
           actions={
             canEdit ? (
@@ -134,6 +136,6 @@ export default async function VendorsPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }

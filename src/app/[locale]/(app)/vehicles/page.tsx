@@ -15,7 +15,7 @@ import { VehicleDrawer } from "./vehicle-drawer";
 const MODULE = "vehicles";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 export default async function VehiclesPage({
   params,
@@ -37,6 +37,7 @@ export default async function VehiclesPage({
 
   const t = await getTranslations("master");
   const tVehicle = await getTranslations("vehicle");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -99,9 +100,10 @@ export default async function VehiclesPage({
           : null;
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("fleet")}
           title={t("vehiclesTitle")}
           actions={
             canEdit ? (
@@ -149,6 +151,6 @@ export default async function VehiclesPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }

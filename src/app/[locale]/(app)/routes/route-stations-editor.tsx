@@ -44,7 +44,7 @@ export function RouteStationsEditor({
           {stops.map((stop, index) => (
             <li
               key={stop.id}
-              className="flex items-center gap-3 rounded-[10px] border border-hairline bg-canvas px-3 py-2.5"
+              className="flex items-center gap-3 rounded-control border border-hairline bg-canvas px-3 py-2.5"
             >
               <span className="tnum w-6 shrink-0 text-[12.5px] font-semibold text-ink-3">
                 {index + 1}
@@ -160,7 +160,7 @@ function StopButton({
         disabled={disabled}
         aria-label={label}
         title={label}
-        className={`grid h-8 w-8 place-items-center rounded-[8px] border border-hairline text-[13px] transition-colors disabled:opacity-30 ${
+        className={`grid h-8 w-8 place-items-center rounded-control border border-hairline text-[13px] transition-colors disabled:opacity-30 ${
           danger ? "text-stop-text hover:bg-stop-soft" : "text-ink-2 hover:bg-raise"
         }`}
       >

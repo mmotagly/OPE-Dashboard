@@ -22,7 +22,7 @@ import type {
 } from "./queries";
 
 const cancelLink =
-  "flex flex-1 items-center justify-center rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none";
+  "flex flex-1 items-center justify-center rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none";
 
 export function RouteForm({
   mode,
@@ -62,7 +62,7 @@ export function RouteForm({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`)}
         </p>
@@ -226,7 +226,7 @@ export function StationForm({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`)}
         </p>

@@ -21,7 +21,7 @@ import { RouteForm, StationForm } from "./route-form";
 import { RouteStationsEditor } from "./route-stations-editor";
 
 const editButton =
-  "rounded-[10px] border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
 
 /**
  * Routes and stations share the page, so they share the drawer. Which entity is

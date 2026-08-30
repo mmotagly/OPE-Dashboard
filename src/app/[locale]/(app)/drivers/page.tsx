@@ -17,7 +17,7 @@ import { DriverDrawer } from "./driver-drawer";
 const MODULE = "drivers";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 /** Amber or red on either document. */
 const documentsDue = (r: DriverRow) => {
@@ -51,6 +51,7 @@ export default async function DriversPage({
   const filter = one("filter");
 
   const t = await getTranslations("master");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -119,9 +120,10 @@ export default async function DriversPage({
           : null;
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("fleet")}
           title={t("driversTitle")}
           actions={
             canEdit ? (
@@ -177,6 +179,6 @@ export default async function DriversPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }

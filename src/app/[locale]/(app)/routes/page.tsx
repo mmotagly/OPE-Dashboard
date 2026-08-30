@@ -14,7 +14,7 @@ import { RoutesTable, StationsTable } from "./routes-table";
 import { RouteDrawer } from "./route-drawer";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 /**
  * Routes and stations on one page. Each entity carries its own filter set and
@@ -42,6 +42,7 @@ export default async function RoutesPage({
   const moduleKey = isStations ? "routes:stations" : "routes";
 
   const t = await getTranslations("master");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -99,9 +100,10 @@ export default async function RoutesPage({
   const newLabel = isStations ? t("newStation") : t("newRoute");
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("fleet")}
           title={isStations ? t("stationsTitle") : t("routesTitle")}
           actions={
             canEdit ? (
@@ -170,6 +172,6 @@ export default async function RoutesPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }
