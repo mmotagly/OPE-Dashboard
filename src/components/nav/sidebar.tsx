@@ -24,11 +24,15 @@ export function Sidebar({
   variant = "desktop",
   onNavigate,
   initialTheme,
+  alertCount,
 }: {
   role: AppRole;
   variant?: "desktop" | "mobile";
   onNavigate?: () => void;
   initialTheme: "light" | "dark";
+  /** Live due_now/overdue PM + aging RFR count — roadmap item 5's proactive
+   * surfacing, visible from any page via the existing nav-item count badge. */
+  alertCount: number;
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -42,7 +46,11 @@ export function Sidebar({
       label: t("overview"),
       items: [
         { href: "/day-board", label: t("dayBoard") },
-        { href: "/alerts", label: t("alerts") },
+        {
+          href: "/alerts",
+          label: t("alerts"),
+          count: alertCount > 0 ? alertCount : undefined,
+        },
       ],
     },
     {

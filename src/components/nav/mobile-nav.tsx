@@ -32,9 +32,11 @@ import type { AppRole } from "@/lib/roles";
 export function MobileNav({
   role,
   initialTheme,
+  alertCount,
 }: {
   role: AppRole;
   initialTheme: "light" | "dark";
+  alertCount: number;
 }) {
   const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
@@ -92,6 +94,7 @@ export function MobileNav({
                 variant="mobile"
                 onNavigate={() => setOpen(false)}
                 initialTheme={initialTheme}
+                alertCount={alertCount}
               />
             </aside>
           </>,

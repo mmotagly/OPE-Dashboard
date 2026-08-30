@@ -690,6 +690,7 @@
   "alerts": {
     "eyebrow": "Overview",
     "pmTitle": "Maintenance due",
+    "pmUpcomingTitle": "Maintenance coming up",
     "rfrTitle": "RFRs aging",
     "noPmAlerts": "Nothing due",
     "noRfrAlerts": "Nothing aging",

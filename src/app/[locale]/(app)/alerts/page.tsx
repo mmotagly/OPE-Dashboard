@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
-import { loadPmAlerts, loadRfrAgingAlerts } from "./queries";
+import { loadPmAlerts, loadPmDueSoon, loadRfrAgingAlerts } from "./queries";
 import { PmAlertsTable } from "./pm-alerts-table";
 import { RfrAgingTable } from "./rfr-aging-table";
 
@@ -23,7 +23,11 @@ export default async function AlertsPage({
 
   const t = await getTranslations("alerts");
 
-  const [pmAlerts, rfrAlerts] = await Promise.all([loadPmAlerts(), loadRfrAgingAlerts()]);
+  const [pmAlerts, pmDueSoon, rfrAlerts] = await Promise.all([
+    loadPmAlerts(),
+    loadPmDueSoon(),
+    loadRfrAgingAlerts(),
+  ]);
 
   return (
     <div className="grid gap-3.5">
@@ -43,6 +47,15 @@ export default async function AlertsPage({
           actions={<span className="tnum">{rfrAlerts.length}</span>}
         />
         <RfrAgingTable rows={rfrAlerts} />
+      </Panel>
+
+      <Panel clip={false}>
+        <PanelHead
+          eyebrow={t("eyebrow")}
+          title={t("pmUpcomingTitle")}
+          actions={<span className="tnum">{pmDueSoon.length}</span>}
+        />
+        <PmAlertsTable rows={pmDueSoon} />
       </Panel>
     </div>
   );

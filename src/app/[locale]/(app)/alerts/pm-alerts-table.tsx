@@ -10,6 +10,7 @@ import type { PmAlertRow } from "./queries";
 const STATUS_KEY: Record<string, string> = {
   overdue: "overdue",
   due_now: "dueNow",
+  due_soon: "dueSoon",
 };
 
 export function PmAlertsTable({ rows }: { rows: PmAlertRow[] }) {

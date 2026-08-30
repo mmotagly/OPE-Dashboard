@@ -63,6 +63,51 @@ export async function loadPmAlerts(): Promise<PmAlertRow[]> {
   }));
 }
 
+/**
+ * Roadmap item 5 (2026-08-30): the earlier, lower-urgency tier — parts that
+ * will need service soon but aren't due_now/overdue yet. Reads
+ * v_periodic_maintenance directly (already in generated types since 0001)
+ * rather than v_pm_alerts, which deliberately excludes due_soon.
+ */
+export async function loadPmDueSoon(): Promise<PmAlertRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_periodic_maintenance")
+    .select(
+      "schedule_id, vehicle_id, vehicle_code, plate_number, part_name, scheduled_km, actual_km, km_remaining, maintenance_status",
+    )
+    .eq("maintenance_status", "due_soon")
+    .order("km_remaining", { ascending: true });
+  if (error) throw error;
+
+  return (data ?? []).map((r) => ({
+    id: r.schedule_id as string,
+    scheduleId: r.schedule_id as string,
+    vehicleId: r.vehicle_id as string,
+    vehicleCode: r.vehicle_code as string,
+    plateNumber: r.plate_number as string,
+    partName: r.part_name as string,
+    scheduledKm: r.scheduled_km,
+    actualKm: r.actual_km,
+    kmRemaining: r.km_remaining,
+    status: r.maintenance_status ?? "due_soon",
+  }));
+}
+
+/** Cheap counts for the sidebar badge — proactive surfacing (roadmap item
+ * 5) beyond the /alerts page itself, so a due_now/overdue/aging condition
+ * is visible from anywhere in the app, not just when a user checks the
+ * board. head:true skips fetching rows, just the count. */
+export async function loadAlertCounts(): Promise<number> {
+  const supabase = await createClient();
+  const [pm, rfr] = await Promise.all([
+    (supabase as any).from("v_pm_alerts").select("*", { count: "exact", head: true }),
+    (supabase as any).from("v_rfr_aging_alerts").select("*", { count: "exact", head: true }),
+  ]);
+  if (pm.error || rfr.error) return 0; // badge is a courtesy, never blocks a page load
+  return (pm.count ?? 0) + (rfr.count ?? 0);
+}
+
 export async function loadRfrAgingAlerts(): Promise<RfrAgingRow[]> {
   const supabase = await createClient();
   const { data, error } = await (supabase as any)

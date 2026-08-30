@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { Sidebar } from "@/components/nav/sidebar";
 import { Topbar } from "@/components/nav/topbar";
+import { loadAlertCounts } from "./alerts/queries";
 
 /**
  * Two regions: the nav tree and the content, which takes everything else.
@@ -20,13 +21,18 @@ export default async function AppLayout({
   const user = await requireUser(locale);
   const cookieStore = await cookies();
   const initialTheme = cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+  // Proactive surfacing (roadmap item 5) — visible from any page, not just
+  // when a user opens /alerts. A courtesy badge: loadAlertCounts() never
+  // throws, so a failed count just shows no badge rather than blocking the
+  // page.
+  const alertCount = await loadAlertCounts();
 
   return (
     <>
-      <Topbar user={user} initialTheme={initialTheme} />
+      <Topbar user={user} initialTheme={initialTheme} alertCount={alertCount} />
       <div className="grid items-start gap-3.5 px-5 pb-7 pt-3.5 xl:grid-cols-[232px_minmax(0,1fr)]">
         <div className="hidden xl:block">
-          <Sidebar role={user.role} initialTheme={initialTheme} />
+          <Sidebar role={user.role} initialTheme={initialTheme} alertCount={alertCount} />
         </div>
         {children}
       </div>

@@ -690,6 +690,7 @@
   "alerts": {
     "eyebrow": "نظرة عامة",
     "pmTitle": "صيانة مستحقة",
+    "pmUpcomingTitle": "صيانة قادمة قريبًا",
     "rfrTitle": "طلبات إصلاح متأخرة",
     "noPmAlerts": "لا توجد صيانة مستحقة",
     "noRfrAlerts": "لا توجد طلبات متأخرة",
