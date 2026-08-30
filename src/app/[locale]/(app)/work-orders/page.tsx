@@ -36,6 +36,7 @@ export default async function WorkOrdersPage({
   const rfr = one("rfr") || undefined;
 
   const t = await getTranslations("workOrder");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
 
@@ -97,9 +98,9 @@ export default async function WorkOrdersPage({
           : null;
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
-        <PanelHead title={t("title")} />
+        <PanelHead eyebrow={tNav("maintenance")} title={t("title")} />
 
         <FilterBar
           pathname="/work-orders"
@@ -136,6 +137,6 @@ export default async function WorkOrdersPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }

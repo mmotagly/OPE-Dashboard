@@ -87,7 +87,7 @@ export function RfrForm({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`)}
         </p>
@@ -188,7 +188,7 @@ export function RfrForm({
             return (
               <label
                 key={issue.id}
-                className={`flex items-center gap-2.5 rounded-[10px] border px-3 py-2.5 transition-colors ${
+                className={`flex items-center gap-2.5 rounded-control border px-3 py-2.5 transition-colors ${
                   checked ? "border-white/10 bg-elev" : "border-hairline bg-canvas"
                 }`}
               >
@@ -213,7 +213,7 @@ export function RfrForm({
         </Button>
         <Link
           href={{ pathname: "/rfrs", query: backTo }}
-          className="flex flex-1 items-center justify-center rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none"
+          className="flex flex-1 items-center justify-center rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none"
         >
           {tCommon("cancel")}
         </Link>

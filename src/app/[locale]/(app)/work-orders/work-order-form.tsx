@@ -103,14 +103,14 @@ export function WorkOrderForm({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`)}
         </p>
       )}
 
       {/* Read-only context from the request this order hangs off. */}
-      <div className="grid gap-2 rounded-[10px] border border-hairline bg-canvas px-3 py-3">
+      <div className="grid gap-2 rounded-control border border-hairline bg-canvas px-3 py-3">
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
           <span className="tnum text-[14px] font-semibold">{rfr.rfrNumber}</span>
           <span className="tnum text-[13px] text-ink-2">{rfr.vehicleCode}</span>
@@ -291,13 +291,13 @@ export function WorkOrderForm({
           selectedPmParts > 0 ? t("pmPartsSelected", { count: selectedPmParts }) : undefined
         }
       >
-        <div className="grid max-h-64 gap-1.5 overflow-y-auto rounded-[10px] border border-hairline p-1.5">
+        <div className="grid max-h-64 gap-1.5 overflow-y-auto rounded-control border border-hairline p-1.5">
           {options.parts.map((part) => {
             const checked = values.partIds.includes(part.id);
             return (
               <label
                 key={part.id}
-                className={`flex items-center gap-2.5 rounded-[8px] px-2.5 py-2 transition-colors ${
+                className={`flex items-center gap-2.5 rounded-control px-2.5 py-2 transition-colors ${
                   checked ? "bg-elev" : "hover:bg-raise"
                 }`}
               >
@@ -351,7 +351,7 @@ export function WorkOrderForm({
         />
       </Field>
 
-      <label className="flex items-center gap-3 rounded-[10px] border border-hairline bg-canvas px-3 py-3">
+      <label className="flex items-center gap-3 rounded-control border border-hairline bg-canvas px-3 py-3">
         <input
           type="checkbox"
           name="isSkipped"
@@ -402,7 +402,7 @@ export function WorkOrderForm({
         </Button>
         <Link
           href={{ pathname: "/work-orders", query: backTo }}
-          className="flex flex-1 items-center justify-center rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none"
+          className="flex flex-1 items-center justify-center rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise xl:flex-none"
         >
           {tCommon("cancel")}
         </Link>

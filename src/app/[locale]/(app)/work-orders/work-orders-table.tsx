@@ -130,7 +130,7 @@ export function WorkOrdersTable({
           action={
             <Link
               href="/rfrs"
-              className="rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
+              className="rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
             >
               {t("goToRequests")}
             </Link>

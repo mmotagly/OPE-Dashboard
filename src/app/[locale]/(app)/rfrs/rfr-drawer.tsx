@@ -114,7 +114,7 @@ export async function RfrDrawer({
         canEdit ? (
           <Link
             href={{ pathname: "/rfrs", query: { ...closeHref.query, mode: "edit", id: rfr.id } }}
-            className="rounded-[10px] border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
           >
             {tCommon("edit")}
           </Link>
@@ -204,7 +204,7 @@ export async function RfrDrawer({
         {canEdit && (
           <Link
             href={{ pathname: "/work-orders", query: { mode: "new", rfr: rfr.id } }}
-            className="mb-3 inline-flex rounded-[10px] border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
+            className="mb-3 inline-flex rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
           >
             {t("createWorkOrder")}
           </Link>
@@ -217,7 +217,7 @@ export async function RfrDrawer({
             {workOrders.map((w) => (
               <li
                 key={w.id}
-                className="rounded-[10px] border border-hairline bg-canvas px-3 py-2.5"
+                className="rounded-control border border-hairline bg-canvas px-3 py-2.5"
               >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <Link
