@@ -35,6 +35,7 @@
     "finance": "المالية",
     "dashboard": "لوحة المعلومات",
     "scorecards": "بطاقات الأداء",
+    "vendorTrends": "اتجاهات الموردين",
     "invoices": "الفواتير",
     "admin": "الإدارة",
     "activityLog": "سجل النشاط",
@@ -661,6 +662,30 @@
       "stillReferenced": "ما زالت هناك سجلات أخرى مرتبطة بهذا السجل."
     },
     "searchPlaceholder": "ابحث بالمورد أو الكود"
+  },
+  "vendorTrends": {
+    "eyebrow": "المالية",
+    "summaryTitle": "اتجاه أداء الموردين",
+    "historyTitle": "{vendor} — السجل الشهري",
+    "historyTitleFallback": "السجل الشهري",
+    "sectionTitle": "حسب قسم المؤشر",
+    "direction": {
+      "improving": "تحسّن",
+      "declining": "تراجع",
+      "stable": "مستقر",
+      "new": "جديد"
+    },
+    "field": {
+      "vendor": "المورد",
+      "latestMonth": "آخر شهر",
+      "latestPct": "آخر نسبة",
+      "delta": "التغيّر",
+      "trend": "الاتجاه",
+      "month": "الشهر",
+      "totalPct": "إجمالي النسبة المحققة",
+      "section": "القسم",
+      "sectionScore": "نسبة القسم"
+    }
   },
   "dashboard": {
     "eyebrow": "المالية",

@@ -35,6 +35,7 @@
     "finance": "Finance",
     "dashboard": "Dashboard",
     "scorecards": "Scorecards",
+    "vendorTrends": "Vendor trends",
     "invoices": "Invoices",
     "admin": "Administration",
     "activityLog": "Activity log",
@@ -661,6 +662,30 @@
       "stillReferenced": "Other records still point at this one."
     },
     "searchPlaceholder": "Search vendor or code"
+  },
+  "vendorTrends": {
+    "eyebrow": "Finance",
+    "summaryTitle": "Vendor KPI trend",
+    "historyTitle": "{vendor} — monthly history",
+    "historyTitleFallback": "Monthly history",
+    "sectionTitle": "By KPI section",
+    "direction": {
+      "improving": "Improving",
+      "declining": "Declining",
+      "stable": "Stable",
+      "new": "New"
+    },
+    "field": {
+      "vendor": "Vendor",
+      "latestMonth": "Latest month",
+      "latestPct": "Latest %",
+      "delta": "Change",
+      "trend": "Trend",
+      "month": "Month",
+      "totalPct": "Total achieved %",
+      "section": "Section",
+      "sectionScore": "Section score %"
+    }
   },
   "dashboard": {
     "eyebrow": "Finance",

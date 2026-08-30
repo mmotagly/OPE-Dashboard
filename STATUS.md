@@ -23,9 +23,9 @@ each item ships.
 | 1 | Automated tests — RFR stage transitions + operation status | ✅ Done, pushed |
 | 2 | Audit log / activity history | ✅ Done, pushed — migration `0015` not yet run |
 | 3 | Notifications/alerts (PM-overdue, RFR-aging) | ✅ Done, pushed — migration `0016` not yet run |
-| 4 | Planning Manager dashboard/reporting | 🔜 Next |
-| 5 | Automated PM scheduling reminders | Not started |
-| 6 | Driver/vendor performance trend history | Not started |
+| 4 | Planning Manager dashboard/reporting | ✅ Done, pushed — migration `0017` not yet run |
+| 5 | Automated PM scheduling reminders | ✅ Done, pushed — reuses `0016`, no new migration |
+| 6 | Driver/vendor performance trend history | 🔜 Next |
 | 7 | Export to Excel/PDF | Not started |
 
 **Migrations written this session that still need to run**, in order:
@@ -36,7 +36,11 @@ each item ships.
    idempotent `on conflict do nothing`), v_pm_alerts view, v_rfr_aging_alerts
    view. Depends on nothing from 0015; order between them doesn't matter,
    only that both run before /activity-log or /alerts are expected to show
-   real data.
+   real data. Also backs roadmap item 5 (proactive reminders) — no separate
+   migration for that item.
+3. `0017_dashboard.sql` — v_pm_compliance_summary, v_rfr_resolution_summary,
+   v_fleet_utilization_monthly. Depends on nothing from 0015/0016; only
+   needs 0001/0014 (already run) for the tables/views it reads from.
 
 ---
 

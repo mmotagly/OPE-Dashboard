@@ -87,6 +87,7 @@ export function Sidebar({
       items: [
         { href: "/dashboard", label: t("dashboard") },
         { href: "/scorecards", label: t("scorecards") },
+        { href: "/vendor-trends", label: t("vendorTrends") },
         { href: "/invoices", label: t("invoices") },
       ],
     });
