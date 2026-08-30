@@ -460,12 +460,27 @@ shipped (Phases 1/2/4, Phase 3 billing, Phase 5 bulk planning, the Day
 Board redesign, its real-PM-data fix, and the table+drawer decision — see
 §1). **Nothing pending from this rollout.**
 
-**Design system rollout (see §0):** Daily Operations is the pilot; every
-other module (Day board, Charging, RFRs, Work orders, Periodic maintenance,
-Vehicles/Drivers/Vendors/Routes, Scorecards, Invoices, Settings) still needs
-its own pass once the pilot is signed off. The login page's logo badge
-(`HANDOVER.md` §8 item 11) was fixed as a small follow-up rather than left
-queued — see §0.
+**Design system rollout — complete (2026-09-01).** Every module now has the
+pattern applied: eyebrow breadcrumb (matching its sidebar nav group), a
+single accent-fill primary action where the page has one, Inter font
+wrapper, and `rounded-control`/`rounded-card` in place of arbitrary radius
+values. Shipped in batches (Vehicles/Drivers/Vendors/Routes;
+Charging; RFRs/Work orders; Periodic maintenance;
+Scorecards/Invoices/Dashboard/Vendor trends/Alerts/Activity log;
+Settings/Day board), each independently verified and committed — see the
+commit history from `8a0ad87` through `e919611`. `GenerateInvoice`/
+`OpenMonth` (Invoices/Scorecards' inline forms) picked up `Button`'s
+`primary` variant along the way, since they'd been each page's one real
+action rendering with no primary styling at all. The login page's logo
+badge (`HANDOVER.md` §8 item 11) was fixed earlier as a small follow-up —
+see §0.
+
+**Known remaining seam**: the ~25+ files across every module with their own
+hardcoded inline "New X" button strings (outside the shared `Button`
+component) were never centralized — each module's own `newButton` const in
+its `page.tsx` was updated individually as part of this rollout, but if a
+new one gets added elsewhere by copy-paste later, it'll need the same
+manual update rather than inheriting a fix automatically.
 
 **Autonomous session roadmap (top of this file):** all 7 items shipped,
 pushed, migrations `0015`-`0018` run, types regenerated, `as any` casts

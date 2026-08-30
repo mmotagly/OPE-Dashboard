@@ -2,7 +2,7 @@
 
 Source of truth for the OPE Dashboard UI/UX redesign. This is stack-agnostic by design — implementation should map these tokens onto whatever the repo already uses (Tailwind config, CSS variables, shadcn theme, etc.), not force a new styling approach into the codebase.
 
-**Status: piloted on Daily Operations.** See `STATUS.md` for what shipped, what's confirmed, and what's next. The mapping below (§Color tokens, §Typography) reflects the actual implementation in `src/app/globals.css`, not just the original spec — two gaps the original spec didn't cover (the idle/neutral pair, and the accent/elev split) were resolved during implementation and are documented inline below so the next module's session has the real, final answer.
+**Status: rolled out to every module.** Piloted on Daily Operations, then applied module by module to the rest of the app. See `STATUS.md` for the shipped history. The mapping below (§Color tokens, §Typography) reflects the actual implementation in `src/app/globals.css`, not just the original spec — two gaps the original spec didn't cover (the idle/neutral pair, and the accent/elev split) were resolved during implementation and are documented inline below.
 
 ## Principles
 
