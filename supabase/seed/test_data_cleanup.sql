@@ -14,6 +14,14 @@
 -- they're not listed as separate DELETEs, they just go away on their own.
 -- Order matters for the ones that are NOT cascaded (rfrs/vehicles/drivers
 -- restrict their parent from deleting first) — this is that order.
+--
+-- One non-obvious exception, found the hard way: vehicle_part_schedules
+-- also has a second FK, last_work_order_id -> work_orders, with no
+-- cascade. It isn't set by a plain INSERT — fn_recalc_pm_schedules sets it
+-- after the fact for any vehicle whose completed work order replaced a
+-- PM-tracked part — so it's easy to miss by reading the seed script alone.
+-- Cleared with an explicit UPDATE below, right before work_orders is
+-- deleted.
 
 begin;
 
@@ -21,6 +29,16 @@ begin;
 -- (it references both), so it has to go first or it blocks both later.
 delete from vendor_invoices
 where vendor_id in (select id from vendors where vendor_code like 'TEST-%');
+
+-- vehicle_part_schedules.last_work_order_id restricts work_orders (no
+-- cascade) — fn_recalc_pm_schedules (called inside fn_init_pm_schedules)
+-- sets it automatically for any vehicle whose completed work order
+-- replaced a PM-tracked part, which the seed's brakes/tires/compressor
+-- work orders do. Must clear this before deleting work_orders, or that
+-- delete fails with a foreign key violation on this column specifically.
+update vehicle_part_schedules
+set last_work_order_id = null
+where last_work_order_id in (select id from work_orders where work_order_number like 'TEST-%');
 
 -- work_orders restricts rfrs (on delete restrict) — must go before rfrs.
 -- work_order_parts cascades from this automatically.
