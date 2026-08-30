@@ -37,7 +37,7 @@ export function BuildSchedules({ vehicles }: { vehicles: SeedableVehicle[] }) {
     <form action={formAction} className="grid gap-3">
       <p className="text-[12.5px] text-ink-3">{t("buildNote")}</p>
 
-      <label className="flex items-center gap-3 rounded-[10px] border border-hairline bg-canvas px-3 py-2.5">
+      <label className="flex items-center gap-3 rounded-control border border-hairline bg-canvas px-3 py-2.5">
         <input
           type="checkbox"
           checked={allSelected}
@@ -52,13 +52,13 @@ export function BuildSchedules({ vehicles }: { vehicles: SeedableVehicle[] }) {
         </span>
       </label>
 
-      <ul className="grid max-h-80 gap-1.5 overflow-y-auto rounded-[10px] border border-hairline p-1.5">
+      <ul className="grid max-h-80 gap-1.5 overflow-y-auto rounded-control border border-hairline p-1.5">
         {vehicles.map((vehicle) => {
           const checked = selected.includes(vehicle.id);
           return (
             <li key={vehicle.id}>
               <label
-                className={`flex items-center gap-2.5 rounded-[8px] px-2.5 py-2 transition-colors ${
+                className={`flex items-center gap-2.5 rounded-control px-2.5 py-2 transition-colors ${
                   checked ? "bg-elev" : "hover:bg-raise"
                 }`}
               >

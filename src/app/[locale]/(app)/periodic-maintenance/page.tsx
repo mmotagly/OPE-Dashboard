@@ -17,7 +17,7 @@ import { BuildSchedules } from "./build-schedules";
 const MODULE = "periodic-maintenance";
 
 const buildButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 /**
  * Periodic maintenance. The one place where a row is not the record the drawer
@@ -46,6 +46,7 @@ export default async function PeriodicMaintenancePage({
   const t = await getTranslations("pm");
   const tStatus = await getTranslations("status");
   const tCommon = await getTranslations("common");
+  const tNav = await getTranslations("nav");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -123,9 +124,10 @@ export default async function PeriodicMaintenancePage({
   const seedable = building ? await loadVehiclesWithoutSchedule() : [];
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("maintenance")}
           title={t("title")}
           actions={
             canEdit ? (
@@ -194,6 +196,6 @@ export default async function PeriodicMaintenancePage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }
