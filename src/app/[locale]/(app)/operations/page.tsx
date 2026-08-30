@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
 import { canWriteOps, isSuper, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { ExportCsvLink } from "@/components/ui/export-csv-link";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
 import { applyFilters, toControls, writeFilterState } from "@/lib/filters";
@@ -53,6 +54,7 @@ export default async function OperationsPage({
   const t = await getTranslations("operations");
   const tNav = await getTranslations("nav");
   const tStatus = await getTranslations("status");
+  const tCommon = await getTranslations("common");
   const user = await requireUser(locale);
   const canEdit = canWriteOps(user.role);
   const isSuperAdmin = isSuper(user.role);
@@ -147,22 +149,25 @@ export default async function OperationsPage({
           eyebrow={tNav("operations")}
           title={t("title")}
           actions={
-            canEdit ? (
-              <>
-                <Link
-                  href={{ pathname: "/operations", query: { ...query, mode: "bulk" } }}
-                  className={bulkButton}
-                >
-                  {t("bulkPlan")}
-                </Link>
-                <Link
-                  href={{ pathname: "/operations", query: { ...query, mode: "new" } }}
-                  className={newButton}
-                >
-                  {t("new")}
-                </Link>
-              </>
-            ) : undefined
+            <>
+              <ExportCsvLink href="/api/export/operations" label={tCommon("exportCsv")} />
+              {canEdit && (
+                <>
+                  <Link
+                    href={{ pathname: "/operations", query: { ...query, mode: "bulk" } }}
+                    className={bulkButton}
+                  >
+                    {t("bulkPlan")}
+                  </Link>
+                  <Link
+                    href={{ pathname: "/operations", query: { ...query, mode: "new" } }}
+                    className={newButton}
+                  >
+                    {t("new")}
+                  </Link>
+                </>
+              )}
+            </>
           }
         />
 

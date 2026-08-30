@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { canSeeMoney, isSuper, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { ExportCsvLink } from "@/components/ui/export-csv-link";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
@@ -42,6 +43,7 @@ export default async function InvoicesPage({
   if (!canSeeMoney(user.role)) notFound();
 
   const t = await getTranslations("invoice");
+  const tCommon = await getTranslations("common");
   const canEdit = isSuper(user.role);
 
   const [all, vendors, shifts, { state: filterState, saved }] = await Promise.all([
@@ -106,7 +108,10 @@ export default async function InvoicesPage({
         <PanelHead
           title={t("title")}
           actions={
-            canEdit ? <GenerateInvoice vendors={vendors} shifts={shifts} /> : undefined
+            <>
+              <ExportCsvLink href="/api/export/invoices" label={tCommon("exportCsv")} />
+              {canEdit && <GenerateInvoice vendors={vendors} shifts={shifts} />}
+            </>
           }
         />
 

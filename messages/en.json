@@ -13,7 +13,9 @@
     "none": "None",
     "today": "Today",
     "empty": "Nothing here yet",
-    "emptyHint": "Records will appear as the team enters them."
+    "emptyHint": "Records will appear as the team enters them.",
+    "exportCsv": "Export CSV",
+    "printPdf": "Print / Save PDF"
   },
   "nav": {
     "overview": "Overview",

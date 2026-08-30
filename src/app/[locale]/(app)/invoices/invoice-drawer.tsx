@@ -66,9 +66,16 @@ export async function InvoiceDrawer({
       closeHref={closeHref}
       closeLabel={tCommon("cancel")}
       footer={
-        canEdit ? (
-          <InvoiceStatusActions invoiceId={invoice.id} status={invoice.status} />
-        ) : undefined
+        <>
+          <Link
+            href={{ pathname: "/print/invoice", query: { id: invoice.id } }}
+            target="_blank"
+            className="rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
+          >
+            {tCommon("printPdf")}
+          </Link>
+          {canEdit && <InvoiceStatusActions invoiceId={invoice.id} status={invoice.status} />}
+        </>
       }
     >
       <Section title={t("netPayable")}>

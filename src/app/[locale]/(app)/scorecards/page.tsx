@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Link } from "@/lib/i18n/routing";
 import { canSeeMoney, isSuper, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { ExportCsvLink } from "@/components/ui/export-csv-link";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
@@ -41,6 +42,7 @@ export default async function ScorecardsPage({
   if (!canSeeMoney(user.role)) notFound();
 
   const t = await getTranslations("scorecard");
+  const tCommon = await getTranslations("common");
   const canEdit = isSuper(user.role);
 
   const [months, templates, vendorInfo, { state: filterState, saved }] = await Promise.all([
@@ -105,19 +107,25 @@ export default async function ScorecardsPage({
         <PanelHead
           title={kind === "templates" ? t("templatesTitle") : t("title")}
           actions={
-            !canEdit ? undefined : kind === "templates" ? (
-              <Link
-                href={{ pathname: "/scorecards", query: { ...query, mode: "new" } }}
-                className={newButton}
-              >
-                {t("newTemplate")}
-              </Link>
-            ) : (
-              <OpenMonth
-                vendors={vendorInfo.vendors}
-                withTemplate={vendorInfo.withTemplate}
-              />
-            )
+            <>
+              {kind === "months" && (
+                <ExportCsvLink href="/api/export/scorecards" label={tCommon("exportCsv")} />
+              )}
+              {canEdit &&
+                (kind === "templates" ? (
+                  <Link
+                    href={{ pathname: "/scorecards", query: { ...query, mode: "new" } }}
+                    className={newButton}
+                  >
+                    {t("newTemplate")}
+                  </Link>
+                ) : (
+                  <OpenMonth
+                    vendors={vendorInfo.vendors}
+                    withTemplate={vendorInfo.withTemplate}
+                  />
+                ))}
+            </>
           }
         />
 
