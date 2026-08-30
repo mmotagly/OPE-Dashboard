@@ -50,7 +50,7 @@ export default async function DashboardPage({
   const totalBusDays = busDays.reduce((sum, r) => sum + r.busDays, 0);
 
   return (
-    <div className="grid gap-3.5">
+    <div className="font-inter grid gap-3.5">
       <Panel clip={false}>
         <PanelHead eyebrow={t("eyebrow")} title={t("title")} />
         <StatBar>

@@ -69,7 +69,7 @@ export function AchievedEditor({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`)}
         </p>
@@ -78,7 +78,7 @@ export function AchievedEditor({
       {sections.map((section) => {
         const points = sectionPoints(section);
         return (
-          <div key={section.id} className="rounded-[10px] border border-hairline">
+          <div key={section.id} className="rounded-control border border-hairline">
             <div className="flex flex-wrap items-baseline gap-2.5 border-b border-hairline bg-raise px-3 py-2.5">
               <span className="text-[13px] font-semibold">{section.sectionName}</span>
               <Micro bar={false}>
@@ -112,7 +112,7 @@ export function AchievedEditor({
                         setValues((v) => ({ ...v, [line.id]: e.target.value }))
                       }
                       aria-label={line.kpiName}
-                      className="tnum w-20 rounded-[8px] border border-hairline bg-canvas px-2.5 py-1.5 text-end text-[13px] text-ink disabled:opacity-60"
+                      className="tnum w-20 rounded-control border border-hairline bg-canvas px-2.5 py-1.5 text-end text-[13px] text-ink disabled:opacity-60"
                     />
                     <span className="tnum text-[12px] text-ink-3">
                       {t("outOf", { weight: line.metricWeight })}

@@ -72,11 +72,12 @@ export function GenerateInvoice({
           value={month}
           onChange={(e) => setMonth(e.target.value)}
           aria-label={t("field.periodMonth")}
-          className="tnum rounded-[10px] border border-hairline bg-canvas px-3 py-2 text-[13.5px] text-ink"
+          className="tnum rounded-control border border-hairline bg-canvas px-3 py-2 text-[13.5px] text-ink"
         />
 
         <Button
           type="submit"
+          variant="primary"
           disabled={pending || vendorId === "" || shiftTypeId === "" || month === ""}
         >
           {pending ? t("generating") : t("generate")}

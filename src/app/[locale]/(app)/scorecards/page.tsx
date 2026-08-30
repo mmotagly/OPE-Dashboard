@@ -16,7 +16,7 @@ import { ScorecardDrawer } from "./scorecard-drawer";
 import { OpenMonth } from "./open-month";
 
 const newButton =
-  "rounded-[10px] border border-ink bg-ink px-3 py-1.5 text-[12.5px] font-medium text-on-ink transition-opacity hover:opacity-90";
+  "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 export default async function ScorecardsPage({
   params,
@@ -43,6 +43,7 @@ export default async function ScorecardsPage({
 
   const t = await getTranslations("scorecard");
   const tCommon = await getTranslations("common");
+  const tNav = await getTranslations("nav");
   const canEdit = isSuper(user.role);
 
   const [months, templates, vendorInfo, { state: filterState, saved }] = await Promise.all([
@@ -102,9 +103,10 @@ export default async function ScorecardsPage({
   const query = { ...baseQuery, ...filterQuery };
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("finance")}
           title={kind === "templates" ? t("templatesTitle") : t("title")}
           actions={
             <>
@@ -173,6 +175,6 @@ export default async function ScorecardsPage({
           vendorsWithoutTemplate={vendorsWithoutTemplate}
         />
       )}
-    </>
+    </div>
   );
 }

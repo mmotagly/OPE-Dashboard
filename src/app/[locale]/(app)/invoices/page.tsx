@@ -44,6 +44,7 @@ export default async function InvoicesPage({
 
   const t = await getTranslations("invoice");
   const tCommon = await getTranslations("common");
+  const tNav = await getTranslations("nav");
   const canEdit = isSuper(user.role);
 
   const [all, vendors, shifts, { state: filterState, saved }] = await Promise.all([
@@ -103,9 +104,10 @@ export default async function InvoicesPage({
   const query = { ...baseQuery, ...filterQuery };
 
   return (
-    <>
+    <div className="font-inter contents">
       <Panel clip={false}>
         <PanelHead
+          eyebrow={tNav("finance")}
           title={t("title")}
           actions={
             <>
@@ -156,6 +158,6 @@ export default async function InvoicesPage({
           canEdit={canEdit}
         />
       )}
-    </>
+    </div>
   );
 }

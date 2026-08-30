@@ -111,7 +111,7 @@ export function TemplateEditor({
   });
 
   const input =
-    "rounded-[8px] border border-hairline bg-canvas px-2.5 py-1.5 text-[13px] text-ink disabled:opacity-60";
+    "rounded-control border border-hairline bg-canvas px-2.5 py-1.5 text-[13px] text-ink disabled:opacity-60";
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -120,7 +120,7 @@ export function TemplateEditor({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-[10px] border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
+          className="rounded-control border border-stop bg-stop-soft px-3 py-2.5 text-[13px] text-stop-text"
         >
           {t(`error.${state.formError}`)}
         </p>
@@ -158,7 +158,7 @@ export function TemplateEditor({
       )}
 
       {draft.map((section, index) => (
-        <div key={section.key} className="rounded-[10px] border border-hairline">
+        <div key={section.key} className="rounded-control border border-hairline">
           <div className="flex flex-wrap items-center gap-2 border-b border-hairline bg-raise px-3 py-2.5">
             <input
               value={section.sectionName}
@@ -186,7 +186,7 @@ export function TemplateEditor({
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
                   aria-label={t("moveUp")}
-                  className="grid h-7 w-7 place-items-center rounded-[8px] border border-hairline text-[12px] text-ink-2 disabled:opacity-30 hover:bg-raise"
+                  className="grid h-7 w-7 place-items-center rounded-control border border-hairline text-[12px] text-ink-2 disabled:opacity-30 hover:bg-raise"
                 >
                   ↑
                 </button>
@@ -195,7 +195,7 @@ export function TemplateEditor({
                   onClick={() => move(index, 1)}
                   disabled={index === draft.length - 1}
                   aria-label={t("moveDown")}
-                  className="grid h-7 w-7 place-items-center rounded-[8px] border border-hairline text-[12px] text-ink-2 disabled:opacity-30 hover:bg-raise"
+                  className="grid h-7 w-7 place-items-center rounded-control border border-hairline text-[12px] text-ink-2 disabled:opacity-30 hover:bg-raise"
                 >
                   ↓
                 </button>
@@ -205,7 +205,7 @@ export function TemplateEditor({
                     setDraft((d) => d.filter((s) => s.key !== section.key))
                   }
                   aria-label={t("removeSection")}
-                  className="grid h-7 w-7 place-items-center rounded-[8px] border border-hairline text-[12px] text-stop-text hover:bg-stop-soft"
+                  className="grid h-7 w-7 place-items-center rounded-control border border-hairline text-[12px] text-stop-text hover:bg-stop-soft"
                 >
                   ×
                 </button>
@@ -250,7 +250,7 @@ export function TemplateEditor({
                       })
                     }
                     aria-label={t("removeLine")}
-                    className="grid h-7 w-7 place-items-center rounded-[8px] border border-hairline text-[12px] text-stop-text hover:bg-stop-soft"
+                    className="grid h-7 w-7 place-items-center rounded-control border border-hairline text-[12px] text-stop-text hover:bg-stop-soft"
                   >
                     ×
                   </button>

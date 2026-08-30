@@ -30,7 +30,7 @@ export default async function AlertsPage({
   ]);
 
   return (
-    <div className="grid gap-3.5">
+    <div className="font-inter grid gap-3.5">
       <Panel clip={false}>
         <PanelHead
           eyebrow={t("eyebrow")}

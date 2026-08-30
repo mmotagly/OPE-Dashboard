@@ -46,10 +46,12 @@ export default async function ActivityLogPage({
   ];
 
   return (
-    <Panel clip={false}>
-      <PanelHead eyebrow={t("eyebrow")} title={t("title")} />
-      <FilterChips chips={chips} active={entity} param="entity" pathname="/activity-log" />
-      <ActivityTable rows={rows} selectedId={null} />
-    </Panel>
+    <div className="font-inter contents">
+      <Panel clip={false}>
+        <PanelHead eyebrow={t("eyebrow")} title={t("title")} />
+        <FilterChips chips={chips} active={entity} param="entity" pathname="/activity-log" />
+        <ActivityTable rows={rows} selectedId={null} />
+      </Panel>
+    </div>
   );
 }
