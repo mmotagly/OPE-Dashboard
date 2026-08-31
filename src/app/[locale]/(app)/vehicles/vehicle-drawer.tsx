@@ -9,7 +9,7 @@ import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
 import { CsvImportForm } from "@/components/ui/csv-import-form";
 import { expiryState, expiryTone, km, pmTone, type PmStatus } from "@/lib/format";
-import { importVehicles } from "./actions";
+import { confirmImportVehicles, previewImportVehicles } from "./actions";
 import {
   EMPTY_VEHICLE_FORM,
   loadLatestOperation,
@@ -68,7 +68,15 @@ export async function VehicleDrawer({
         closeLabel={tCommon("cancel")}
       >
         <div className="p-4">
-          <CsvImportForm action={importVehicles} templateHref="/api/import-template/vehicles" />
+          <CsvImportForm
+            previewAction={previewImportVehicles}
+            confirmAction={confirmImportVehicles}
+            templateHref="/api/import-template/vehicles"
+            extraColumns={[
+              { key: "plate_number", header: t("field.plateNumber") },
+              { key: "vendor_code", header: tVehicle("vendor") },
+            ]}
+          />
         </div>
       </Drawer>
     );

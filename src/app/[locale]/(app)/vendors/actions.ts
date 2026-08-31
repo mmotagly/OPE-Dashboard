@@ -5,7 +5,15 @@ import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { guardMaster, isDenied } from "@/lib/master";
 import { dbErrorText, dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
-import { codeMapFromLookups, importFromFormData, type ImportFormState } from "@/lib/csv-import";
+import {
+  buildPreview,
+  codeMapFromLookups,
+  loadCodeMap,
+  runPreviewedImport,
+  type ImportFormState,
+  type PreviewFormState,
+  type RowValidation,
+} from "@/lib/csv-import";
 import { loadLookups } from "@/lib/lookups";
 import { vendorSchema, parseVendorForm, type VendorInput } from "./schema";
 
@@ -122,33 +130,49 @@ export async function updateVendor(
   });
 }
 
-/** CSV import (roadmap: CSV Import/Export). See vehicles/actions.ts's importVehicles.
- * A row that would create a second `is_company` vendor fails that row only —
- * the same rule `companyVendorTaken` enforces on the manual form. */
-export async function importVendors(
-  _prev: ImportFormState,
-  formData: FormData,
-): Promise<ImportFormState> {
-  const gate = await guardMaster();
-  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", report: null };
+/** CSV import (roadmap: CSV Import/Export). Two-step preview/confirm — see
+ * vehicles/actions.ts. A row that would create a second `is_company`
+ * vendor fails that row only — the same rule `companyVendorTaken`
+ * enforces on the manual form. */
 
-  const supabase = await createClient();
+const CSV_CODE_COLUMN = "vendor_code";
+
+/** Optional fields only — a blank cell here leaves the existing value
+ * alone on Update. `currency` is required and never blank, so it's always
+ * overwritten and doesn't appear here. */
+const OPTIONAL_UPDATE_FIELDS: { column: string; key: string }[] = [
+  { column: "vendor_type_code", key: "vendor_type_id" },
+  { column: "is_company", key: "is_company" },
+  { column: "contact_person", key: "contact_person" },
+  { column: "mobile_number", key: "mobile_number" },
+  { column: "email_address", key: "email_address" },
+  { column: "billing_basis", key: "billing_basis" },
+  { column: "rate_amount", key: "rate_amount" },
+  { column: "apply_kpi", key: "apply_kpi" },
+  { column: "billing_notes", key: "billing_notes" },
+  { column: "status_code", key: "status_id" },
+];
+
+async function loadImportMaps() {
   const [vendorTypes, statuses] = await Promise.all([
     loadLookups("vendor_type").then(codeMapFromLookups),
     loadLookups("generic_status").then(codeMapFromLookups),
   ]);
+  return { vendorTypes, statuses };
+}
 
+function makeRowValidator(maps: Awaited<ReturnType<typeof loadImportMaps>>) {
   const resolve = (codes: Map<string, string>, code: string, field: string) => {
     if (!code) return { id: null as string | null, error: null as string | null };
     const id = codes.get(code);
     return id ? { id, error: null } : { id: null, error: `Unknown ${field} "${code}"` };
   };
 
-  const result = await importFromFormData(formData, async (record) => {
-    const type = resolve(vendorTypes, record.vendor_type_code, "vendor_type_code");
-    if (type.error) return type.error;
-    const status = resolve(statuses, record.status_code, "status_code");
-    if (status.error) return status.error;
+  return async (record: Record<string, string>): Promise<RowValidation<VendorInput>> => {
+    const type = resolve(maps.vendorTypes, record.vendor_type_code, "vendor_type_code");
+    if (type.error) return { error: type.error };
+    const status = resolve(maps.statuses, record.status_code, "status_code");
+    if (status.error) return { error: status.error };
 
     const parsed = vendorSchema.safeParse({
       vendorCode: record.vendor_code,
@@ -166,20 +190,64 @@ export async function importVendors(
       statusId: status.id ?? "",
     });
     if (!parsed.success) {
-      return parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      return { error: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") };
     }
+    return { error: null, data: parsed.data };
+  };
+}
 
-    if (parsed.data.isCompany && (await companyVendorTaken(supabase))) {
-      return "A company vendor already exists";
-    }
+export async function previewImportVendors(
+  _prev: PreviewFormState,
+  formData: FormData,
+): Promise<PreviewFormState> {
+  const gate = await guardMaster();
+  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", preview: null };
 
-    const { error } = await supabase.from("vendors").insert(toRow(parsed.data));
-    if (error) return isCompanyClash(error) ? "A company vendor already exists" : dbErrorText(error);
-    return null;
-  });
+  const supabase = await createClient();
+  const maps = await loadImportMaps();
+  const existingCodes = await loadCodeMap(supabase, "vendors", "vendor_code");
 
-  if (result.formError) return { formError: result.formError, report: null };
+  return buildPreview(formData, CSV_CODE_COLUMN, existingCodes, makeRowValidator(maps));
+}
+
+export async function confirmImportVendors(
+  _prev: ImportFormState,
+  formData: FormData,
+): Promise<ImportFormState> {
+  const gate = await guardMaster();
+  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", report: null };
+
+  const supabase = await createClient();
+  const maps = await loadImportMaps();
+  const existingCodes = await loadCodeMap(supabase, "vendors", "vendor_code");
+
+  const report = await runPreviewedImport(
+    formData,
+    CSV_CODE_COLUMN,
+    existingCodes,
+    makeRowValidator(maps),
+    async (data, _rowNumber, codeOverride) => {
+      const row = toRow(data);
+      if (codeOverride) row.vendor_code = codeOverride;
+      if (row.is_company && (await companyVendorTaken(supabase))) {
+        return "A company vendor already exists";
+      }
+      const { error } = await supabase.from("vendors").insert(row);
+      return error ? (isCompanyClash(error) ? "A company vendor already exists" : dbErrorText(error)) : null;
+    },
+    async (matchId, data, record) => {
+      const row = toRow(data);
+      for (const f of OPTIONAL_UPDATE_FIELDS) {
+        if (!record[f.column]) delete (row as Record<string, unknown>)[f.key];
+      }
+      if ("is_company" in row && row.is_company && (await companyVendorTaken(supabase, matchId))) {
+        return "A company vendor already exists";
+      }
+      const { error } = await supabase.from("vendors").update(row).eq("id", matchId);
+      return error ? (isCompanyClash(error) ? "A company vendor already exists" : dbErrorText(error)) : null;
+    },
+  );
 
   revalidatePath("/[locale]/vendors", "page");
-  return { formError: null, report: result.report };
+  return { formError: null, report };
 }

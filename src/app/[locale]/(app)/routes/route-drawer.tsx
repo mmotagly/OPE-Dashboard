@@ -7,7 +7,7 @@ import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
 import { CsvImportForm } from "@/components/ui/csv-import-form";
 import { km } from "@/lib/format";
-import { importRoutes } from "./actions";
+import { confirmImportRoutes, previewImportRoutes } from "./actions";
 import {
   EMPTY_ROUTE_FORM,
   EMPTY_STATION_FORM,
@@ -55,7 +55,12 @@ export async function RouteDrawer({
         closeLabel={tCommon("cancel")}
       >
         <div className="p-4">
-          <CsvImportForm action={importRoutes} templateHref="/api/import-template/routes" />
+          <CsvImportForm
+            previewAction={previewImportRoutes}
+            confirmAction={confirmImportRoutes}
+            templateHref="/api/import-template/routes"
+            extraColumns={[{ key: "route_name", header: t("field.routeName") }]}
+          />
         </div>
       </Drawer>
     );

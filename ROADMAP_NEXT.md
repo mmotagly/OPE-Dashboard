@@ -62,7 +62,7 @@ Modules: Daily Operations, RFRs, Work Orders, Periodic Maintenance, Invoices, an
 
 ### Open questions for the business owner
 - Should CSV export include ALL historical data or respect the current on-screen filter/date range?
-- For re-uploading a partially-failed import: overwrite behavior, or does the template need an "already imported, skip" marker column?
+- ~~For re-uploading a partially-failed import: overwrite behavior, or does the template need an "already imported, skip" marker column?~~ **Answered 2026-09-01** — see BUILD NOTES: a preview/decision step, not a fixed default.
 
 ### BUILD NOTES (added during implementation, 2026-09-01)
 
@@ -75,6 +75,15 @@ RFRs/Work Orders/PM/Invoices/Scorecards import) is in `STATUS.md`'s
 remaining modules are trigger-/workflow-driven in ways flat CSV rows can't
 express, so only export (already shipped for Operations/Invoices/
 Scorecards) was judged the right fit for them.
+
+**Update (2026-09-01, later): the re-upload/duplicate question above is
+answered**, not defaulted — import is now upload → preview (New/Match/
+Error classification, nothing written yet) → an explicit, un-defaulted
+decision per Match row (Skip/Update/Create-as-new) → commit. "Update" is
+a field-level merge (blank optional cells preserve the existing value,
+not clear it) after a considered tradeoff, not the original full-replace
+plan — full detail and reasoning in `STATUS.md`'s "Update (2026-09-01,
+later)" subsection under item 1.
 
 ---
 

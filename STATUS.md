@@ -72,6 +72,62 @@ rejection" requirement.
   wasn't needed — all four shipped modules are small master-data tables
   (tens to low hundreds of rows), well inside one server-action request.
 
+### Update (2026-09-01, later) — answers the re-upload/duplicate open question above
+
+Resolves the open question this section originally flagged
+("re-uploading a partially-failed import... duplicate-handling
+behavior"). Import is now a three-step flow, not a one-shot insert:
+
+1. **Upload** — unchanged.
+2. **Preview** — every row is classified against the database *before
+   anything is written*: **New** (no existing record with that code),
+   **Match** (a record with that code already exists), or **Error**
+   (fails validation — shown inline, same as before, just surfaced a
+   step earlier). A summary line and a scrollable table show all three.
+3. **Decide, then commit** — every **Match** row requires an explicit,
+   un-defaulted decision: **Skip**, **Update existing**, or **Create as
+   new**. There is deliberately no default (confirmed with the business
+   owner) — the "Import N rows" button stays disabled until every match
+   row has a choice, so nothing is silently skipped or overwritten.
+   "Skip all"/"Update all" bulk buttons speed up resolving many rows at
+   once, but remain a deliberate click, never an implicit fallback.
+   **New** rows always import automatically — nothing to decide.
+
+**"Create as new"** confronts the real constraint honestly: the code
+column has a database `UNIQUE` constraint, so a literal duplicate with
+the *same* code is impossible. Choosing it reveals an inline text field
+for a replacement code (suggested as `{code}-2`, editable, required)
+rather than pretending a true duplicate is possible.
+
+**"Update existing" is a field-level merge, not a full replace** — a
+blank cell for an *optional* field leaves the existing value untouched
+rather than clearing it. This was a real, considered decision, not the
+original plan: a full replace is safe for the primary "export → edit in
+Excel → re-import" workflow (every field is already populated by the
+export), but would silently destroy data for the plausible case of a
+hand-built partial file meant to bulk-correct just one column. Required
+fields are never blank-preservable (they can't be blank at all — a row
+with one is already an Error before reaching a decision), so this only
+touches genuinely optional fields, listed explicitly per module in each
+`actions.ts`'s `OPTIONAL_UPDATE_FIELDS`. Deliberately not built: any way
+to explicitly *clear* a field via CSV (blank always means "leave alone,"
+never "erase") — the existing edit form covers that rare case for now.
+
+Security note built into the re-architecture: **the confirm step never
+trusts the client's row classification**, only its explicit per-row
+decision. `csvText` is resubmitted and re-parsed/re-validated/
+re-classified fresh against the database on commit — if something
+changed between preview and confirm (another user created a colliding
+record, say), that row fails and shows up in the final report exactly
+like any other row failure, rather than silently trusting stale client
+state.
+
+Shared engine additions in `src/lib/csv-import.ts`: `buildPreview()`,
+`runPreviewedImport()`, `PreviewFormState`/`ImportPreview`/`PreviewRow`
+types. Shared UI: `src/components/ui/csv-import-preview.tsx` (new).
+Applies uniformly to all four already-shipped modules — one addition to
+the shared engine, not four separate builds.
+
 ### 2. GPS Integration — built and ready for provider config
 
 **Migration `supabase/migrations/0019_gps_pings.sql` — run against the

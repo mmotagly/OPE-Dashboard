@@ -15,7 +15,7 @@ import {
   toVendorFormValues,
 } from "./queries";
 import { VendorForm } from "./vendor-form";
-import { importVendors } from "./actions";
+import { confirmImportVendors, previewImportVendors } from "./actions";
 
 export async function VendorDrawer({
   mode,
@@ -40,7 +40,15 @@ export async function VendorDrawer({
         closeLabel={tCommon("cancel")}
       >
         <div className="p-4">
-          <CsvImportForm action={importVendors} templateHref="/api/import-template/vendors" />
+          <CsvImportForm
+            previewAction={previewImportVendors}
+            confirmAction={confirmImportVendors}
+            templateHref="/api/import-template/vendors"
+            extraColumns={[
+              { key: "vendor_name", header: t("field.vendorName") },
+              { key: "vendor_type_code", header: t("field.vendorType") },
+            ]}
+          />
         </div>
       </Drawer>
     );

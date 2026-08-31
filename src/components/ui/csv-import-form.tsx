@@ -3,24 +3,40 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { EMPTY_IMPORT_STATE, type ImportFormState } from "@/lib/csv-import";
+import {
+  EMPTY_PREVIEW_STATE,
+  type ImportFormState,
+  type ImportReport,
+  type PreviewFormState,
+} from "@/lib/csv-import";
+import { CsvImportPreview } from "@/components/ui/csv-import-preview";
 
 /**
- * Generic upload-CSV-and-report UI, shared by every module's import (roadmap
- * item 1). Each module supplies its own Server Action (built with
- * `importFromFormData` in csv-import.ts) and a template download link; this
- * component only owns the file input, the pending state, and rendering the
- * per-row error report the action returns.
+ * Step 1 of CSV import: upload a file, get a preview of what it would do —
+ * nothing is written to the database yet. `CsvImportPreview` (step 2) takes
+ * over once a preview comes back, and owns the actual commit.
  */
 export function CsvImportForm({
-  action,
+  previewAction,
+  confirmAction,
   templateHref,
+  extraColumns,
 }: {
-  action: (prev: ImportFormState, formData: FormData) => Promise<ImportFormState>;
+  previewAction: (prev: PreviewFormState, formData: FormData) => Promise<PreviewFormState>;
+  confirmAction: (prev: ImportFormState, formData: FormData) => Promise<ImportFormState>;
   templateHref: string;
+  /** Extra raw CSV columns to show for context in the preview table,
+   * beyond the row's natural-key code — e.g. plate_number for vehicles. */
+  extraColumns: { key: string; header: string }[];
 }) {
   const t = useTranslations("csvImport");
-  const [state, formAction, pending] = useActionState(action, EMPTY_IMPORT_STATE);
+  const [state, formAction, pending] = useActionState(previewAction, EMPTY_PREVIEW_STATE);
+
+  if (state.preview) {
+    return (
+      <CsvImportPreview preview={state.preview} confirmAction={confirmAction} extraColumns={extraColumns} />
+    );
+  }
 
   return (
     <div className="grid gap-4">
@@ -50,27 +66,36 @@ export function CsvImportForm({
         )}
 
         <Button type="submit" variant="primary" disabled={pending} className="w-fit">
-          {pending ? t("uploading") : t("submit")}
+          {pending ? t("uploading") : t("preview")}
         </Button>
       </form>
+    </div>
+  );
+}
 
-      {state.report && (
-        <div className="grid gap-2 rounded-control border border-hairline p-3">
-          <p className="tnum text-[13px] text-ink-2">
-            {t("summary", { succeeded: state.report.succeeded, total: state.report.totalRows })}
-          </p>
-          {state.report.errors.length === 0 ? (
-            <p className="text-[12px] text-go-text">{t("allSucceeded")}</p>
-          ) : (
-            <ul className="grid max-h-64 gap-1 overflow-y-auto">
-              {state.report.errors.map((e) => (
-                <li key={e.row} className="tnum text-[12px] text-stop-text">
-                  {t("rowError", { row: e.row, message: e.message })}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+/** Shared by the preview step's post-commit view — the same report shape
+ * every module's import produces. */
+export function ImportReportView({ report }: { report: ImportReport }) {
+  const t = useTranslations("csvImport");
+
+  return (
+    <div className="grid gap-2 rounded-control border border-hairline p-3">
+      <p className="tnum text-[13px] text-ink-2">
+        {t("summary", { succeeded: report.succeeded, total: report.totalRows })}
+      </p>
+      {report.skipped > 0 && (
+        <p className="tnum text-[12px] text-ink-3">{t("skippedSummary", { count: report.skipped })}</p>
+      )}
+      {report.errors.length === 0 ? (
+        <p className="text-[12px] text-go-text">{t("allSucceeded")}</p>
+      ) : (
+        <ul className="grid max-h-64 gap-1 overflow-y-auto">
+          {report.errors.map((e) => (
+            <li key={e.row} className="tnum text-[12px] text-stop-text">
+              {t("rowError", { row: e.row, message: e.message })}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

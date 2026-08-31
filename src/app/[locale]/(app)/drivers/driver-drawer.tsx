@@ -15,7 +15,7 @@ import {
   toDriverFormValues,
 } from "./queries";
 import { DriverForm } from "./driver-form";
-import { importDrivers } from "./actions";
+import { confirmImportDrivers, previewImportDrivers } from "./actions";
 
 export async function DriverDrawer({
   mode,
@@ -39,7 +39,15 @@ export async function DriverDrawer({
         closeLabel={tCommon("cancel")}
       >
         <div className="p-4">
-          <CsvImportForm action={importDrivers} templateHref="/api/import-template/drivers" />
+          <CsvImportForm
+            previewAction={previewImportDrivers}
+            confirmAction={confirmImportDrivers}
+            templateHref="/api/import-template/drivers"
+            extraColumns={[
+              { key: "driver_name", header: t("field.driverName") },
+              { key: "vendor_code", header: t("field.vendor") },
+            ]}
+          />
         </div>
       </Drawer>
     );

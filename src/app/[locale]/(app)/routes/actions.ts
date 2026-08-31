@@ -5,7 +5,15 @@ import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { guardMaster, isDenied } from "@/lib/master";
 import { dbErrorText, dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
-import { codeMapFromLookups, importFromFormData, type ImportFormState } from "@/lib/csv-import";
+import {
+  buildPreview,
+  codeMapFromLookups,
+  loadCodeMap,
+  runPreviewedImport,
+  type ImportFormState,
+  type PreviewFormState,
+  type RowValidation,
+} from "@/lib/csv-import";
 import { loadLookups } from "@/lib/lookups";
 import {
   routeSchema,
@@ -90,22 +98,28 @@ export async function updateRoute(
   });
 }
 
-/** CSV import (roadmap: CSV Import/Export). See vehicles/actions.ts's importVehicles. */
-export async function importRoutes(
-  _prev: ImportFormState,
-  formData: FormData,
-): Promise<ImportFormState> {
-  const gate = await guardMaster();
-  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", report: null };
+/** CSV import (roadmap: CSV Import/Export). Two-step preview/confirm — see
+ * vehicles/actions.ts. Routes only — the stop list stays out of scope,
+ * see routes/schema.ts. */
 
-  const supabase = await createClient();
-  const statuses = codeMapFromLookups(await loadLookups("generic_status"));
+const CSV_CODE_COLUMN = "route_code";
 
-  const result = await importFromFormData(formData, async (record) => {
+/** Optional fields only — a blank cell here leaves the existing value
+ * alone on Update. */
+const OPTIONAL_UPDATE_FIELDS: { column: string; key: string }[] = [
+  { column: "route_distance_km", key: "route_distance_km" },
+  { column: "number_of_stations", key: "number_of_stations" },
+  { column: "standard_leg_time", key: "standard_leg_time" },
+  { column: "standard_round_trip_time", key: "standard_round_trip_time" },
+  { column: "status_code", key: "status_id" },
+];
+
+function makeRowValidator(statuses: Map<string, string>) {
+  return async (record: Record<string, string>): Promise<RowValidation<RouteInput>> => {
     let statusId: string | null = null;
     if (record.status_code) {
       statusId = statuses.get(record.status_code) ?? null;
-      if (!statusId) return `Unknown status_code "${record.status_code}"`;
+      if (!statusId) return { error: `Unknown status_code "${record.status_code}"` };
     }
 
     const parsed = routeSchema.safeParse({
@@ -118,17 +132,60 @@ export async function importRoutes(
       statusId: statusId ?? "",
     });
     if (!parsed.success) {
-      return parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      return { error: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") };
     }
+    return { error: null, data: parsed.data };
+  };
+}
 
-    const { error } = await supabase.from("routes").insert(routeRow(parsed.data));
-    return error ? dbErrorText(error) : null;
-  });
+export async function previewImportRoutes(
+  _prev: PreviewFormState,
+  formData: FormData,
+): Promise<PreviewFormState> {
+  const gate = await guardMaster();
+  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", preview: null };
 
-  if (result.formError) return { formError: result.formError, report: null };
+  const supabase = await createClient();
+  const statuses = codeMapFromLookups(await loadLookups("generic_status"));
+  const existingCodes = await loadCodeMap(supabase, "routes", "route_code");
+
+  return buildPreview(formData, CSV_CODE_COLUMN, existingCodes, makeRowValidator(statuses));
+}
+
+export async function confirmImportRoutes(
+  _prev: ImportFormState,
+  formData: FormData,
+): Promise<ImportFormState> {
+  const gate = await guardMaster();
+  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", report: null };
+
+  const supabase = await createClient();
+  const statuses = codeMapFromLookups(await loadLookups("generic_status"));
+  const existingCodes = await loadCodeMap(supabase, "routes", "route_code");
+
+  const report = await runPreviewedImport(
+    formData,
+    CSV_CODE_COLUMN,
+    existingCodes,
+    makeRowValidator(statuses),
+    async (data, _rowNumber, codeOverride) => {
+      const row = routeRow(data);
+      if (codeOverride) row.route_code = codeOverride;
+      const { error } = await supabase.from("routes").insert(row);
+      return error ? dbErrorText(error) : null;
+    },
+    async (matchId, data, record) => {
+      const row = routeRow(data);
+      for (const f of OPTIONAL_UPDATE_FIELDS) {
+        if (!record[f.column]) delete (row as Record<string, unknown>)[f.key];
+      }
+      const { error } = await supabase.from("routes").update(row).eq("id", matchId);
+      return error ? dbErrorText(error) : null;
+    },
+  );
 
   revalidatePath("/[locale]/routes", "page");
-  return { formError: null, report: result.report };
+  return { formError: null, report };
 }
 
 /* ---------------- stations ---------------- */
