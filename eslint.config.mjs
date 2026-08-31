@@ -5,10 +5,11 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
   {
-    // bridge/ is a separate standalone Node service (ROADMAP_NEXT.md item
-    // 3), not part of this Next.js app — it has its own package.json/
-    // tsconfig and its own lint/build, run from inside that directory.
-    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "bridge/**"],
+    // bridge/ and driver-app/ are separate standalone packages (camera
+    // bridge service, Android driver companion app), not part of this
+    // Next.js app — each has its own package.json/tsconfig and its own
+    // lint/build, run from inside that directory.
+    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "bridge/**", "driver-app/**"],
   },
   ...next,
   ...nextCoreWebVitals,

@@ -1,0 +1,29 @@
+-- Driver companion app, GPS phase (interactive session, 2026-08-31). Schema
+-- only — written and NOT run against the live database, same hard stop as
+-- every other migration in this repo: the user runs it in the Supabase SQL
+-- editor, this file is never executed from here.
+--
+-- Drivers have never authenticated against this system before. `drivers` is
+-- plain master data (driver_code, driver_name, ...) with no link to
+-- auth.users — every existing login belongs to `profiles` (office staff:
+-- super_admin/admin/supervisor/data_admin). This migration adds exactly the
+-- one column needed to let a driver's Supabase Auth session resolve back to
+-- their driver record, and nothing else.
+--
+-- Deliberately NOT a new app_role value and NOT a profiles row. Drivers
+-- aren't staff — shoehorning them into can_read()/can_write_ops()/etc. would
+-- ripple through every existing RLS policy in 0001_init.sql for no benefit.
+-- Every driver-facing route (src/lib/driver-auth.ts, added alongside this
+-- migration) authenticates the caller itself and reads/writes via the
+-- service-role client — the same justification already used for GPS
+-- ingestion (src/lib/gps/ingest.ts) and the camera bridge. RLS on `drivers`
+-- and every other table stays exactly as CLAUDE.md's role table describes;
+-- this column changes no policy.
+--
+-- Provisioning follows the same manual-creation model this project already
+-- uses for staff accounts (CLAUDE.md: "no public sign-up. Do not build
+-- one."): an admin creates an auth.users row per driver (synthetic email,
+-- e.g. <driver_code>@drivers.internal, temp password) in the Supabase
+-- dashboard, then sets this column — never a self-service flow.
+
+alter table drivers add column auth_user_id uuid unique references auth.users(id);
