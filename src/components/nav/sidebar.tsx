@@ -59,6 +59,7 @@ export function Sidebar({
         { href: "/operations", label: t("dailyOperations") },
         { href: "/charging", label: t("charging") },
         { href: "/fleet-location", label: t("fleetLocation") },
+        { href: "/passenger-counts", label: t("passengerCounts") },
       ],
     },
     {
@@ -78,6 +79,7 @@ export function Sidebar({
         { href: "/drivers", label: t("drivers") },
         { href: "/vendors", label: t("vendors") },
         { href: "/routes", label: t("routes") },
+        { href: "/cameras", label: t("cameras") },
       ],
     },
   ];

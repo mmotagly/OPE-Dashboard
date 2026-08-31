@@ -121,10 +121,68 @@ later decision. `CLAUDE.md` section 1's stale "GPS is a later phase, do
 not build for it" note has been updated to reflect that GPS work is now
 in progress, without changing that specific deferral.
 
-### 3-4. General Camera Integration / Counter Cams — not started yet
+### 3. General Camera Integration — built and ready for site config
 
-See `ROADMAP_NEXT.md` for the plan; will update this section as each
-lands.
+**Migration `supabase/migrations/0020_cameras.sql` — written, NOT run**
+against the live database. Adds a device registry (`camera_bridges`,
+`cameras` — a camera points at exactly one vehicle or one station, never
+both) and `camera_clip_requests` (async playback request log, since ISAPI
+recording search is not instant). RLS: the registry is master data
+(everyone reads, supervisor+ writes); clip requests follow the
+"operations" bucket, same as `daily_vehicle_operations`.
+
+**Local bridge/agent — real reference implementation, not a stub**, at
+`bridge/` (a separate standalone Node/TypeScript service — its own
+`package.json`/`tsconfig.json`, excluded from the main app's
+typecheck/lint via `tsconfig.json`'s `exclude` and `eslint.config.mjs`'s
+`ignores`, and never deployed to Vercel). Unlike the GPS adapters, this
+isn't a config-slot stub: Hikvision's ISAPI protocol is a *confirmed*,
+documented HTTP/REST protocol (ROADMAP_NEXT.md item 3), so `bridge/src/
+isapi.ts` is a real, working HTTP Digest-auth client (RFC 7616, hand-
+rolled with Node's built-in `crypto`, no extra auth dependency) calling
+the real `/ISAPI/ContentMgmt/search` (playback) endpoint. Verified: `cd
+bridge && npm install && npm run build && npm run typecheck` all pass,
+and the server was smoke-tested locally — `/health` returns `{ok:true}`
+and every authenticated route correctly 503s with no `BRIDGE_SHARED_SECRET`
+configured (fails closed, never open). The one genuinely open item is
+documented, not glossed over: turning the raw RTSP live stream into
+something a browser can play needs an RTSP→HLS/WebRTC relay that's better
+built against real hardware than guessed at now — see `bridge/README.md`'s
+"what's still a config slot" section for the honest reasoning.
+
+**Main app side**: `src/lib/cameras/bridge-client.ts` (server-only fetch
+wrapper, fails closed without `CAMERA_BRIDGE_SHARED_SECRET`), three proxy
+routes under `/api/cameras/[cameraId]/` (`live`, `playback`, `counts` —
+counts is item 4, see below) — a browser only ever calls these, never the
+bridge or camera directly, per the roadmap's explicit security
+instruction. UI: `/cameras` (device registry, master-data table pattern
+like Routes/Stations — two entities, one page) under the Fleet nav group.
+A camera's drawer shows an honest "requested through the bridge, never
+direct" note rather than a fake live-view player.
+
+### 4. Counter Cams — built on the same bridge, ready for site config
+
+Shares migration 0020 (`bus_passenger_counts` — raw enter/exit counts per
+camera/window, `operation_id` deliberately left unresolved by any trigger:
+matching a raw time window to one of a vehicle's two shifts needs a
+shift-time policy that doesn't exist yet, since `shift_type` is just a
+Morning/Night lookup with no time boundaries — a real decision for once
+real counting data exists, not a gap papered over with a guess). Bridge
+reference implementation includes the two real, named ISAPI endpoints
+ROADMAP_NEXT.md item 4 already confirmed: `searchPassengerCounts()` calls
+`/ISAPI/Event/channels/{id}/SearchRegionTargetNumberCounting`;
+`openAlertStream()` opens `/ISAPI/Event/notification/alertStream` for the
+real-time push variant (left as a raw `Response` for a future consumer to
+frame, rather than guessing at a streaming shape nobody's tested).
+`POST /api/cameras/[cameraId]/counts` is the on-demand path (ask the
+bridge for a window's counts right now); a scheduled version (auto-poll
+per shift) is a small follow-up once there's a real camera/cadence to
+tune it against. UI: `/passenger-counts` — read-only, same honest-empty
+pattern as `/fleet-location`.
+
+**Explicitly not built**: an RTSP-to-HLS live-view relay (documented as
+the one open item in `bridge/README.md`) and any automatic reconciliation
+of a passenger-count window to a specific operations shift.
 
 ---
 

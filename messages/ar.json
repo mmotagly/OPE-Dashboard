@@ -37,6 +37,7 @@
     "dailyOperations": "التشغيل اليومي",
     "charging": "جلسات الشحن",
     "fleetLocation": "موقع الأسطول",
+    "passengerCounts": "عدد الركاب",
     "maintenance": "الصيانة",
     "rfrs": "طلبات الإصلاح",
     "workOrders": "أوامر العمل",
@@ -46,6 +47,7 @@
     "drivers": "السائقون",
     "vendors": "الموردون",
     "routes": "المسارات والمحطات",
+    "cameras": "الكاميرات",
     "finance": "المالية",
     "dashboard": "لوحة المعلومات",
     "scorecards": "بطاقات الأداء",
@@ -491,6 +493,58 @@
     },
     "goToRequests": "الانتقال إلى الطلبات"
   },
+  "cameras": {
+    "camerasTitle": "الكاميرات",
+    "bridgesTitle": "وسطاء الكاميرات",
+    "camerasTab": "الكاميرات",
+    "bridgesTab": "الوسطاء",
+    "newCamera": "كاميرا جديدة",
+    "editCamera": "تعديل الكاميرا",
+    "newBridge": "وسيط جديد",
+    "editBridge": "تعديل الوسيط",
+    "record": "السجل",
+    "choose": "اختر…",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "live": "بث مباشر",
+    "counting": "عدّ الركاب",
+    "locationVehicle": "مركبة (كاميرا داخلية)",
+    "locationStation": "محطة (ثابتة)",
+    "liveAndPlayback": "البث المباشر والتشغيل",
+    "bridgeProxyHint": "يتم طلب البث المباشر والتشغيل عبر وسيط هذه الكاميرا، ولا يتم الاتصال بها مباشرة من المتصفح أبدًا. راجع bridge/README.md لمعرفة ما تم بناؤه وما لا يزال يحتاج إلى إعداد فعلي.",
+    "neverSeen": "لم يتم التحقق منه بعد",
+    "noSelection": "لم يتم اختيار سجل",
+    "noSelectionHint": "اختر صفًا لعرض السجل الكامل.",
+    "notFound": "هذا السجل لم يعد موجودًا",
+    "notFoundHint": "ربما تمت إزالته منذ فتح هذا الرابط.",
+    "noCameras": "لا توجد كاميرات",
+    "noBridges": "لا يوجد وسطاء كاميرات",
+    "field": {
+      "cameraCode": "رمز الكاميرا",
+      "bridgeCode": "رمز الوسيط",
+      "siteName": "اسم الموقع",
+      "baseUrl": "الرابط الأساسي",
+      "bridge": "الوسيط",
+      "location": "الموقع",
+      "locationType": "نوع الموقع",
+      "vehicle": "المركبة",
+      "station": "المحطة",
+      "isapiChannel": "قناة ISAPI",
+      "capabilities": "القدرات",
+      "supportsLive": "يدعم البث المباشر",
+      "supportsCounting": "يدعم عدّ الركاب",
+      "isActive": "نشط",
+      "cameraCount": "عدد الكاميرات",
+      "lastSeen": "آخر تحقق",
+      "status": "الحالة"
+    },
+    "baseUrlHint": "يتم الوصول إليه عبر VPN/نفق الموقع — أبدًا عبر توجيه منفذ عام إلى الوسيط أو الكاميرات.",
+    "error": {
+      "required": "مطلوب",
+      "number": "أدخل رقمًا",
+      "negative": "لا يمكن أن يكون سالبًا"
+    }
+  },
   "fleetLocation": {
     "title": "موقع الأسطول",
     "reporting": "{count} من {total} مركبة ترسل بياناتها",
@@ -505,6 +559,19 @@
       "speed": "السرعة",
       "ignition": "المحرك",
       "lastSeen": "آخر ظهور"
+    }
+  },
+  "passengerCounts": {
+    "title": "عدد الركاب",
+    "noDataHint": "لا توجد بيانات من كاميرات العدّ بعد — كل عدد يأتي من كاميرا متصلة بالوسيط ومفعّل بها العدّ.",
+    "noCounts": "لا توجد أعداد مسجلة",
+    "field": {
+      "vehicle": "المركبة",
+      "camera": "الكاميرا",
+      "window": "الفترة",
+      "enter": "دخول",
+      "exit": "خروج",
+      "net": "الصافي"
     }
   },
   "charging": {

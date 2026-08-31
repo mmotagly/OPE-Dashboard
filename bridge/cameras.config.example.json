@@ -1,0 +1,12 @@
+{
+  "cameras": [
+    {
+      "camera_code": "example-camera-code-matching-the-cameras-table",
+      "ip": "192.168.1.101",
+      "port": 80,
+      "isapi_username": "admin",
+      "isapi_password": "REPLACE_ME",
+      "channel": 1
+    }
+  ]
+}

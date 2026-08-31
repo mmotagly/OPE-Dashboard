@@ -19,8 +19,8 @@ as a plug-in step.**
 |---|---|---|
 | 1 | CSV Import/Export | ✅ Built (Vehicles/Drivers/Vendors/Routes) — see STATUS.md |
 | 2 | GPS Integration | ✅ Built, blocked on provider config — see STATUS.md |
-| 3 | General Camera Integration | Not started |
-| 4 | Counter Cams | Not started |
+| 3 | General Camera Integration | ✅ Built, blocked on site networking/hardware — see STATUS.md |
+| 4 | Counter Cams | ✅ Built, blocked on site networking/hardware — see STATUS.md |
 
 ---
 
@@ -136,7 +136,16 @@ This means camera integration needs a **local bridge/agent** — a small always-
 
 ### BUILD NOTES (added during implementation, 2026-09-01)
 
-See `STATUS.md`.
+Built: schema (`camera_bridges`, `cameras`, `camera_clip_requests`,
+migration 0020, not yet run), a real local-bridge reference
+implementation at `bridge/` (own package, ISAPI digest-auth client, real
+`/ISAPI/ContentMgmt/search` playback call — this one is real code, not a
+stub, since ISAPI is a confirmed protocol unlike the GPS providers), three
+backend proxy routes under `/api/cameras/[cameraId]/`, and a `/cameras`
+device-registry UI. Not built, and documented as the one real open item:
+an RTSP-to-HLS/WebRTC relay for browser live view — see
+`bridge/README.md`. Full detail in `STATUS.md`'s "3. General Camera
+Integration" section.
 
 ---
 
@@ -160,7 +169,14 @@ This is genuinely simpler than general camera video — it's just structured cou
 
 ### BUILD NOTES (added during implementation, 2026-09-01)
 
-See `STATUS.md`.
+Built on item 3's bridge, as planned: `bus_passenger_counts` table (0020),
+the bridge's `searchPassengerCounts()`/`openAlertStream()` hitting the two
+real named ISAPI endpoints above, `POST /api/cameras/[cameraId]/counts`,
+and a read-only `/passenger-counts` UI. Not built: automatic reconciliation
+of a count window to a specific operations shift (no shift-time policy
+exists yet to match against) and scheduled/automatic polling (only the
+on-demand path exists). Full detail in `STATUS.md`'s "4. Counter Cams"
+section.
 
 ---
 

@@ -1,0 +1,23 @@
+{
+  "name": "pyramids-camera-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local bridge/agent that talks to on-site Hikvision cameras over ISAPI/RTSP and exposes a small authenticated HTTP API for the main Pyramids Shuttle app to call. Runs on a computer physically on the depot's local network — never deployed to Vercel. See README.md.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.9",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}

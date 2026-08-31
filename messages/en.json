@@ -37,6 +37,7 @@
     "dailyOperations": "Daily operations",
     "charging": "Charging sessions",
     "fleetLocation": "Fleet location",
+    "passengerCounts": "Passenger counts",
     "maintenance": "Maintenance",
     "rfrs": "RFRs",
     "workOrders": "Work orders",
@@ -46,6 +47,7 @@
     "drivers": "Drivers",
     "vendors": "Vendors",
     "routes": "Routes & stations",
+    "cameras": "Cameras",
     "finance": "Finance",
     "dashboard": "Dashboard",
     "scorecards": "Scorecards",
@@ -491,6 +493,58 @@
     },
     "goToRequests": "Go to requests"
   },
+  "cameras": {
+    "camerasTitle": "Cameras",
+    "bridgesTitle": "Camera bridges",
+    "camerasTab": "Cameras",
+    "bridgesTab": "Bridges",
+    "newCamera": "New camera",
+    "editCamera": "Edit camera",
+    "newBridge": "New bridge",
+    "editBridge": "Edit bridge",
+    "record": "Record",
+    "choose": "Choose…",
+    "active": "Active",
+    "inactive": "Inactive",
+    "live": "Live view",
+    "counting": "Counting",
+    "locationVehicle": "Vehicle (dashcam)",
+    "locationStation": "Station (fixed)",
+    "liveAndPlayback": "Live & playback",
+    "bridgeProxyHint": "Live view and playback are requested through this camera's bridge, never connected to directly from the browser. See bridge/README.md for what's built and what's still a config slot.",
+    "neverSeen": "Never checked in",
+    "noSelection": "No record selected",
+    "noSelectionHint": "Pick a row to see the full record.",
+    "notFound": "That record no longer exists",
+    "notFoundHint": "It may have been removed since this link was opened.",
+    "noCameras": "No cameras",
+    "noBridges": "No camera bridges",
+    "field": {
+      "cameraCode": "Camera code",
+      "bridgeCode": "Bridge code",
+      "siteName": "Site name",
+      "baseUrl": "Base URL",
+      "bridge": "Bridge",
+      "location": "Location",
+      "locationType": "Location type",
+      "vehicle": "Vehicle",
+      "station": "Station",
+      "isapiChannel": "ISAPI channel",
+      "capabilities": "Capabilities",
+      "supportsLive": "Supports live view",
+      "supportsCounting": "Supports passenger counting",
+      "isActive": "Active",
+      "cameraCount": "Cameras",
+      "lastSeen": "Last check-in",
+      "status": "Status"
+    },
+    "baseUrlHint": "Reached through the site's VPN/tunnel — never a public port-forward to the bridge or the cameras.",
+    "error": {
+      "required": "Required",
+      "number": "Enter a number",
+      "negative": "Cannot be negative"
+    }
+  },
   "fleetLocation": {
     "title": "Fleet location",
     "reporting": "{count} of {total} vehicles reporting",
@@ -505,6 +559,19 @@
       "speed": "Speed",
       "ignition": "Ignition",
       "lastSeen": "Last seen"
+    }
+  },
+  "passengerCounts": {
+    "title": "Passenger counts",
+    "noDataHint": "No counter-cam data yet — every count comes from a bridge-connected camera with counting enabled.",
+    "noCounts": "No counts recorded",
+    "field": {
+      "vehicle": "Vehicle",
+      "camera": "Camera",
+      "window": "Window",
+      "enter": "Enter",
+      "exit": "Exit",
+      "net": "Net"
     }
   },
   "charging": {
