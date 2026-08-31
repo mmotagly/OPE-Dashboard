@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { guardMaster, isDenied } from "@/lib/master";
-import { dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
-import { parseVehicleForm, type VehicleInput } from "./schema";
+import { dbErrorText, dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
+import { codeMapFromLookups, importFromFormData, loadCodeMap, type ImportFormState } from "@/lib/csv-import";
+import { loadLookups } from "@/lib/lookups";
+import { vehicleSchema, parseVehicleForm, type VehicleInput } from "./schema";
 
 /**
  * Vehicle master data. Supervisor and above only — `guardMaster` rejects
@@ -105,4 +107,71 @@ export async function buildPmSchedule(
 
   revalidatePath("/[locale]/vehicles", "page");
   return { formError: null, fieldErrors: {} };
+}
+
+/**
+ * CSV import (roadmap: CSV Import/Export). Runs every row through the same
+ * `vehicleSchema` + `toRow` the manual form uses — only the FK resolution
+ * (code -> id, from the human-readable columns a spreadsheet can hold) is
+ * import-specific.
+ */
+export async function importVehicles(
+  _prev: ImportFormState,
+  formData: FormData,
+): Promise<ImportFormState> {
+  const gate = await guardMaster();
+  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", report: null };
+
+  const supabase = await createClient();
+  const [vendorCodes, driverCodes, vehicleTypes, fuelTypes, statuses] = await Promise.all([
+    loadCodeMap(supabase, "vendors", "vendor_code"),
+    loadCodeMap(supabase, "drivers", "driver_code"),
+    loadLookups("vehicle_type").then(codeMapFromLookups),
+    loadLookups("fuel_type").then(codeMapFromLookups),
+    loadLookups("generic_status").then(codeMapFromLookups),
+  ]);
+
+  const resolve = (codes: Map<string, string>, code: string, field: string) => {
+    if (!code) return { id: null as string | null, error: null as string | null };
+    const id = codes.get(code);
+    return id
+      ? { id, error: null }
+      : { id: null, error: `Unknown ${field} "${code}"` };
+  };
+
+  const result = await importFromFormData(formData, async (record) => {
+    const vendor = resolve(vendorCodes, record.vendor_code, "vendor_code");
+    if (vendor.error) return vendor.error;
+    const driver = resolve(driverCodes, record.default_driver_code, "default_driver_code");
+    if (driver.error) return driver.error;
+    const type = resolve(vehicleTypes, record.vehicle_type_code, "vehicle_type_code");
+    if (type.error) return type.error;
+    const fuel = resolve(fuelTypes, record.fuel_type_code, "fuel_type_code");
+    if (fuel.error) return fuel.error;
+    const status = resolve(statuses, record.status_code, "status_code");
+    if (status.error) return status.error;
+
+    const parsed = vehicleSchema.safeParse({
+      vehicleCode: record.vehicle_code,
+      plateNumber: record.plate_number,
+      vendorId: vendor.id ?? "",
+      vehicleTypeId: type.id ?? "",
+      fuelTypeId: fuel.id ?? "",
+      batteryCapacityKwh: record.battery_capacity_kwh,
+      licenseExpiryDate: record.license_expiry_date,
+      defaultDriverId: driver.id ?? "",
+      statusId: status.id ?? "",
+    });
+    if (!parsed.success) {
+      return parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    }
+
+    const { error } = await supabase.from("vehicles").insert(toRow(parsed.data));
+    return error ? dbErrorText(error) : null;
+  });
+
+  if (result.formError) return { formError: result.formError, report: null };
+
+  revalidatePath("/[locale]/vehicles", "page");
+  return { formError: null, report: result.report };
 }

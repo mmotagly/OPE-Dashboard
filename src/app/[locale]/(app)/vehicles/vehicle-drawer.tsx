@@ -7,7 +7,9 @@ import { KmMeter } from "@/components/ui/km-meter";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
+import { CsvImportForm } from "@/components/ui/csv-import-form";
 import { expiryState, expiryTone, km, pmTone, type PmStatus } from "@/lib/format";
+import { importVehicles } from "./actions";
 import {
   EMPTY_VEHICLE_FORM,
   loadLatestOperation,
@@ -48,7 +50,7 @@ export async function VehicleDrawer({
   closeHref,
   canEdit,
 }: {
-  mode: "view" | "new" | "edit";
+  mode: "view" | "new" | "edit" | "import";
   id?: string;
   closeHref: CloseHref;
   canEdit: boolean;
@@ -57,6 +59,20 @@ export async function VehicleDrawer({
   const tCommon = await getTranslations("common");
   const tVehicle = await getTranslations("vehicle");
   const tStatus = await getTranslations("status");
+
+  if (mode === "import") {
+    return (
+      <Drawer
+        code={`${tCommon("importCsv")} · ${t("vehiclesTitle")}`}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <div className="p-4">
+          <CsvImportForm action={importVehicles} templateHref="/api/import-template/vehicles" />
+        </div>
+      </Drawer>
+    );
+  }
 
   if (mode === "new" || mode === "edit") {
     const [options, vehicle] = await Promise.all([

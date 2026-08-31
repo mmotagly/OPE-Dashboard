@@ -62,3 +62,21 @@ export const VENDOR_FIELDS = [
 
 export const parseVendorForm = (formData: FormData) =>
   vendorSchema.safeParse(readFields(formData, VENDOR_FIELDS));
+
+/** CSV import/export columns (roadmap: CSV Import/Export). See vehicles/schema.ts.
+ * Invoicing terms are included since they're vendor master data, not derived. */
+export const VENDOR_IMPORT_COLUMNS = [
+  "vendor_code",
+  "vendor_name",
+  "vendor_type_code",
+  "is_company",
+  "contact_person",
+  "mobile_number",
+  "email_address",
+  "billing_basis",
+  "rate_amount",
+  "apply_kpi",
+  "currency",
+  "billing_notes",
+  "status_code",
+] as const;

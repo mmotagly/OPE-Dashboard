@@ -5,7 +5,9 @@ import { Section } from "@/components/ui/panel";
 import { KeyValue, Row } from "@/components/ui/key-value";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
+import { CsvImportForm } from "@/components/ui/csv-import-form";
 import { km } from "@/lib/format";
+import { importRoutes } from "./actions";
 import {
   EMPTY_ROUTE_FORM,
   EMPTY_STATION_FORM,
@@ -35,7 +37,7 @@ export async function RouteDrawer({
   canEdit,
 }: {
   entity: RouteEntity;
-  mode: "view" | "new" | "edit";
+  mode: "view" | "new" | "edit" | "import";
   id?: string;
   closeHref: CloseHref;
   canEdit: boolean;
@@ -44,6 +46,21 @@ export async function RouteDrawer({
   const tCommon = await getTranslations("common");
 
   const isStations = entity === "stations";
+
+  if (mode === "import") {
+    return (
+      <Drawer
+        code={`${tCommon("importCsv")} · ${t("routesTitle")}`}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <div className="p-4">
+          <CsvImportForm action={importRoutes} templateHref="/api/import-template/routes" />
+        </div>
+      </Drawer>
+    );
+  }
+
   const options = await loadRouteOptions();
 
   if (mode === "new" || mode === "edit") {

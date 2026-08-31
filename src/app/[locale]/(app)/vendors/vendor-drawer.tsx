@@ -6,6 +6,7 @@ import { KeyValue, Row } from "@/components/ui/key-value";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
+import { CsvImportForm } from "@/components/ui/csv-import-form";
 import { money } from "@/lib/format";
 import {
   EMPTY_VENDOR_FORM,
@@ -14,6 +15,7 @@ import {
   toVendorFormValues,
 } from "./queries";
 import { VendorForm } from "./vendor-form";
+import { importVendors } from "./actions";
 
 export async function VendorDrawer({
   mode,
@@ -21,7 +23,7 @@ export async function VendorDrawer({
   closeHref,
   canEdit,
 }: {
-  mode: "view" | "new" | "edit";
+  mode: "view" | "new" | "edit" | "import";
   id?: string;
   closeHref: CloseHref;
   canEdit: boolean;
@@ -29,6 +31,20 @@ export async function VendorDrawer({
   const t = await getTranslations("master");
   const tCommon = await getTranslations("common");
   const tFinance = await getTranslations("finance");
+
+  if (mode === "import") {
+    return (
+      <Drawer
+        code={`${tCommon("importCsv")} · ${t("vendorsTitle")}`}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <div className="p-4">
+          <CsvImportForm action={importVendors} templateHref="/api/import-template/vendors" />
+        </div>
+      </Drawer>
+    );
+  }
 
   if (mode === "new" || mode === "edit") {
     const [options, vendor] = await Promise.all([

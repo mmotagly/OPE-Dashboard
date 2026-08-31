@@ -15,7 +15,18 @@
     "empty": "لا توجد بيانات بعد",
     "emptyHint": "ستظهر السجلات فور إدخالها من الفريق.",
     "exportCsv": "تصدير CSV",
-    "printPdf": "طباعة / حفظ PDF"
+    "printPdf": "طباعة / حفظ PDF",
+    "importCsv": "استيراد CSV"
+  },
+  "csvImport": {
+    "downloadTemplate": "تنزيل القالب",
+    "chooseFile": "اختر ملف CSV",
+    "submit": "استيراد",
+    "uploading": "جارٍ الاستيراد…",
+    "noFile": "اختر ملف CSV أولاً.",
+    "summary": "تم استيراد {succeeded} من {total} صفوف",
+    "rowError": "الصف {row}: {message}",
+    "allSucceeded": "تم استيراد جميع الصفوف بنجاح."
   },
   "nav": {
     "overview": "نظرة عامة",

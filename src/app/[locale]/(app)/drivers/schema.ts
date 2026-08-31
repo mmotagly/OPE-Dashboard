@@ -46,3 +46,19 @@ export const DRIVER_FIELDS = [
 
 export const parseDriverForm = (formData: FormData) =>
   driverSchema.safeParse(readFields(formData, DRIVER_FIELDS));
+
+/** CSV import/export columns (roadmap: CSV Import/Export). See vehicles/schema.ts. */
+export const DRIVER_IMPORT_COLUMNS = [
+  "driver_code",
+  "driver_name",
+  "mobile_number",
+  "hiring_date",
+  "license_number",
+  "license_grade_code",
+  "license_expiry_date",
+  "has_tourism_id",
+  "tourism_id_issuing_company",
+  "tourism_id_expiry_date",
+  "vendor_code",
+  "status_code",
+] as const;

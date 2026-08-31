@@ -6,6 +6,7 @@ import { KeyValue, Row } from "@/components/ui/key-value";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
+import { CsvImportForm } from "@/components/ui/csv-import-form";
 import { expiryState, expiryTone, type ExpiryState } from "@/lib/format";
 import {
   EMPTY_DRIVER_FORM,
@@ -14,6 +15,7 @@ import {
   toDriverFormValues,
 } from "./queries";
 import { DriverForm } from "./driver-form";
+import { importDrivers } from "./actions";
 
 export async function DriverDrawer({
   mode,
@@ -21,13 +23,27 @@ export async function DriverDrawer({
   closeHref,
   canEdit,
 }: {
-  mode: "view" | "new" | "edit";
+  mode: "view" | "new" | "edit" | "import";
   id?: string;
   closeHref: CloseHref;
   canEdit: boolean;
 }) {
   const t = await getTranslations("master");
   const tCommon = await getTranslations("common");
+
+  if (mode === "import") {
+    return (
+      <Drawer
+        code={`${tCommon("importCsv")} · ${t("driversTitle")}`}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <div className="p-4">
+          <CsvImportForm action={importDrivers} templateHref="/api/import-template/drivers" />
+        </div>
+      </Drawer>
+    );
+  }
 
   if (mode === "new" || mode === "edit") {
     const [options, driver] = await Promise.all([

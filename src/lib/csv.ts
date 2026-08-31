@@ -33,3 +33,73 @@ export function csvResponse(csv: string, filename: string): Response {
     },
   });
 }
+
+/**
+ * RFC4180-ish parser for the import side (roadmap: CSV Import/Export).
+ * Handles quoted fields (embedded commas/newlines, doubled `""` for a
+ * literal quote), CRLF or LF line endings, and a missing trailing newline.
+ * Deliberately not a streaming parser — imports here are hundreds of rows,
+ * not the file sizes that would need one.
+ */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  let i = 0;
+  const n = text.length;
+
+  while (i < n) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i += 2;
+          continue;
+        }
+        inQuotes = false;
+        i++;
+        continue;
+      }
+      field += c;
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      inQuotes = true;
+      i++;
+      continue;
+    }
+    if (c === ",") {
+      row.push(field);
+      field = "";
+      i++;
+      continue;
+    }
+    if (c === "\r") {
+      i++;
+      continue;
+    }
+    if (c === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      i++;
+      continue;
+    }
+    field += c;
+    i++;
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  // A UTF-8 BOM (written by toCsv, and by Excel's own "CSV UTF-8" export)
+  // lands as a literal character on the first cell if not stripped.
+  if (rows.length > 0 && rows[0].length > 0) {
+    rows[0][0] = rows[0][0].replace(/^﻿/, "");
+  }
+  return rows;
+}

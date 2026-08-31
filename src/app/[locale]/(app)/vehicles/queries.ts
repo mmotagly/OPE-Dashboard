@@ -8,10 +8,13 @@ export type VehicleRow = {
   plateNumber: string;
   vendorId: string;
   vendorName: string | null;
+  vendorCode: string | null;
   vehicleTypeId: string | null;
   vehicleTypeLabel: string | null;
+  vehicleTypeCode: string | null;
   fuelTypeId: string | null;
   fuelTypeLabel: string | null;
+  fuelTypeCode: string | null;
   batteryCapacityKwh: number | null;
   licenseExpiryDate: string | null;
   defaultDriverId: string | null;
@@ -67,7 +70,7 @@ const SELECT = `
   current_odometer_km,
   current_odometer_date,
   status_id,
-  vendors ( vendor_name ),
+  vendors ( vendor_code, vendor_name ),
   drivers ( driver_code, driver_name )
 `;
 
@@ -83,13 +86,20 @@ function toRow(v: any, lookups: Map<string, LookupOption>): VehicleRow {
     plateNumber: v.plate_number,
     vendorId: v.vendor_id,
     vendorName: vendor?.vendor_name ?? null,
+    vendorCode: vendor?.vendor_code ?? null,
     vehicleTypeId: v.vehicle_type_id,
     vehicleTypeLabel: v.vehicle_type_id
       ? (lookups.get(v.vehicle_type_id)?.labelEn ?? null)
       : null,
+    vehicleTypeCode: v.vehicle_type_id
+      ? (lookups.get(v.vehicle_type_id)?.code ?? null)
+      : null,
     fuelTypeId: v.fuel_type_id,
     fuelTypeLabel: v.fuel_type_id
       ? (lookups.get(v.fuel_type_id)?.labelEn ?? null)
+      : null,
+    fuelTypeCode: v.fuel_type_id
+      ? (lookups.get(v.fuel_type_id)?.code ?? null)
       : null,
     batteryCapacityKwh: v.battery_capacity_kwh,
     licenseExpiryDate: v.license_expiry_date,

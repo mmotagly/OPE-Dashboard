@@ -10,6 +10,7 @@ export type DriverRow = {
   licenseNumber: string | null;
   licenseGradeId: string | null;
   licenseGradeLabel: string | null;
+  licenseGradeCode: string | null;
   licenseExpiryDate: string | null;
   hasTourismId: boolean;
   tourismIdIssuingCompany: string | null;
@@ -17,6 +18,7 @@ export type DriverRow = {
   /** null means a company driver, not a missing value. */
   vendorId: string | null;
   vendorName: string | null;
+  vendorCode: string | null;
   statusId: string | null;
   statusCode: string | null;
   statusLabel: string | null;
@@ -57,7 +59,7 @@ const SELECT = `
   tourism_id_expiry_date,
   vendor_id,
   status_id,
-  vendors ( vendor_name )
+  vendors ( vendor_code, vendor_name )
 `;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -76,12 +78,16 @@ function toRow(d: any, lookups: Map<string, LookupOption>): DriverRow {
     licenseGradeLabel: d.license_grade_id
       ? (lookups.get(d.license_grade_id)?.labelEn ?? null)
       : null,
+    licenseGradeCode: d.license_grade_id
+      ? (lookups.get(d.license_grade_id)?.code ?? null)
+      : null,
     licenseExpiryDate: d.license_expiry_date,
     hasTourismId: d.has_tourism_id,
     tourismIdIssuingCompany: d.tourism_id_issuing_company,
     tourismIdExpiryDate: d.tourism_id_expiry_date,
     vendorId: d.vendor_id,
     vendorName: vendor?.vendor_name ?? null,
+    vendorCode: vendor?.vendor_code ?? null,
     statusId: d.status_id,
     statusCode: status?.code ?? null,
     statusLabel: status?.labelEn ?? null,

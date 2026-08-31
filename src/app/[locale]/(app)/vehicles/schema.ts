@@ -43,3 +43,21 @@ export const VEHICLE_FIELDS = [
 
 export const parseVehicleForm = (formData: FormData) =>
   vehicleSchema.safeParse(readFields(formData, VEHICLE_FIELDS));
+
+/**
+ * CSV import/export columns (roadmap: CSV Import/Export). `_code` columns
+ * are the human-readable FK references a spreadsheet can actually contain —
+ * resolved to ids by the import action before validation, and reused
+ * verbatim as the export header order so a downloaded file re-imports.
+ */
+export const VEHICLE_IMPORT_COLUMNS = [
+  "vehicle_code",
+  "plate_number",
+  "vendor_code",
+  "vehicle_type_code",
+  "fuel_type_code",
+  "battery_capacity_kwh",
+  "license_expiry_date",
+  "default_driver_code",
+  "status_code",
+] as const;

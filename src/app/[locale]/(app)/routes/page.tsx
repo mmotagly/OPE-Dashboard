@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
 import { canWriteMaster, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { ExportCsvLink } from "@/components/ui/export-csv-link";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
@@ -43,6 +44,7 @@ export default async function RoutesPage({
 
   const t = await getTranslations("master");
   const tNav = await getTranslations("nav");
+  const tCommon = await getTranslations("common");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -93,9 +95,11 @@ export default async function RoutesPage({
       ? "new"
       : canEdit && mode === "edit" && id
         ? "edit"
-        : id
-          ? "view"
-          : null;
+        : canEdit && mode === "import" && !isStations
+          ? "import"
+          : id
+            ? "view"
+            : null;
 
   const newLabel = isStations ? t("newStation") : t("newRoute");
 
@@ -107,12 +111,25 @@ export default async function RoutesPage({
           title={isStations ? t("stationsTitle") : t("routesTitle")}
           actions={
             canEdit ? (
-              <Link
-                href={{ pathname: "/routes", query: { ...query, mode: "new" } }}
-                className={newButton}
-              >
-                {newLabel}
-              </Link>
+              <>
+                {!isStations && (
+                  <>
+                    <ExportCsvLink href="/api/export/routes" label={tCommon("exportCsv")} />
+                    <Link
+                      href={{ pathname: "/routes", query: { ...query, mode: "import" } }}
+                      className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
+                    >
+                      {tCommon("importCsv")}
+                    </Link>
+                  </>
+                )}
+                <Link
+                  href={{ pathname: "/routes", query: { ...query, mode: "new" } }}
+                  className={newButton}
+                >
+                  {newLabel}
+                </Link>
+              </>
             ) : undefined
           }
         />

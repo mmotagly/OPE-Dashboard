@@ -5,7 +5,77 @@ snapshot) this file is meant to be updated as work lands, so any session on
 any machine can `git pull` and know exactly where things stand. Read
 `CLAUDE.md` first for domain rules; this file is state, not spec.
 
-Last updated: 2026-08-31.
+Last updated: 2026-09-01.
+
+---
+
+## Autonomous overnight session (2026-09-01, user away ~6h, pre-authorized)
+
+Working through `ROADMAP_NEXT.md`'s four items in priority order: CSV
+Import/Export, GPS Integration, General Camera Integration, Counter Cams.
+No live-DB migrations run this session (hard stop, same as every prior
+autonomous session) — new schema is written as numbered migration files and
+flagged pending until the user runs them.
+
+### 1. CSV Import/Export — built and ready (Vehicles, Drivers, Vendors, Routes)
+
+Shared engine: `src/lib/csv.ts` (`parseCsv`, RFC4180-ish, handles quoted
+fields/CRLF/BOM) and `src/lib/csv-import.ts` (`csvTextToRecords`,
+`loadCodeMap`, `codeMapFromLookups`, `runImport`, `importFromFormData`) — one
+generic engine every module's import action calls into, never a parallel
+per-module parser. Shared UI: `src/components/ui/csv-import-form.tsx`
+(upload + submit + per-row error report, `useActionState`-driven like every
+other form in the app).
+
+**Shipped, full round-trip (export -> edit in Excel -> import)**:
+- **Vehicles** — `importVehicles` in `vehicles/actions.ts`, resolves
+  `vendor_code` / `vehicle_type_code` / `fuel_type_code` /
+  `default_driver_code` / `status_code` to ids, then runs the *same*
+  `vehicleSchema` + `toRow()` the manual form uses. Export/template routes:
+  `/api/export/vehicles`, `/api/import-template/vehicles`.
+- **Drivers** — `importDrivers`, resolves `license_grade_code` /
+  `vendor_code` / `status_code`. Same routes pattern under `/drivers`.
+- **Vendors** — `importVendors`, resolves `vendor_type_code` /
+  `status_code`; a row that would create a second `is_company` vendor fails
+  just that row (same rule the manual form enforces). Same routes pattern
+  under `/vendors`.
+- **Routes** — `importRoutes`, resolves `status_code`. **Routes only, not
+  stations or the route_stations stop list** — deliberately out of scope,
+  see below.
+
+Each module's UI: "Export CSV" (plain download link, reuses the existing
+`ExportCsvLink` component from the Operations/Invoices/Scorecards export
+work) and "Import CSV" (`?mode=import`, opens the same drawer as
+create/edit, URL-driven per CLAUDE.md's form rule) next to the page's
+existing "New" button. Import is row-level best-effort: a bad row is
+skipped and reported (`Row 14: Unknown vendor_code "X"`), valid rows still
+commit — matching the roadmap's explicit "row-level, not batch-level
+rejection" requirement.
+
+**Deliberately not built — scope judgment calls, not oversights:**
+- **Stations / route_stations (the stop list)** — sequence-numbered and
+  relational (`unique(route_id, sequence_number)`, renumbering logic in
+  `editRouteStations`), a poor fit for flat-row CSV. The existing
+  drag-style stop editor stays the only way to edit a route's stops.
+- **Daily Operations, RFRs, Work Orders, Periodic Maintenance, Invoices,
+  Scorecards** — every one of these is trigger-driven, multi-step, or
+  workflow-gated (stage machines, auto-filled odometer/driver, KPI point
+  caps, invoice generation functions) in a way flat-row import would fight
+  rather than reuse. Operations, Invoices, and Scorecards already have
+  CSV **export** (shipped earlier session); import for these was judged
+  not to fit the roadmap's own "reuse existing triggers, never a parallel
+  validation path" instruction — a CSV row can't drive a stage transition
+  or express "the trigger should auto-fill this." If bulk creation is
+  wanted for these later, the existing bulk-planning pattern
+  (`operations/bulk-plan-form.tsx`) is the closer-fitting model than CSV.
+- Large-file/background-job chunking (the roadmap's flagged open question)
+  wasn't needed — all four shipped modules are small master-data tables
+  (tens to low hundreds of rows), well inside one server-action request.
+
+### 2-4. GPS / General Camera / Counter Cams — not started yet
+
+See `ROADMAP_NEXT.md` for the plan; will update this section as each
+lands.
 
 ---
 

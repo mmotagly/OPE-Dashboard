@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import { guardMaster, isDenied } from "@/lib/master";
-import { dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
+import { dbErrorText, dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
+import { codeMapFromLookups, importFromFormData, type ImportFormState } from "@/lib/csv-import";
+import { loadLookups } from "@/lib/lookups";
 import {
+  routeSchema,
   parseRouteForm,
   parseRouteStationsForm,
   parseStationForm,
@@ -85,6 +88,47 @@ export async function updateRoute(
     href: { pathname: "/routes", query: { selected: id } },
     locale: gate.locale,
   });
+}
+
+/** CSV import (roadmap: CSV Import/Export). See vehicles/actions.ts's importVehicles. */
+export async function importRoutes(
+  _prev: ImportFormState,
+  formData: FormData,
+): Promise<ImportFormState> {
+  const gate = await guardMaster();
+  if (isDenied(gate)) return { formError: gate.formError ?? "forbidden", report: null };
+
+  const supabase = await createClient();
+  const statuses = codeMapFromLookups(await loadLookups("generic_status"));
+
+  const result = await importFromFormData(formData, async (record) => {
+    let statusId: string | null = null;
+    if (record.status_code) {
+      statusId = statuses.get(record.status_code) ?? null;
+      if (!statusId) return `Unknown status_code "${record.status_code}"`;
+    }
+
+    const parsed = routeSchema.safeParse({
+      routeCode: record.route_code,
+      routeName: record.route_name,
+      routeDistanceKm: record.route_distance_km,
+      numberOfStations: record.number_of_stations,
+      standardLegTime: record.standard_leg_time,
+      standardRoundTripTime: record.standard_round_trip_time,
+      statusId: statusId ?? "",
+    });
+    if (!parsed.success) {
+      return parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    }
+
+    const { error } = await supabase.from("routes").insert(routeRow(parsed.data));
+    return error ? dbErrorText(error) : null;
+  });
+
+  if (result.formError) return { formError: result.formError, report: null };
+
+  revalidatePath("/[locale]/routes", "page");
+  return { formError: null, report: result.report };
 }
 
 /* ---------------- stations ---------------- */

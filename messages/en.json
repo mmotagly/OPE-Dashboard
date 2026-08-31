@@ -15,7 +15,18 @@
     "empty": "Nothing here yet",
     "emptyHint": "Records will appear as the team enters them.",
     "exportCsv": "Export CSV",
-    "printPdf": "Print / Save PDF"
+    "printPdf": "Print / Save PDF",
+    "importCsv": "Import CSV"
+  },
+  "csvImport": {
+    "downloadTemplate": "Download template",
+    "chooseFile": "Choose CSV file",
+    "submit": "Import",
+    "uploading": "Importing…",
+    "noFile": "Choose a CSV file first.",
+    "summary": "{succeeded} of {total} rows imported",
+    "rowError": "Row {row}: {message}",
+    "allSucceeded": "All rows imported successfully."
   },
   "nav": {
     "overview": "Overview",

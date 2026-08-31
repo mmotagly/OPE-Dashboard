@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
 import { canWriteMaster, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
+import { ExportCsvLink } from "@/components/ui/export-csv-link";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SavedViewsTabs } from "@/components/ui/saved-views-tabs";
 import { applyFilters, toControls, writeFilterState } from "@/lib/filters";
@@ -38,6 +39,7 @@ export default async function VehiclesPage({
   const t = await getTranslations("master");
   const tVehicle = await getTranslations("vehicle");
   const tNav = await getTranslations("nav");
+  const tCommon = await getTranslations("common");
   const user = await requireUser(locale);
   const canEdit = canWriteMaster(user.role);
 
@@ -95,9 +97,11 @@ export default async function VehiclesPage({
       ? "new"
       : canEdit && mode === "edit" && id
         ? "edit"
-        : id
-          ? "view"
-          : null;
+        : canEdit && mode === "import"
+          ? "import"
+          : id
+            ? "view"
+            : null;
 
   return (
     <div className="font-inter contents">
@@ -107,12 +111,21 @@ export default async function VehiclesPage({
           title={t("vehiclesTitle")}
           actions={
             canEdit ? (
-              <Link
-                href={{ pathname: "/vehicles", query: { ...query, mode: "new" } }}
-                className={newButton}
-              >
-                {t("newVehicle")}
-              </Link>
+              <>
+                <ExportCsvLink href="/api/export/vehicles" label={tCommon("exportCsv")} />
+                <Link
+                  href={{ pathname: "/vehicles", query: { ...query, mode: "import" } }}
+                  className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
+                >
+                  {tCommon("importCsv")}
+                </Link>
+                <Link
+                  href={{ pathname: "/vehicles", query: { ...query, mode: "new" } }}
+                  className={newButton}
+                >
+                  {t("newVehicle")}
+                </Link>
+              </>
             ) : undefined
           }
         />

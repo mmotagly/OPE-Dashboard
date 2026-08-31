@@ -9,6 +9,7 @@ export type VendorRow = {
   vendorName: string;
   vendorTypeId: string | null;
   vendorTypeLabel: string | null;
+  vendorTypeCode: string | null;
   isCompany: boolean;
   contactPerson: string | null;
   mobileNumber: string | null;
@@ -74,6 +75,9 @@ function toRow(v: any, lookups: Map<string, LookupOption>): VendorRow {
     vendorTypeId: v.vendor_type_id,
     vendorTypeLabel: v.vendor_type_id
       ? (lookups.get(v.vendor_type_id)?.labelEn ?? null)
+      : null,
+    vendorTypeCode: v.vendor_type_id
+      ? (lookups.get(v.vendor_type_id)?.code ?? null)
       : null,
     isCompany: v.is_company,
     contactPerson: v.contact_person,
