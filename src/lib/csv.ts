@@ -22,7 +22,17 @@ export function toCsv<T extends Record<string, unknown>>(
   );
   // \r\n and a leading BOM: Excel on Windows mis-decodes UTF-8 CSVs without
   // one, showing mangled Arabic/accented text instead of an error.
-  return "﻿" + [headerLine, ...lines].join("\r\n");
+  //
+  // `sep=,` as the literal first line is a documented Excel-only directive
+  // that forces comma-delimited parsing on double-click-open, regardless
+  // of the OS's regional "list separator" setting — without it, a Windows
+  // install whose regional separator isn't a comma (common outside the
+  // US) puts the whole row into column A instead of splitting it, which
+  // then corrupts the file for real if the user re-saves from that state.
+  // csvTextToRecords() strips this same line back out on import, so the
+  // export → edit → re-import round trip this app is built around still
+  // works whether or not a file carries the directive.
+  return "﻿sep=,\r\n" + [headerLine, ...lines].join("\r\n");
 }
 
 export function csvResponse(csv: string, filename: string): Response {

@@ -39,7 +39,15 @@ export const EMPTY_IMPORT_STATE: ImportFormState = { formError: null, report: nu
  * trailing one) are skipped silently, not reported as failures.
  */
 export function csvTextToRecords(text: string): { header: string[]; rows: CsvRecord[] } {
-  const table = parseCsv(text);
+  // toCsv() writes a leading `sep=,` directive (Excel-only, forces
+  // comma-delimited parsing regardless of OS regional settings) before
+  // the BOM+header — strip it back out here so a round-tripped export/
+  // template file parses the same as one without it. Excel doesn't count
+  // this line as row 1 either, so stripping it first keeps this
+  // function's own row numbering (below) aligned with what a person sees
+  // with the file open.
+  const withoutSepDirective = text.replace(/^﻿?sep=,\r?\n/, "");
+  const table = parseCsv(withoutSepDirective);
   if (table.length === 0) return { header: [], rows: [] };
 
   const [header, ...body] = table;

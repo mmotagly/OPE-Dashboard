@@ -128,6 +128,55 @@ types. Shared UI: `src/components/ui/csv-import-preview.tsx` (new).
 Applies uniformly to all four already-shipped modules — one addition to
 the shared engine, not four separate builds.
 
+### Investigated (2026-09-01, later still) — a downloaded Vendors template came out malformed
+
+The business owner downloaded a Vendors CSV and found it "malformed":
+raw-byte inspection showed the header row and one data row each wrapped
+in a single quoted string with literal tab characters between what
+should have been separate columns, and the file contained one real
+vendor row instead of being blank.
+
+Investigated by reproducing this app's exact `toCsv()`/route logic in
+isolation and hex-dumping the output, rather than assuming either way:
+
+- `/api/import-template/vendors` passes a hardcoded empty rows array —
+  it cannot emit a data row under any input, template or otherwise. The
+  real vendor row must have come from `/api/export/vendors` (working as
+  designed — that route's whole job is returning real data), most likely
+  the page's "Export CSV" button was clicked instead of "Download
+  template" inside the Import CSV drawer — two similar, adjacent
+  controls, an easy mix-up.
+- Reproducing `toCsv()` directly and hex-dumping the result (both for an
+  empty template and for a realistic single-vendor row) produced clean,
+  correctly comma-delimited, BOM-prefixed, CRLF-terminated output in
+  both cases — no tabs, no spurious quoting. This app's CSV generation
+  could not be reproduced to produce the reported byte pattern from any
+  input tried.
+- Most likely explanation: the file was altered after downloading,
+  before it reached this conversation — a well-known class of bug where
+  Excel, opening a CSV by double-click, uses the OS's regional "list
+  separator" setting rather than assuming comma; on a system where that
+  setting isn't a comma, Excel can misparse the file and produce exactly
+  this kind of corruption on re-save. Not confirmed as the exact
+  mechanism, since there was no way to inspect a file at the moment of
+  download.
+
+**Fix applied regardless of exact root cause**, since it's low-cost and
+addresses this whole class of bug: `toCsv()` now writes `sep=,` as the
+literal first line of every exported/template CSV — a documented
+Microsoft Excel-only directive that forces comma-delimited parsing
+regardless of the OS's regional settings. `csvTextToRecords()` (the
+import side) now strips that same line back out before parsing, so the
+export/template → edit → re-import round trip this app is built around
+is unaffected whether or not a file carries the directive. Verified with
+a full round-trip reproduction (export with the directive → re-parse) —
+correct header and row data recovered.
+
+**Not yet independently confirmed**: whether a freshly re-downloaded
+file (post-fix) opens cleanly for the business owner — asked them to
+verify directly rather than treating this as closed on the strength of
+the hex-dump evidence alone.
+
 ### 2. GPS Integration — built and ready for provider config
 
 **Migration `supabase/migrations/0019_gps_pings.sql` — run against the
