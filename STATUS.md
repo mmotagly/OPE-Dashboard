@@ -184,6 +184,109 @@ pattern as `/fleet-location`.
 the one open item in `bridge/README.md`) and any automatic reconciliation
 of a passenger-count window to a specific operations shift.
 
+### What to go get, itemized — hand this directly to each vendor/provider
+
+Everything above is built and waiting for real configuration. This is the
+exact list of what unblocks each piece — specific enough to hand to a
+provider's account/support team as-is, per the request that started this
+session.
+
+#### GPS — Etit (ETIT-FMS)
+
+Ask Etit's account/support team, in this order:
+
+1. **Does ETIT-FMS expose a REST API or a webhook for position data at
+   all**, separate from their own dashboard UI? (Confirmed unknown as of
+   this writing — no public API docs found.)
+2. If yes: **the base URL and how to authenticate** — API key in a
+   header, OAuth client credentials, or basic auth. Whichever it is,
+   it's one value to put in `ETIT_API_BASE_URL`/`ETIT_API_KEY`.
+3. **Push or pull** — does Etit call a webhook URL we provide (in which
+   case we give them `https://<our-domain>/api/gps/webhook` and a shared
+   secret they echo back in a header), or do we have to poll their API on
+   a schedule (in which case we need the endpoint and its rate limit)?
+   Both patterns are already built (`/api/gps/webhook` and
+   `/api/gps/poll`) — whichever Etit actually supports, that route is
+   ready.
+4. **Confirm the response/payload includes**: vehicle/device identifier
+   (and how it maps to our plate number or a code we can configure on
+   their side), timestamp, latitude, longitude, speed, and — if
+   available — heading, ignition status, and odometer. We only need to
+   know the field names and units (km/h vs mph, meters vs km) to finish
+   `src/lib/gps/adapters/etit.ts`'s `normalizeWebhookPayload`/`poll`
+   functions; everything downstream already exists.
+5. **How many of our ~50 vehicles are actually on the Etit platform
+   today** — the roadmap says "hardware already installed" but the exact
+   count/which vehicles determines rollout order.
+
+#### GPS — Zhongtong (manufacturer unit)
+
+1. **Does any API or data-export path exist at all** for the
+   manufacturer-installed unit — ask Zhongtong directly, or the local
+   dealer/distributor who sold the buses, since manufacturer telematics
+   are often locked to a proprietary app with no integration path. This
+   is the real open question, not just "which format."
+2. If one exists, the same four items as Etit above (auth, push/pull,
+   payload fields, vehicle coverage).
+
+Only one provider is needed to go live — pick whichever answers first
+with a real API. `GPS_PROVIDER` in the main app's env just switches which
+adapter is active.
+
+#### Cameras (general + counter cams) — Hikvision installer/integrator
+
+1. **Confirm every camera's exact model, firmware version, and whether
+   ISAPI is enabled** on each device (it's usually on by default, but
+   worth confirming per unit) — ask whoever installed them, or check the
+   camera's own web UI under Configuration → Network → Advanced Settings
+   → Integration Protocol.
+2. **The real IP address, ISAPI port (usually 80), and ISAPI
+   username/password for every camera** that should be wired in — these
+   go straight into the bridge's `cameras.config.json`
+   (`bridge/cameras.config.example.json` shows the exact shape).
+3. **Confirm HTTP Digest auth is what each camera actually uses** on
+   ISAPI (the bridge assumes this, the common Hikvision default) —
+   if a specific device is set to Basic auth instead, `bridge/src/
+   isapi.ts`'s `digestRequest` already has a one-line fallback for that
+   case, just needs someone to confirm which mode a given camera is in.
+4. **For counter cams specifically: confirm the people-counting feature
+   is licensed and enabled** on each camera meant to count passengers —
+   Hikvision's region/line-crossing counting is sometimes a separately
+   licensed feature, not on by default, and `supports_counting` should
+   only be turned on in the `cameras` table for units where it's
+   actually active.
+5. **A decision on whether remote live view is actually needed** (see
+   `bridge/README.md`) — if playback + counting cover the real use case,
+   the RTSP-to-HLS relay work can be skipped entirely, which simplifies
+   the bridge meaningfully.
+
+#### Networking/hardware — what the business owner needs to arrange on-site
+
+1. **A dedicated, always-on computer on the depot's local network** to
+   run `bridge/` — doesn't need to be powerful (a small PC or a Raspberry
+   Pi 4 is plenty for the ISAPI calls this bridge makes; more is needed
+   only if the RTSP-to-HLS relay gets built later). It needs to stay
+   powered and network-connected continuously and be able to reach every
+   camera's IP on the LAN.
+2. **A way for the main app (hosted on Vercel) to reach that computer
+   without exposing the cameras to the public internet.** Two real
+   options, in order of preference:
+   - A VPN mesh (Tailscale or WireGuard are the common low-effort
+     choices) — the bridge joins the VPN, gets a stable address only
+     reachable by devices on the same VPN, and `camera_bridges.base_url`
+     points at that address.
+   - An authenticated reverse tunnel (e.g. Cloudflare Tunnel) — no VPN
+     client needed, but adds a dependency on that provider staying up.
+   A raw port-forward on the site router to the bridge's port is the
+   minimum-viable option but exposes the bridge (and everything behind
+   it) directly to internet scanning — worth a real security discussion
+   before choosing it, not a default.
+3. **Confirm the depot's internet connection is reliable enough** for
+   GPS polling/webhooks and camera-bridge round-trips — no specific
+   bandwidth requirement (these are small, infrequent API calls, not
+   video streaming, unless/until live view gets built), just basic
+   uptime.
+
 ---
 
 ## Autonomous session roadmap (2026-08-30, user away ~3h, pre-authorized)
