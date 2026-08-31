@@ -36,6 +36,7 @@
     "operations": "Operations",
     "dailyOperations": "Daily operations",
     "charging": "Charging sessions",
+    "fleetLocation": "Fleet location",
     "maintenance": "Maintenance",
     "rfrs": "RFRs",
     "workOrders": "Work orders",
@@ -489,6 +490,22 @@
       "saveFailed": "The work order could not be saved. Try again."
     },
     "goToRequests": "Go to requests"
+  },
+  "fleetLocation": {
+    "title": "Fleet location",
+    "reporting": "{count} of {total} vehicles reporting",
+    "noProviderHint": "No GPS provider is connected yet — every vehicle shows as no data until one is wired in.",
+    "noVehicles": "No vehicles",
+    "ignitionOn": "Ignition on",
+    "ignitionOff": "Ignition off",
+    "field": {
+      "vehicle": "Vehicle",
+      "vendor": "Vendor",
+      "position": "Position",
+      "speed": "Speed",
+      "ignition": "Ignition",
+      "lastSeen": "Last seen"
+    }
   },
   "charging": {
     "title": "Charging sessions",

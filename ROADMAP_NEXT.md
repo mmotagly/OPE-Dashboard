@@ -18,7 +18,7 @@ as a plug-in step.**
 | # | Item | Status |
 |---|---|---|
 | 1 | CSV Import/Export | ✅ Built (Vehicles/Drivers/Vendors/Routes) — see STATUS.md |
-| 2 | GPS Integration | Not started |
+| 2 | GPS Integration | ✅ Built, blocked on provider config — see STATUS.md |
 | 3 | General Camera Integration | Not started |
 | 4 | Counter Cams | Not started |
 
@@ -96,7 +96,13 @@ Two candidate sources, both with hardware already installed (2 devices per bus):
 
 ### BUILD NOTES (added during implementation, 2026-09-01)
 
-See `STATUS.md`.
+Built: schema (`vehicle_gps_pings` + `v_vehicle_latest_gps`, migration
+0019, not yet run), a provider-agnostic adapter layer
+(`src/lib/gps/adapters/{etit,zhongtong}.ts` — clearly-marked config slots,
+no fake data), both webhook and poll ingestion routes, and a read-only
+`/fleet-location` UI. Full detail in `STATUS.md`'s "2. GPS Integration"
+section. Not built, deliberately: the Operating%-replaces-manual-entry
+logic this section already called out as a separate decision.
 
 ---
 

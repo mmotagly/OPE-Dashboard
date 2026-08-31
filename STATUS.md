@@ -72,7 +72,56 @@ rejection" requirement.
   wasn't needed — all four shipped modules are small master-data tables
   (tens to low hundreds of rows), well inside one server-action request.
 
-### 2-4. GPS / General Camera / Counter Cams — not started yet
+### 2. GPS Integration — built and ready for provider config
+
+**Migration `supabase/migrations/0019_gps_pings.sql` — written, NOT run**
+against the live database (hard stop). Adds `vehicle_gps_pings`
+(provider-agnostic ping storage: vehicle_id, recorded_at, lat/lng, speed,
+heading, odometer, ignition, provider, raw_payload) and
+`v_vehicle_latest_gps` (latest position per vehicle). RLS follows the same
+"operations" bucket as `daily_vehicle_operations` (everyone reads,
+data_admin/supervisor/super_admin write) — real ingestion writes through
+the service-role client instead, see below.
+
+**Adapter layer** (`src/lib/gps/`): `types.ts` defines the
+provider-agnostic `NormalizedGpsPing` shape and `GpsAdapter` interface;
+`adapters/etit.ts` and `adapters/zhongtong.ts` are clearly-marked config
+slots — each reads its own env vars (`ETIT_API_BASE_URL`/`ETIT_API_KEY`,
+`ZHONGTONG_API_BASE_URL`/`ZHONGTONG_API_KEY`), reports `isConfigured()`
+honestly, and **throws** rather than guessing when asked to normalize a
+payload, since neither provider's real wire format is confirmed yet
+(no fake data, no pretend connection, per the explicit instruction this
+session started from). `adapters/index.ts` picks the active one from
+`GPS_PROVIDER`. Swapping in a real provider later means filling in one
+adapter file's two functions — nothing downstream changes.
+
+**Ingestion**: both integration patterns are built, since ROADMAP_NEXT.md
+flags the pull-vs-push question as unresolved for both candidates —
+`POST /api/gps/webhook` (push, gated by `GPS_WEBHOOK_SECRET` header) and
+`POST /api/gps/poll` (pull, meant for a Vercel Cron job, gated by
+`CRON_SECRET`, resumes from the last stored ping per provider). Both call
+the same `ingestPings()` (`src/lib/gps/ingest.ts`), which writes through a
+new `src/lib/supabase/service.ts` service-role client — needed because a
+provider's server has no logged-in app user for RLS to check.
+
+**UI**: `/fleet-location` (new nav item under Operations) — a read-only
+table of every vehicle with its latest position, speed, ignition, and
+last-seen time, "no GPS data" for every vehicle until a provider lands
+(the honest, expected state right now). Deliberately a table, not a map —
+DESIGN_SYSTEM.md's "lists are tables" rule, and adding a map library is a
+real dependency decision better left until there's real position data to
+plot. The query gracefully treats a missing `v_vehicle_latest_gps` (i.e.
+migration 0019 not yet run) as "no data" rather than a 500, so this page
+is safe to deploy ahead of the migration.
+
+**Explicitly not built**: any GPS-driven change to
+`fn_validate_operation_status`, auto-filled odometer/status, or "Operating
+%" — CLAUDE.md and ROADMAP_NEXT.md both call this out as a separate,
+later decision. `CLAUDE.md` section 1's stale "GPS is a later phase, do
+not build for it" note has been updated to reflect that GPS work is now
+in progress, without changing that specific deferral.
+
+### 3-4. General Camera Integration / Counter Cams — not started yet
 
 See `ROADMAP_NEXT.md` for the plan; will update this section as each
 lands.

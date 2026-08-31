@@ -36,6 +36,7 @@
     "operations": "التشغيل",
     "dailyOperations": "التشغيل اليومي",
     "charging": "جلسات الشحن",
+    "fleetLocation": "موقع الأسطول",
     "maintenance": "الصيانة",
     "rfrs": "طلبات الإصلاح",
     "workOrders": "أوامر العمل",
@@ -489,6 +490,22 @@
       "saveFailed": "تعذّر حفظ أمر العمل. حاول مرة أخرى."
     },
     "goToRequests": "الانتقال إلى الطلبات"
+  },
+  "fleetLocation": {
+    "title": "موقع الأسطول",
+    "reporting": "{count} من {total} مركبة ترسل بياناتها",
+    "noProviderHint": "لا يوجد مزود GPS متصل بعد — تظهر كل مركبة بدون بيانات حتى يتم ربط أحد المزودين.",
+    "noVehicles": "لا توجد مركبات",
+    "ignitionOn": "المحرك يعمل",
+    "ignitionOff": "المحرك متوقف",
+    "field": {
+      "vehicle": "المركبة",
+      "vendor": "المورّد",
+      "position": "الموقع",
+      "speed": "السرعة",
+      "ignition": "المحرك",
+      "lastSeen": "آخر ظهور"
+    }
   },
   "charging": {
     "title": "جلسات الشحن",

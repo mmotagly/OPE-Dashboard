@@ -16,9 +16,15 @@ KPI scorecards.
 Scale: ~50 vehicles, 5 vendors, 100 drivers, 10 routes, 15 stations. Small data,
 high input frequency. Correctness matters far more than throughput.
 
-Everything is manual entry today. GPS/telematics integration is a later phase —
-do not build for it now, but keep odometer ingestion in one place so it can be
-swapped.
+Daily operations are still manual entry. GPS/telematics integration is under
+active build (see `ROADMAP_NEXT.md` item 2 and `STATUS.md`) — schema
+(`vehicle_gps_pings`, migration `0019`, not yet run against the live database),
+a provider-agnostic adapter layer (`src/lib/gps/`), and a read-only fleet
+location page exist and are ready to accept real config. What is **not** built,
+and stays a deliberate later decision: using GPS data to auto-fill or replace
+any manually-entered operations field — starting odometer, Operating %,
+status — stays exactly as section 2 describes below until that is explicitly
+revisited with real GPS accuracy in hand.
 
 ---
 

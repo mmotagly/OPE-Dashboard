@@ -58,6 +58,7 @@ export function Sidebar({
       items: [
         { href: "/operations", label: t("dailyOperations") },
         { href: "/charging", label: t("charging") },
+        { href: "/fleet-location", label: t("fleetLocation") },
       ],
     },
     {
