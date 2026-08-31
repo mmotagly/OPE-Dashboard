@@ -74,8 +74,11 @@ rejection" requirement.
 
 ### 2. GPS Integration — built and ready for provider config
 
-**Migration `supabase/migrations/0019_gps_pings.sql` — written, NOT run**
-against the live database (hard stop). Adds `vehicle_gps_pings`
+**Migration `supabase/migrations/0019_gps_pings.sql` — run against the
+live database, confirmed 2026-09-01** (user ran it; verified from this
+side via an anon-key PostgREST probe against `vehicle_gps_pings` and
+`v_vehicle_latest_gps` — both return `200 []`, i.e. exist and correctly
+show no rows to an unauthenticated caller under RLS). Adds `vehicle_gps_pings`
 (provider-agnostic ping storage: vehicle_id, recorded_at, lat/lng, speed,
 heading, odometer, ignition, provider, raw_payload) and
 `v_vehicle_latest_gps` (latest position per vehicle). RLS follows the same
@@ -110,9 +113,10 @@ last-seen time, "no GPS data" for every vehicle until a provider lands
 (the honest, expected state right now). Deliberately a table, not a map —
 DESIGN_SYSTEM.md's "lists are tables" rule, and adding a map library is a
 real dependency decision better left until there's real position data to
-plot. The query gracefully treats a missing `v_vehicle_latest_gps` (i.e.
-migration 0019 not yet run) as "no data" rather than a 500, so this page
-is safe to deploy ahead of the migration.
+plot. The query gracefully treats a missing `v_vehicle_latest_gps` as "no
+data" rather than a 500 — that fallback is no longer load-bearing now
+that migration 0019 has run, but stays in place; it costs nothing and
+protects against a future rollback/reset of this table.
 
 **Explicitly not built**: any GPS-driven change to
 `fn_validate_operation_status`, auto-filled odometer/status, or "Operating
@@ -123,8 +127,11 @@ in progress, without changing that specific deferral.
 
 ### 3. General Camera Integration — built and ready for site config
 
-**Migration `supabase/migrations/0020_cameras.sql` — written, NOT run**
-against the live database. Adds a device registry (`camera_bridges`,
+**Migration `supabase/migrations/0020_cameras.sql` — run against the live
+database, confirmed 2026-09-01** (user ran it; verified from this side
+via anon-key PostgREST probes against `camera_bridges`, `cameras`,
+`camera_clip_requests`, `bus_passenger_counts` — all return `200 []`).
+Adds a device registry (`camera_bridges`,
 `cameras` — a camera points at exactly one vehicle or one station, never
 both) and `camera_clip_requests` (async playback request log, since ISAPI
 recording search is not instant). RLS: the registry is master data

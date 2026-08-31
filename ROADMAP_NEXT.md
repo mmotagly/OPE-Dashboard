@@ -24,9 +24,9 @@ as a plug-in step.**
 | # | Item | Status |
 |---|---|---|
 | 1 | CSV Import/Export | ✅ Built (Vehicles/Drivers/Vendors/Routes) — see STATUS.md |
-| 2 | GPS Integration | ✅ Built, blocked on provider config — 16 vehicles confirmed on Etit, self-check in progress — see STATUS.md |
-| 3 | General Camera Integration | ✅ Built, **blocked on cloud-vs-local-network decision** — no further camera work until answered — see STATUS.md |
-| 4 | Counter Cams | ✅ Built, counting confirmed licensed+enabled — same cloud-vs-local decision applies — see STATUS.md |
+| 2 | GPS Integration | ✅ Built, migration 0019 **run 2026-09-01**, blocked on provider config — 16 vehicles confirmed on Etit, self-check in progress — see STATUS.md |
+| 3 | General Camera Integration | ✅ Built, migration 0020 **run 2026-09-01**, **blocked on cloud-vs-local-network decision** — no further camera work until answered — see STATUS.md |
+| 4 | Counter Cams | ✅ Built, migration 0020 **run 2026-09-01**, counting confirmed licensed+enabled — same cloud-vs-local decision applies — see STATUS.md |
 
 ---
 
@@ -107,7 +107,7 @@ what to look for.
 ### BUILD NOTES (added during implementation, 2026-09-01)
 
 Built: schema (`vehicle_gps_pings` + `v_vehicle_latest_gps`, migration
-0019, not yet run), a provider-agnostic adapter layer
+0019, **run 2026-09-01**), a provider-agnostic adapter layer
 (`src/lib/gps/adapters/{etit,zhongtong}.ts` — clearly-marked config slots,
 no fake data), both webhook and poll ingestion routes, and a read-only
 `/fleet-location` UI. Full detail in `STATUS.md`'s "2. GPS Integration"
@@ -165,7 +165,7 @@ platforms tend not to expose ISAPI's more specialized counting endpoint).
 ### BUILD NOTES (added during implementation, 2026-09-01)
 
 Built: schema (`camera_bridges`, `cameras`, `camera_clip_requests`,
-migration 0020, not yet run), a real local-bridge reference
+migration 0020, **run 2026-09-01**), a real local-bridge reference
 implementation at `bridge/` (own package, ISAPI digest-auth client, real
 `/ISAPI/ContentMgmt/search` playback call — this one is real code, not a
 stub, since ISAPI is a confirmed protocol unlike the GPS providers), three
