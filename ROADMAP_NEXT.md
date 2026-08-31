@@ -3,8 +3,14 @@
 **Status:** In progress — see the status table below (added 2026-09-01;
 everything below the table is the original plan, unedited except where a
 build decision needed recording inline).
-**Owner decision needed on:** GPS provider API (Etit vs. Zhongtong), exact
-Hikvision camera/firmware models in use
+**Owner decision needed on:** whether the camera system already has a
+cloud/remote-access API (e.g. Hik-Connect) or is local-network-only —
+**this now blocks further camera work**, see `STATUS.md`'s "Update
+(2026-09-01, business owner check-in)" section under item 3 for the full
+reasoning on whether the bridge already built stays useful either way (it
+does, at minimum for counter cams — see that section). GPS: Etit vs.
+Zhongtong API access is being self-checked by the business owner directly
+(no account access shared); 16 owned vehicles already confirmed on Etit.
 
 This roadmap covers four major features, prioritized by dependency and
 risk. Each is written so Claude Code can begin architecture and UI work
@@ -18,9 +24,9 @@ as a plug-in step.**
 | # | Item | Status |
 |---|---|---|
 | 1 | CSV Import/Export | ✅ Built (Vehicles/Drivers/Vendors/Routes) — see STATUS.md |
-| 2 | GPS Integration | ✅ Built, blocked on provider config — see STATUS.md |
-| 3 | General Camera Integration | ✅ Built, blocked on site networking/hardware — see STATUS.md |
-| 4 | Counter Cams | ✅ Built, blocked on site networking/hardware — see STATUS.md |
+| 2 | GPS Integration | ✅ Built, blocked on provider config — 16 vehicles confirmed on Etit, self-check in progress — see STATUS.md |
+| 3 | General Camera Integration | ✅ Built, **blocked on cloud-vs-local-network decision** — no further camera work until answered — see STATUS.md |
+| 4 | Counter Cams | ✅ Built, counting confirmed licensed+enabled — same cloud-vs-local decision applies — see STATUS.md |
 
 ---
 
@@ -76,10 +82,14 @@ Scorecards) was judged the right fit for them.
 
 ### Status: blocked on provider decision
 Two candidate sources, both with hardware already installed (2 devices per bus):
-- **Etit** (Egyptian company, NTRA-licensed, has a real platform called ETIT-FMS) — no public API docs found yet; needs a direct ask to their support/account team about REST API or webhook access.
+- **Etit** (Egyptian company, NTRA-licensed, has a real platform called ETIT-FMS) — no public API docs found yet. **Confirmed 2026-09-01: 16 owned vehicles have Etit devices installed and working; speed is reported in km/h.**
 - **Zhongtong** (bus manufacturer's built-in unit) — unknown API status, needs investigation. Manufacturer-installed telematics units are often locked to a proprietary app with no public integration path — historically the lower-probability option.
 
-**Action item for the business owner:** get API documentation or confirmation of API availability from at least one provider before implementation can begin in earnest.
+**Process, updated 2026-09-01:** the business owner is self-checking both
+platforms directly (logging in, looking for an API/Developer/
+Integrations/Webhooks section, bringing back screenshots) rather than
+sharing account access — see `STATUS.md`'s itemized list for exactly
+what to look for.
 
 ### What GPS integration would enable, once connected
 - Real-time fleet location view
@@ -124,6 +134,24 @@ This means camera integration needs a **local bridge/agent** — a small always-
 
 **This is the single biggest open architecture question in this whole roadmap** — worth a dedicated planning session before writing code, since it affects security (exposing camera access to the internet, even partially, needs careful thought), network setup (does the site have a static IP / port forwarding / VPN capability), and ongoing maintenance (something has to keep this bridge running reliably).
 
+**Update 2026-09-01, now the concrete, actively-blocking version of this
+question**: it's not certain the local-only picture above is even still
+true — the camera system may already have its own cloud/remote-access
+platform (e.g. Hik-Connect or similar), in which case some or all of
+live view/playback could go through that platform's own cloud API
+directly, with no on-site bridge computer needed for what it covers
+("Scenario A"). Or the cameras really are reachable only on the local
+network, exactly as assumed above, and the bridge already built is
+required ("Scenario B"). Settling this depends on the business owner
+confirming how the cameras are currently viewed remotely today — see
+`STATUS.md`'s "Update (2026-09-01, business owner check-in)" section for
+the full reasoning on whether last session's bridge work stays useful
+under either scenario (short answer: yes, though how much of it actually
+gets deployed depends on the answer — counter cams in particular very
+plausibly need the local bridge regardless, since consumer cloud
+platforms tend not to expose ISAPI's more specialized counting endpoint).
+**No further camera code work until this is answered.**
+
 ### Scope questions for the business owner
 - Does your site have a dedicated computer/server that could run this bridge software continuously?
 - Is there any existing network infrastructure (static IP, VPN, port forwarding) at the site, or would this need to be set up from scratch?
@@ -158,6 +186,14 @@ Same Hikvision ISAPI foundation as general cameras, with real, working endpoints
 
 This is genuinely simpler than general camera video — it's just structured count data (timestamped enter/exit numbers), not video streaming, so once the local bridge/agent from item #3 exists, adding counter-cam data collection is a much smaller additional step (same bridge, different ISAPI endpoint, simpler data shape).
 
+**Confirmed 2026-09-01: the people-counting feature is licensed and
+enabled** on the relevant cameras — removes what was previously an open
+question (item 3's business-owner list used to ask this). Item 3's
+cloud-vs-local-network question still applies here too, and per the
+reasoning in `STATUS.md`, counting specifically is the part of this
+roadmap most likely to need the local bridge regardless of how that
+question resolves.
+
 ### What this would enable
 - Per-bus, per-shift passenger counts (enter/exit) — genuinely useful data tied directly to Daily Operations records
 - Potential future use: capacity/occupancy tracking, ridership reporting per route
@@ -190,12 +226,13 @@ section.
 
 ## What's needed from the business owner before deeper work can start
 
-| Item | Needed |
-|---|---|
-| GPS | API docs/confirmation from Etit and/or Zhongtong |
-| Cameras (general + counter) | Confirm exact camera/NVR models and firmware versions; confirm site network capability (static IP, VPN, dedicated always-on computer for the bridge) |
-| CSV | Decide re-upload/duplicate-handling behavior; decide export scope (all data vs. filtered) |
+| Item | Needed | Status (2026-09-01) |
+|---|---|---|
+| GPS | API/Developer/Integrations section check on Etit's and Zhongtong's own platforms (self-check in progress, screenshots to follow) | 16 vehicles confirmed on Etit; speed unit (km/h) confirmed |
+| Cameras (general + counter) | Exact camera models/firmware/ISAPI credentials; **how cameras are currently viewed remotely** (settles cloud vs. local-network architecture) | In progress — incoming today |
+| Cameras (general + counter) | Site network capability if local-network (static IP, VPN, dedicated always-on computer for the bridge) | Depends on the cloud-vs-local answer above |
+| CSV | Decide re-upload/duplicate-handling behavior; decide export scope (all data vs. filtered) | Not yet raised |
 
-**Expanded, vendor-ready version of this table is in `STATUS.md`**, written
-during implementation once the exact schema/adapter shape made clear
-exactly which fields/endpoints/credentials are needed.
+**Expanded, vendor-ready version of this table is in `STATUS.md`**, kept
+current as answers come in — see its "Update (2026-09-01, business owner
+check-in)" section for the latest.
