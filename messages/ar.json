@@ -583,6 +583,8 @@
     "noVehicles": "لا توجد مركبات",
     "ignitionOn": "المحرك يعمل",
     "ignitionOff": "المحرك متوقف",
+    "fullscreen": "ملء الشاشة",
+    "exitFullscreen": "الخروج من ملء الشاشة",
     "field": {
       "vehicle": "المركبة",
       "vendor": "المورّد",

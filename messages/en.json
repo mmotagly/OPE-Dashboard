@@ -583,6 +583,8 @@
     "noVehicles": "No vehicles",
     "ignitionOn": "Ignition on",
     "ignitionOff": "Ignition off",
+    "fullscreen": "Full screen",
+    "exitFullscreen": "Exit full screen",
     "field": {
       "vehicle": "Vehicle",
       "vendor": "Vendor",
