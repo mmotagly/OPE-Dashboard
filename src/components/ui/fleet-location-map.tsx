@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import L from "leaflet";
-import { busIcon, DARK_TILE_URL, DARK_TILE_ATTRIBUTION } from "./vehicle-map";
+import {
+  busIcon,
+  DARK_TILE_BASE_URL,
+  DARK_TILE_LABELS_URL,
+  DARK_TILE_MAX_ZOOM,
+  DARK_TILE_ATTRIBUTION,
+} from "./vehicle-map";
 import { MapFullscreenFrame } from "./map-fullscreen-frame";
 import type { FleetLocationRow } from "@/app/[locale]/(app)/fleet-location/queries";
 
@@ -151,10 +157,12 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
         ref={mapRef}
         center={GIZA_FALLBACK}
         zoom={13}
+        maxZoom={DARK_TILE_MAX_ZOOM}
         scrollWheelZoom={fullscreen}
         style={{ height: fullscreen ? "100%" : 320, width: "100%", borderRadius: 10 }}
       >
-        <TileLayer className="map-tiles-dark" attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
+        <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_BASE_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
+        <TileLayer url={DARK_TILE_LABELS_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
         <LiveMarkers rows={rows} />
       </MapContainer>
     </MapFullscreenFrame>

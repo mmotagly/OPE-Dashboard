@@ -37,22 +37,32 @@ export function busIcon(tone: "warn" | "go" | "idle") {
 }
 
 /**
- * CARTO's free basemap tiles — no API key/account needed (unlike Google
- * Maps or Mapbox, deliberately avoided elsewhere in this app for exactly
- * that reason — see STATUS.md).
+ * CARTO's free basemap CDN (both `dark_all` and `voyager`, tried first)
+ * turned out to require a registered account to remove an "API KEY
+ * REQUIRED" watermark stamped across every tile — real map data underneath,
+ * but unusable as shipped. Confirmed by downloading real tiles at different
+ * coordinates and diffing them (they were genuinely differentiated per
+ * location, so the watermark is an account gate, not a data gap) — not
+ * assumed from a plain HTTP 200. Plain OpenStreetMap tile.openstreetmap.org
+ * (this app's original tile source) also isn't a real option here: their
+ * usage policy explicitly asks embedded apps not to hotlink it, and a
+ * bare request against it returns "Access blocked" already.
  *
- * Voyager, not the `dark_all` ("Dark Matter") style tried first: dark_all
- * is deliberately minimal — roads/labels are dimmed by design, and pushing
- * them back up with a brightness filter fights that design with a low
- * ceiling on the result. Voyager is CARTO's general-purpose style with far
- * more inherent road/water/label contrast; darkening *that* down via
- * `.map-tiles-dark` (globals.css) keeps its clarity while reading as dark
- * overall — verified directly against a.basemaps.cartocdn.com.
+ * Esri's ArcGIS Online "Canvas" basemaps are the option that's actually
+ * free with no account/key: `World_Dark_Gray_Base` (the dark ground layer)
+ * plus `World_Dark_Gray_Reference` (a separate, transparent overlay layer
+ * of just the labels — stacked as a second TileLayer) — verified the same
+ * way, real differentiated tiles at real Giza-area coordinates, no
+ * watermark. Esri does require the specific attribution string below
+ * (pulled from the service's own metadata), same as any tile provider.
  */
-export const DARK_TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+export const DARK_TILE_BASE_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+export const DARK_TILE_LABELS_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
+export const DARK_TILE_MAX_ZOOM = 16;
 export const DARK_TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  "Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS user community";
 
 export function VehicleMap({
   latitude,
@@ -70,10 +80,12 @@ export function VehicleMap({
       <MapContainer
         center={[latitude, longitude]}
         zoom={fullscreen ? 16 : 14}
+        maxZoom={DARK_TILE_MAX_ZOOM}
         scrollWheelZoom={fullscreen}
         style={{ height: fullscreen ? "100%" : 220, width: "100%", borderRadius: 10 }}
       >
-        <TileLayer className="map-tiles-dark" attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
+        <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_BASE_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
+        <TileLayer url={DARK_TILE_LABELS_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
         <Marker position={[latitude, longitude]} icon={busIcon(tone)} />
       </MapContainer>
     </MapFullscreenFrame>

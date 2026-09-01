@@ -44,20 +44,29 @@ export async function ingestPings(provider: string, pings: NormalizedGpsPing[]):
 }
 
 /**
- * Trusts the device/provider's own speed when it supplied one — that's
- * Doppler-derived and more accurate than anything we can compute from two
- * positions. Falls back to a distance/time estimate against the vehicle's
- * immediately-preceding ping only when the source gave nothing at all
- * (e.g. a background-delivered Android fix with no computed speed), so a
- * missing sensor reading doesn't just show as a permanently stuck value.
+ * Takes the larger of the device's own speed and a distance/time estimate
+ * against the vehicle's immediately-preceding ping — not "trust the device,
+ * fall back to the estimate only when the device gave nothing," which was
+ * the bug here. Android's native `Location.getSpeed()` returns `0.0`, not
+ * `null`, whenever it has no real speed to report (the field is
+ * non-nullable on Android; `expo-location`'s own type only documents `null`
+ * as a *Web* possibility) — so a JS `?? fallback` on that value never once
+ * ran the fallback, because a real `0` isn't nullish. A device-reported `0`
+ * can never make the position-derived estimate wrong (it just means the
+ * device didn't supply anything useful), so taking the max is safe in both
+ * directions: a genuinely stationary vehicle has both readings near zero
+ * anyway, and a moving one with a spurious device `0` still gets a real
+ * number from position deltas.
  */
 async function resolveSpeedKmh(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   p: NormalizedGpsPing,
 ): Promise<number | null> {
-  const kmh = p.speedKmh ?? (await fallbackSpeedFromPriorPing(supabase, p));
-  if (kmh === null) return null;
+  const fallback = await fallbackSpeedFromPriorPing(supabase, p);
+  if (p.speedKmh === null && fallback === null) return null;
+
+  const kmh = Math.max(p.speedKmh ?? 0, fallback ?? 0);
   return kmh < SPEED_DEADBAND_KMH ? 0 : kmh;
 }
 
