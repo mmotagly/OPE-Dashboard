@@ -1,8 +1,10 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import { useState } from "react";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
+import { MapFullscreenFrame } from "./map-fullscreen-frame";
 
 /**
  * Leaflet's default marker icon resolves its image URLs relative to
@@ -57,15 +59,19 @@ export function VehicleMap({
   longitude: number;
   tone: "warn" | "go";
 }) {
+  const [fullscreen, setFullscreen] = useState(false);
+
   return (
-    <MapContainer
-      center={[latitude, longitude]}
-      zoom={14}
-      scrollWheelZoom={false}
-      style={{ height: 220, width: "100%", borderRadius: 10 }}
-    >
-      <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
-      <Marker position={[latitude, longitude]} icon={busIcon(tone)} />
-    </MapContainer>
+    <MapFullscreenFrame fullscreen={fullscreen} onToggle={() => setFullscreen((v) => !v)} height={220}>
+      <MapContainer
+        center={[latitude, longitude]}
+        zoom={fullscreen ? 16 : 14}
+        scrollWheelZoom={fullscreen}
+        style={{ height: fullscreen ? "100%" : 220, width: "100%", borderRadius: 10 }}
+      >
+        <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
+        <Marker position={[latitude, longitude]} icon={busIcon(tone)} />
+      </MapContainer>
+    </MapFullscreenFrame>
   );
 }

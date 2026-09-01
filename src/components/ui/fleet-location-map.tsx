@@ -5,9 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import L from "leaflet";
-import { useTranslations } from "next-intl";
-import { Maximize2, Minimize2 } from "lucide-react";
 import { busIcon, DARK_TILE_URL, DARK_TILE_ATTRIBUTION } from "./vehicle-map";
+import { MapFullscreenFrame } from "./map-fullscreen-frame";
 import type { FleetLocationRow } from "@/app/[locale]/(app)/fleet-location/queries";
 
 const POLL_MS = 7_000;
@@ -99,11 +98,9 @@ function LiveMarkers({ rows }: { rows: FleetLocationRow[] }) {
 }
 
 export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRow[] }) {
-  const t = useTranslations("fleetLocation");
   const [rows, setRows] = useState(initialRows);
   const [fullscreen, setFullscreen] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const hasFramedRef = useRef(false);
 
   useEffect(() => {
@@ -120,29 +117,21 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
     return () => clearInterval(id);
   }, []);
 
-  // Leaflet measures its container's pixel size on creation and caches it —
-  // it has no way to know the fullscreen toggle just resized that container
-  // out from under it. A ResizeObserver on the actual DOM node reacts to
-  // the real, final size rather than guessing how long a layout pass takes
-  // (a fixed setTimeout delay was the bug here: it fired before the browser
-  // had finished laying out the fullscreen container, so Leaflet kept
-  // rendering tiles sized for the old small preview).
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => mapRef.current?.invalidateSize());
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   const withPosition = rows.filter(
     (r): r is FleetLocationRow & { latitude: number; longitude: number } =>
       r.latitude !== null && r.longitude !== null,
   );
 
-  // Frame every vehicle once, the first time any position exists — not on
-  // every poll, or the view would keep yanking itself away from wherever
-  // the user just panned/zoomed to look at one bus.
+  // Toggling fullscreen remounts the map (MapFullscreenFrame relocates it
+  // to a portal), which resets its pan/zoom — re-frame once after that
+  // happens, same as on first load, rather than only ever once overall.
+  useEffect(() => {
+    hasFramedRef.current = false;
+  }, [fullscreen]);
+
+  // Frame every vehicle once — on first load and once again after a
+  // fullscreen toggle — not on every poll, or the view would keep yanking
+  // itself away from wherever the user just panned/zoomed to.
   useEffect(() => {
     if (hasFramedRef.current || withPosition.length === 0 || !mapRef.current) return;
     hasFramedRef.current = true;
@@ -154,13 +143,10 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
         { padding: [32, 32] },
       );
     }
-  }, [withPosition]);
+  }, [withPosition, fullscreen]);
 
   return (
-    <div
-      ref={containerRef}
-      className={fullscreen ? "fixed inset-0 z-50 bg-canvas p-3" : "relative"}
-    >
+    <MapFullscreenFrame fullscreen={fullscreen} onToggle={() => setFullscreen((v) => !v)} height={320}>
       <MapContainer
         ref={mapRef}
         center={GIZA_FALLBACK}
@@ -171,14 +157,6 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
         <LiveMarkers rows={rows} />
       </MapContainer>
-      <button
-        type="button"
-        onClick={() => setFullscreen((v) => !v)}
-        aria-label={fullscreen ? t("exitFullscreen") : t("fullscreen")}
-        className="absolute end-4 top-4 z-[1000] grid h-8 w-8 place-items-center rounded-control border border-hairline bg-surface text-ink hover:bg-raise"
-      >
-        {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-      </button>
-    </div>
+    </MapFullscreenFrame>
   );
 }
