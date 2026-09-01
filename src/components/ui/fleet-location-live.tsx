@@ -31,7 +31,7 @@ export function FleetLocationLive({ initialRows }: { initialRows: FleetLocationR
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("vehicle_gps_pings-live", { config: { private: true } })
+      .channel("vehicle_gps_pings-live")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "vehicle_gps_pings" },
