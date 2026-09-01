@@ -87,7 +87,10 @@ export async function startTracking(operationId: string): Promise<void> {
   if (alreadyStarted) await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
 
   await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-    accuracy: Location.Accuracy.Balanced,
+    // Balanced can be satisfied from cell/Wi-Fi positioning alone, without
+    // ever acquiring a real GPS fix — that's a multi-km error, not just a
+    // lower-resolution one. High forces the fused provider to prefer GPS.
+    accuracy: Location.Accuracy.High,
     timeInterval: 20_000,
     distanceInterval: 30,
     foregroundService: {
