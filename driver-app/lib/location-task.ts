@@ -97,8 +97,12 @@ export async function startTracking(operationId: string): Promise<void> {
     // ever acquiring a real GPS fix — that's a multi-km error, not just a
     // lower-resolution one. High forces the fused provider to prefer GPS.
     accuracy: Location.Accuracy.High,
-    timeInterval: 20_000,
-    distanceInterval: 30,
+    // Tightened from 20s/30m — the real ceiling on both position
+    // freshness and how low a speed the system can meaningfully detect.
+    // Roughly doubles background location battery/data use during a
+    // shift; worth it for materially fresher fleet-map positions.
+    timeInterval: 10_000,
+    distanceInterval: 15,
     foregroundService: {
       notificationTitle: "Pyramids Shuttle — tracking active",
       notificationBody: "Sharing your location with dispatch for this shift",
