@@ -38,7 +38,7 @@ export function AppShell({
 
   return (
     <div
-      className={`grid items-start gap-3.5 px-5 pb-7 pt-3.5 ${
+      className={`grid gap-3.5 px-5 pb-7 pt-3.5 ${
         collapsed ? "xl:grid-cols-[64px_minmax(0,1fr)]" : "xl:grid-cols-[232px_minmax(0,1fr)]"
       }`}
     >
