@@ -1,0 +1,44 @@
+{
+  "name": "driver-app",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "expo": "~57.0.18",
+    "expo-constants": "~57.0.16",
+    "expo-dev-client": "~57.0.16",
+    "expo-linking": "~57.0.8",
+    "expo-location": "~57.0.14",
+    "expo-notifications": "~57.0.15",
+    "expo-router": "~57.0.17",
+    "expo-secure-store": "~57.0.2",
+    "expo-status-bar": "~57.0.1",
+    "expo-task-manager": "~57.0.14",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-url-polyfill": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "react-dom": "$react",
+    "react-native-worklets": "0.10.4"
+  },
+  "expo": {
+    "autolinking": {
+      "android": {
+        "exclude": ["react-native-reanimated"]
+      }
+    }
+  },
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo start --dev-client --android",
+    "typecheck": "tsc --noEmit"
+  },
+  "private": true
+}
