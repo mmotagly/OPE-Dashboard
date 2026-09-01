@@ -103,6 +103,7 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
   const [rows, setRows] = useState(initialRows);
   const [fullscreen, setFullscreen] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const hasFramedRef = useRef(false);
 
   useEffect(() => {
@@ -119,13 +120,20 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
     return () => clearInterval(id);
   }, []);
 
-  // Leaflet measures its container's pixel size on creation; toggling
-  // fullscreen resizes that container after the fact, so it needs an
-  // explicit nudge once the new layout has actually settled.
+  // Leaflet measures its container's pixel size on creation and caches it —
+  // it has no way to know the fullscreen toggle just resized that container
+  // out from under it. A ResizeObserver on the actual DOM node reacts to
+  // the real, final size rather than guessing how long a layout pass takes
+  // (a fixed setTimeout delay was the bug here: it fired before the browser
+  // had finished laying out the fullscreen container, so Leaflet kept
+  // rendering tiles sized for the old small preview).
   useEffect(() => {
-    const id = setTimeout(() => mapRef.current?.invalidateSize(), 50);
-    return () => clearTimeout(id);
-  }, [fullscreen]);
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => mapRef.current?.invalidateSize());
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const withPosition = rows.filter(
     (r): r is FleetLocationRow & { latitude: number; longitude: number } =>
@@ -149,7 +157,10 @@ export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRo
   }, [withPosition]);
 
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 bg-canvas p-3" : "relative"}>
+    <div
+      ref={containerRef}
+      className={fullscreen ? "fixed inset-0 z-50 bg-canvas p-3" : "relative"}
+    >
       <MapContainer
         ref={mapRef}
         center={GIZA_FALLBACK}
