@@ -108,88 +108,97 @@ export function DataTable<T extends { id: string }>({
   };
 
   return (
-    <table className="w-full table-fixed border-collapse">
-      <thead>
-        <tr>
-          {columns.map((column) => {
-            const isSorted = order.key === column.key;
-            return (
-              <th
-                key={column.key}
-                scope="col"
-                aria-sort={
-                  isSorted
-                    ? order.dir === "asc"
-                      ? "ascending"
-                      : "descending"
-                    : undefined
-                }
-                className={`sticky top-[68px] z-10 border-b border-hairline bg-surface px-3 py-2.5 text-table-header font-medium uppercase tracking-[0.04em] text-ink-3 ${
-                  column.numeric ? "text-end" : "text-start"
-                } ${column.className ?? ""}`}
-              >
-                {column.sortValue ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleSort(column.key)}
-                    className={`inline-flex items-center gap-1 transition-colors hover:text-ink ${
-                      isSorted ? "text-ink" : ""
-                    }`}
-                  >
-                    <span className="truncate">{column.header}</span>
-                    <span aria-hidden className="text-[9px]">
-                      {isSorted ? (order.dir === "asc" ? "▲" : "▼") : "↕"}
-                    </span>
-                  </button>
-                ) : (
-                  <span className="truncate">{column.header}</span>
-                )}
-              </th>
-            );
-          })}
-        </tr>
-      </thead>
-
-      <tbody>
-        {sorted.length === 0 ? (
+    // The one scrollable region: bounded by whatever height the parent gives
+    // it (Panel's `fill` mode hands it exactly the remaining space below
+    // PanelHead/filters; a non-fill Panel leaves this at its natural content
+    // height, where it's a harmless no-op). `th`'s sticky is relative to
+    // *this* div specifically, not the page — the only way to make a sticky
+    // header actually reliable, since the scrolling ancestor is now
+    // unambiguous.
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <table className="w-full table-fixed border-collapse">
+        <thead>
           <tr>
-            <td colSpan={columns.length} className="px-4">
-              {empty}
-            </td>
+            {columns.map((column) => {
+              const isSorted = order.key === column.key;
+              return (
+                <th
+                  key={column.key}
+                  scope="col"
+                  aria-sort={
+                    isSorted
+                      ? order.dir === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : undefined
+                  }
+                  className={`sticky top-0 z-10 border-b border-hairline bg-surface px-3 py-2.5 text-table-header font-medium uppercase tracking-[0.04em] text-ink-3 ${
+                    column.numeric ? "text-end" : "text-start"
+                  } ${column.className ?? ""}`}
+                >
+                  {column.sortValue ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(column.key)}
+                      className={`inline-flex items-center gap-1 transition-colors hover:text-ink ${
+                        isSorted ? "text-ink" : ""
+                      }`}
+                    >
+                      <span className="truncate">{column.header}</span>
+                      <span aria-hidden className="text-[9px]">
+                        {isSorted ? (order.dir === "asc" ? "▲" : "▼") : "↕"}
+                      </span>
+                    </button>
+                  ) : (
+                    <span className="truncate">{column.header}</span>
+                  )}
+                </th>
+              );
+            })}
           </tr>
-        ) : (
-          sorted.map((row) => {
-            const isActive = active === row.id;
-            return (
-              <tr
-                key={rowKey ? rowKey(row) : row.id}
-                onClick={() => select(row.id)}
-                aria-selected={isActive}
-                className={`cursor-pointer border-b border-hairline transition-colors last:border-b-0 ${
-                  isActive ? "bg-elev" : "hover:bg-raise"
-                }`}
-              >
-                {columns.map((column, index) => (
-                  <td
-                    key={column.key}
-                    className={`${index === 0 ? "relative" : ""} px-3 py-2.5 text-body ${
-                      column.numeric ? "tnum text-end" : "text-start"
-                    } ${column.className ?? ""}`}
-                  >
-                    {index === 0 && isActive && (
-                      <span
-                        aria-hidden
-                        className="absolute bottom-0 start-0 top-0 w-[2px] bg-ink"
-                      />
-                    )}
-                    <div className="truncate">{column.cell(row)}</div>
-                  </td>
-                ))}
-              </tr>
-            );
-          })
-        )}
-      </tbody>
-    </table>
+        </thead>
+
+        <tbody>
+          {sorted.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="px-4">
+                {empty}
+              </td>
+            </tr>
+          ) : (
+            sorted.map((row) => {
+              const isActive = active === row.id;
+              return (
+                <tr
+                  key={rowKey ? rowKey(row) : row.id}
+                  onClick={() => select(row.id)}
+                  aria-selected={isActive}
+                  className={`cursor-pointer border-b border-hairline transition-colors last:border-b-0 ${
+                    isActive ? "bg-elev" : "hover:bg-raise"
+                  }`}
+                >
+                  {columns.map((column, index) => (
+                    <td
+                      key={column.key}
+                      className={`${index === 0 ? "relative" : ""} px-3 py-2.5 text-body ${
+                        column.numeric ? "tnum text-end" : "text-start"
+                      } ${column.className ?? ""}`}
+                    >
+                      {index === 0 && isActive && (
+                        <span
+                          aria-hidden
+                          className="absolute bottom-0 start-0 top-0 w-[2px] bg-ink"
+                        />
+                      )}
+                      <div className="truncate">{column.cell(row)}</div>
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

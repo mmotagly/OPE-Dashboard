@@ -4,19 +4,35 @@ export function Panel({
   children,
   className = "",
   clip = true,
+  fill = false,
 }: {
   children: ReactNode;
   className?: string;
   /**
    * Panels clip their content to the card radius. A panel holding a table sets
-   * this false: `overflow: hidden` makes the panel the scrollport, and a sticky
-   * table header would then stick to a container that never scrolls.
+   * this false — the table itself owns clipping around its own scroll area
+   * (see `fill`) instead of the panel clipping it.
    */
   clip?: boolean;
+  /**
+   * Bounds the panel to the content column's full height and turns it into a
+   * fixed head + scrollable tail: everything before the last flex-growing
+   * child (PanelHead, filter bars) stays put, and only that child's own
+   * overflow scrolls — `DataTable` and `DetailPage` both already build
+   * themselves as that flex-growing child. For a page whose Panel is exactly
+   * one table this gives the table its own dedicated scrollbar. Pages that
+   * stack several panels instead (Dashboard, Vendor trends, Alerts, Day
+   * board) leave this off and let the content column's own scroll (set in
+   * `AppShell`) handle them — there's no single "the table" to hand a
+   * dedicated scrollbar to there.
+   */
+  fill?: boolean;
 }) {
   return (
     <section
-      className={`${clip ? "overflow-hidden" : ""} rounded-card bg-surface rim ${className}`}
+      className={`${clip ? "overflow-hidden" : ""} ${
+        fill ? "flex h-full min-h-0 flex-col overflow-hidden" : ""
+      } rounded-card bg-surface rim ${className}`}
     >
       {children}
     </section>

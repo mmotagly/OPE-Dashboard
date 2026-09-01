@@ -62,7 +62,7 @@ export default async function CamerasPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("fleet")}
           title={isBridges ? t("bridgesTitle") : t("camerasTitle")}

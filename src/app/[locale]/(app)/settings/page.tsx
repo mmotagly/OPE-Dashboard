@@ -120,7 +120,7 @@ export default async function SettingsPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("admin")}
           title={title}
@@ -156,7 +156,11 @@ export default async function SettingsPage({
           </>
         )}
 
-        {entity === "thresholds" && <ThresholdsForm thresholds={thresholds} />}
+        {entity === "thresholds" && (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ThresholdsForm thresholds={thresholds} />
+          </div>
+        )}
 
         {entity === "lookups" && (
           <>

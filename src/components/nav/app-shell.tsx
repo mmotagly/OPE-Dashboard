@@ -38,11 +38,11 @@ export function AppShell({
 
   return (
     <div
-      className={`grid gap-3.5 px-5 pb-7 pt-3.5 ${
+      className={`grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3.5 px-5 pb-7 pt-3.5 ${
         collapsed ? "xl:grid-cols-[64px_minmax(0,1fr)]" : "xl:grid-cols-[232px_minmax(0,1fr)]"
       }`}
     >
-      <div className="hidden xl:block">
+      <div className="hidden min-h-0 xl:block">
         <Sidebar
           role={role}
           user={user}
@@ -52,7 +52,13 @@ export function AppShell({
           onToggleCollapsed={toggle}
         />
       </div>
-      {children}
+      {/* The one contained scrollbar for page content — sidebar and topbar
+          sit outside it entirely, so they cannot move regardless of what's
+          inside. Pages whose Panel uses `fill` occupy exactly this height,
+          so their own internal table scroll takes over and this outer
+          scroll never engages; pages that stack several panels (Dashboard,
+          Vendor trends, Alerts, Day board) scroll here instead. */}
+      <div className="min-h-0 overflow-y-auto">{children}</div>
     </div>
   );
 }

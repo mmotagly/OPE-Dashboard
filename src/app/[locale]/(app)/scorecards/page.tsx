@@ -104,7 +104,7 @@ export default async function ScorecardsPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("finance")}
           title={kind === "templates" ? t("templatesTitle") : t("title")}

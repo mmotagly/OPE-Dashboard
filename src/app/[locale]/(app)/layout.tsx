@@ -29,7 +29,7 @@ export default async function AppLayout({
   const alertCount = await loadAlertCounts();
 
   return (
-    <>
+    <div className="flex h-dvh flex-col overflow-hidden">
       <Topbar user={user} initialTheme={initialTheme} alertCount={alertCount} />
       <AppShell
         role={user.role}
@@ -40,6 +40,6 @@ export default async function AppLayout({
       >
         {children}
       </AppShell>
-    </>
+    </div>
   );
 }

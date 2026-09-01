@@ -90,7 +90,7 @@ export default async function VendorsPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("fleet")}
           title={t("vendorsTitle")}

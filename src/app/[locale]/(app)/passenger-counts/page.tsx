@@ -26,7 +26,7 @@ export default async function PassengerCountsPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead eyebrow={tNav("operations")} title={t("title")} actions={<span className="tnum text-ink-3">{rows.length}</span>} />
         {rows.length === 0 && (
           <p className="border-b border-hairline px-4 py-3 text-[12.5px] text-ink-3">{t("noDataHint")}</p>

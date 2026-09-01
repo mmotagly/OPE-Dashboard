@@ -33,8 +33,8 @@ export function DetailPage({
   children: ReactNode;
 }) {
   return (
-    <Panel clip={false}>
-      <header className="border-b border-hairline px-4 py-3.5">
+    <Panel clip={false} fill>
+      <header className="shrink-0 border-b border-hairline px-4 py-3.5">
         <Link href={backHref} className="text-[12px] text-ink-3 transition-colors hover:text-ink-2">
           ← {backLabel}
         </Link>
@@ -45,7 +45,7 @@ export function DetailPage({
         </div>
         {sub && <p className="mt-1 text-[12.5px] text-ink-3">{sub}</p>}
       </header>
-      {children}
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
     </Panel>
   );
 }

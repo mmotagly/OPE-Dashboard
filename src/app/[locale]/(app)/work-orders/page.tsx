@@ -99,7 +99,7 @@ export default async function WorkOrdersPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead eyebrow={tNav("maintenance")} title={t("title")} />
 
         <FilterBar

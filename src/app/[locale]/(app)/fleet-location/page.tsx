@@ -27,7 +27,7 @@ export default async function FleetLocationPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("operations")}
           title={t("title")}

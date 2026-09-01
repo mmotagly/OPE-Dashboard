@@ -71,7 +71,7 @@ export function FleetLocationLive({ initialRows }: { initialRows: FleetLocationR
 
   return (
     <>
-      <div className="border-b border-hairline p-3">
+      <div className="shrink-0 border-b border-hairline p-3">
         <FleetLocationMapLoader rows={rows} />
       </div>
       <FleetLocationTable rows={rows} />

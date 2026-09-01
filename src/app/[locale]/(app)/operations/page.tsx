@@ -144,7 +144,7 @@ export default async function OperationsPage({
 
   return (
     <div className="font-inter contents">
-      <Panel clip={false}>
+      <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("operations")}
           title={t("title")}

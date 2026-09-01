@@ -150,8 +150,13 @@ export function Sidebar({
   const isDesktop = variant === "desktop";
   const isCollapsed = isDesktop && collapsed;
 
+  // Deliberately no overflow-y here even though it's a "safety net" candidate
+  // for a very short viewport with many groups: setting overflow-y alone
+  // forces the browser to coerce overflow-x to auto too (CSS's own rule,
+  // not a Tailwind choice), which would clip the collapsed-mode tooltip
+  // below — it escapes the nav's box horizontally by design.
   const navClass = isDesktop
-    ? "sticky top-[68px] rounded-[14px] bg-surface px-2.5 py-3.5 rim"
+    ? "h-full rounded-[14px] bg-surface px-2.5 py-3.5 rim"
     : "px-2.5 py-3.5";
 
   return (
