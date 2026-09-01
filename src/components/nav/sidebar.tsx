@@ -5,6 +5,7 @@ import { Link, usePathname } from "@/lib/i18n/routing";
 import { canSeeMoney, isSuper, type AppRole } from "@/lib/roles";
 import { ThemeToggle } from "./theme-toggle";
 import { LocaleSwitch } from "./locale-switch";
+import { SignOut } from "./sign-out";
 import {
   CalendarDays,
   BellRing,
@@ -75,6 +76,7 @@ export function Sidebar({
   onToggleCollapsed?: () => void;
 }) {
   const t = useTranslations("nav");
+  const tCommon = useTranslations("common");
   const pathname = usePathname();
 
   // next-intl already strips the locale, but a raw `/en/...` is handled too so
@@ -150,14 +152,26 @@ export function Sidebar({
   const isDesktop = variant === "desktop";
   const isCollapsed = isDesktop && collapsed;
 
-  // Deliberately no overflow-y here even though it's a "safety net" candidate
-  // for a very short viewport with many groups: setting overflow-y alone
-  // forces the browser to coerce overflow-x to auto too (CSS's own rule,
-  // not a Tailwind choice), which would clip the collapsed-mode tooltip
-  // below — it escapes the nav's box horizontally by design.
+  // Expanded mode's group list gets its own scroll — at a normal ~900px
+  // viewport with every group visible (super_admin), the list is genuinely
+  // taller than the sidebar's box, and the old plain-overflow layout just
+  // let the bottom groups (and the always-should-be-visible user/theme
+  // footer) run off the box with no way to reach them. Collapsed mode
+  // deliberately does NOT get the same overflow-y: setting it forces the
+  // browser to coerce overflow-x to auto too (CSS's own rule), which would
+  // permanently clip the collapsed-mode tooltip below — it escapes the
+  // list's box horizontally by design. Collapsed content measures shorter
+  // than expanded (no group-label rows), and doesn't overflow at any
+  // reasonable desktop viewport height, so it keeps the simpler
+  // fully-visible layout instead.
   const navClass = isDesktop
-    ? "h-full rounded-[14px] bg-surface px-2.5 py-3.5 rim"
+    ? "flex h-full flex-col rounded-[14px] bg-surface px-2.5 py-3.5 rim"
     : "px-2.5 py-3.5";
+  const listClass = isDesktop
+    ? isCollapsed
+      ? "min-h-0"
+      : "min-h-0 flex-1 overflow-y-auto"
+    : "";
 
   return (
     <nav className={navClass}>
@@ -167,7 +181,7 @@ export function Sidebar({
           onClick={onToggleCollapsed}
           aria-label={isCollapsed ? t("expandSidebar") : t("collapseSidebar")}
           title={isCollapsed ? t("expandSidebar") : t("collapseSidebar")}
-          className={`mb-2 flex items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-ink-3 transition-colors hover:bg-raise hover:text-ink ${
+          className={`mb-2 flex shrink-0 items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-ink-3 transition-colors hover:bg-raise hover:text-ink ${
             isCollapsed ? "justify-center" : ""
           }`}
         >
@@ -179,15 +193,16 @@ export function Sidebar({
         </button>
       )}
 
-      {groups.map((g) => (
-        <div key={g.label}>
-          {!isCollapsed && (
-            <p className="px-2.5 pb-1.5 pt-3.5 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
-              {g.label}
-            </p>
-          )}
-          {isCollapsed && <div className="mt-3.5 border-t border-hairline pt-1.5" />}
-          {g.items.map((item) => {
+      <div className={listClass}>
+        {groups.map((g) => (
+          <div key={g.label}>
+            {!isCollapsed && (
+              <p className="px-2.5 pb-1.5 pt-3.5 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
+                {g.label}
+              </p>
+            )}
+            {isCollapsed && <div className="mt-3.5 border-t border-hairline pt-1.5" />}
+            {g.items.map((item) => {
             // Segment match, not prefix match: /operations?mode=new stays
             // highlighted, and /routes never lights up /rfrs.
             const isActive = segment === item.href;
@@ -229,11 +244,12 @@ export function Sidebar({
                 )}
               </Link>
             );
-          })}
-        </div>
-      ))}
+            })}
+          </div>
+        ))}
+      </div>
 
-      <div className="mt-3.5 border-t border-hairline pt-1.5">
+      <div className="mt-3.5 shrink-0 border-t border-hairline pt-1.5">
         {!isCollapsed && (
           <div className="flex items-center gap-2.5 px-2.5 py-1.5">
             <div className="min-w-0 flex-1">
@@ -244,6 +260,7 @@ export function Sidebar({
           </div>
         )}
         <ThemeToggle initialTheme={initialTheme} collapsed={isCollapsed} />
+        <SignOut label={tCommon("signOut")} collapsed={isCollapsed} />
       </div>
     </nav>
   );

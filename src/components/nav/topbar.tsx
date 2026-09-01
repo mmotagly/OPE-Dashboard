@@ -1,17 +1,13 @@
 import { getTranslations } from "next-intl/server";
-import { SignOut } from "./sign-out";
 import { MobileNav } from "./mobile-nav";
 import type { CurrentUser } from "@/lib/auth";
 
 /**
- * Deliberately short and never wraps to a second line: user name, job
- * title, and the language toggle used to live here and moved to the
- * sidebar's bottom-left (variable-length name/title text was the one
- * thing that could push this row past its assumed ~68px height, and every
- * sticky `top-[68px]` offset in the app — table headers, the sidebar's own
- * sticky position, MobileNav's sheet — depends on that height staying
- * fixed). What's left (brand + sign out, plus the mobile hamburger) is
- * short enough at any supported viewport width that it shouldn't wrap.
+ * Deliberately minimal: user name, job title, language toggle, and sign out
+ * all live in the sidebar's bottom-left instead (SignOut specifically
+ * because Settings — where it was asked to go — is super_admin-only, so it
+ * can't be the only way to sign out). What's left here is just the brand
+ * and the mobile hamburger.
  */
 export async function Topbar({
   user,
@@ -34,10 +30,6 @@ export async function Topbar({
         </span>
         <span className="hidden sm:inline">{t("brand")}</span>
       </div>
-
-      <div className="flex-1" />
-
-      <SignOut label={t("common.signOut")} />
     </header>
   );
 }

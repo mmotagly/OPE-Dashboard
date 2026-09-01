@@ -101,6 +101,32 @@
   body {
     min-height: 100dvh;
   }
+  /* Themed scrollbars everywhere, not the browser default — applies globally
+     (rather than an opt-in utility class) so every current and future
+     scroll container picks it up automatically: table rows, the sidebar,
+     the drawer body, dropdowns. Firefox's pair is inherited, so setting it
+     once on html covers descendants; WebKit's pseudo-elements aren't
+     inherited, hence the universal selector. Both reference the same
+     --color-* tokens as everything else, so they retheme for free with
+     [data-theme="light"] — no separate light/dark block needed here. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-idle) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-idle);
+    border-radius: 8px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-ink-3);
+  }
   ::placeholder {
     color: var(--color-ink-3);
   }
