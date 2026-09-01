@@ -29,6 +29,9 @@ export type PingPayload = {
   recordedAt: string;
   speedKmh?: number | null;
   headingDeg?: number | null;
+  /** Diagnostic only (see lib/location-task.ts) — horizontal fix accuracy
+   * in meters, stored verbatim in the ping's raw_payload. */
+  accuracy?: number | null;
 };
 
 async function authHeader(): Promise<Record<string, string>> {

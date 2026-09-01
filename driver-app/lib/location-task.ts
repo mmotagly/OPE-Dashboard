@@ -50,6 +50,12 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     recordedAt: new Date(latest.timestamp).toISOString(),
     speedKmh: latest.coords.speed != null ? latest.coords.speed * 3.6 : null,
     headingDeg: latest.coords.heading,
+    // Diagnostic only, not displayed anywhere yet — horizontal fix
+    // accuracy in meters. Lets us tell "device never got a good enough
+    // fix to compute speed" apart from a transport/storage bug, by
+    // reading it back from vehicle_gps_pings.raw_payload after a test
+    // drive, without needing on-device log access.
+    accuracy: latest.coords.accuracy,
   });
   if (queue.length > MAX_QUEUE) queue.shift();
 
