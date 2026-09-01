@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { Empty } from "@/components/ui/empty";
+import { dateTime, time } from "@/lib/format";
 import type { PassengerCountRow } from "./queries";
 
 export function PassengerCountsTable({ rows }: { rows: PassengerCountRow[] }) {
@@ -28,7 +29,7 @@ export function PassengerCountsTable({ rows }: { rows: PassengerCountRow[] }) {
       sortValue: (r) => r.windowStart,
       cell: (r) => (
         <span className="tnum">
-          {new Date(r.windowStart).toLocaleString()} → {new Date(r.windowEnd).toLocaleTimeString()}
+          {dateTime(r.windowStart)} → {time(r.windowEnd)}
         </span>
       ),
     },

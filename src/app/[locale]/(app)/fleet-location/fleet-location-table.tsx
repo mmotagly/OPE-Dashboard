@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { DataTable, orDash, type Column } from "@/components/ui/data-table";
 import { Empty } from "@/components/ui/empty";
 import { Pill } from "@/components/ui/pill";
+import { dateTime } from "@/lib/format";
 import type { FleetLocationRow } from "./queries";
 
 export function FleetLocationTable({ rows }: { rows: FleetLocationRow[] }) {
@@ -62,7 +63,7 @@ export function FleetLocationTable({ rows }: { rows: FleetLocationRow[] }) {
       key: "lastSeen",
       header: t("field.lastSeen"),
       sortValue: (r) => r.recordedAt ?? "",
-      cell: (r) => (r.recordedAt ? <span className="tnum">{new Date(r.recordedAt).toLocaleString()}</span> : orDash(null)),
+      cell: (r) => (r.recordedAt ? <span className="tnum">{dateTime(r.recordedAt)}</span> : orDash(null)),
     },
   ];
 

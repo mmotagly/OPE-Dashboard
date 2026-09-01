@@ -145,7 +145,12 @@ export function FleetLocationMap({ rows }: { rows: FleetLocationRow[] }) {
         scrollWheelZoom={fullscreen}
         style={{ height: fullscreen ? "100%" : 320, width: "100%", borderRadius: 10 }}
       >
-        <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
+        <TileLayer
+          className="map-tiles-dark"
+          attribution={DARK_TILE_ATTRIBUTION}
+          url={DARK_TILE_URL}
+          maxNativeZoom={DARK_TILE_MAX_ZOOM}
+        />
         <LiveMarkers rows={rows} />
       </MapContainer>
     </MapFullscreenFrame>

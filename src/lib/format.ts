@@ -17,6 +17,40 @@ export function percent(value: number | null | undefined, digits = 1): string {
   return `${value.toFixed(digits)}%`;
 }
 
+/**
+ * `toLocaleString()` with no arguments renders differently on the server
+ * (Node's own default locale/timezone) than in the browser (the viewer's
+ * own locale/timezone) — a real hydration-mismatch bug in a Client
+ * Component (React error #418) traced to exactly this in
+ * fleet-location-table.tsx. Fixed locale + timezone makes it deterministic
+ * regardless of where it renders; Cairo is also just more useful here than
+ * whatever the viewer's OS happens to be set to, since everyone using this
+ * app is in Egypt.
+ */
+export function dateTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "Africa/Cairo",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/** Time-only companion to `dateTime()` — same fixed locale/timezone, for a
+ * second timestamp already paired with a full `dateTime()` (e.g. a window's
+ * end time right after its start). */
+export function time(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-US", {
+    timeZone: "Africa/Cairo",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 /** Minutes -> "2d 4h 13m". Matches fn_format_minutes in the database. */
 export function duration(minutes: number | null | undefined): string {
   if (minutes === null || minutes === undefined) return "—";

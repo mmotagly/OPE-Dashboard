@@ -45,7 +45,7 @@ export function busIcon(tone: "warn" | "go" | "idle") {
 /**
  * CARTO's Basemaps API key (free, no CARTO account required — see
  * .env.example) fixes both prior problems in one move: the anonymous CDN's
- * "API KEY REQUIRED" watermark (CARTO), and Esri's Dark Gray Canvas having
+ * "API KEY REQUIRED" watermark, and Esri's Dark Gray Canvas having
  * genuinely thin/no data for the Giza/Cairo area specifically (verified
  * directly: real tile fetches came back with an empty labels layer and an
  * explicit "no data" pattern at real Giza coordinates, z14-20). CARTO's
@@ -53,13 +53,22 @@ export function busIcon(tone: "warn" | "go" | "idle") {
  * this exact area — verified the same way, real differentiated tiles,
  * checked visually (found the Great Pyramid itself labeled at z16).
  *
+ * Voyager, not `dark_all`: raw `dark_all` is CARTO's own deliberately
+ * minimal dark style — its roads/labels are dimmed by design, which is
+ * exactly why the very first version of this map (before Voyager or Esri
+ * were ever tried) was already reported as "too dark, streets barely
+ * visible." Voyager has far more inherent road/water/label contrast (its
+ * own colours, not dark by default); `.map-tiles-dark` (globals.css) darkens
+ * *that* down via a CSS filter so it reads as dark overall while keeping
+ * that inherent clarity, instead of fighting dark_all's design back up.
+ *
  * URL format confirmed against CARTO's own docs and a live fetch, not
- * assumed — `rastertiles/dark_all`, not `dark_all` alone (both are valid
+ * assumed — `rastertiles/voyager`, not `voyager` alone (both are valid
  * paths on the anonymous CDN, but the keyed endpoint specifically wants
  * the `rastertiles/` prefix). `{s}` subdomain sharding and `{r}` retina
  * both confirmed working with the key.
  */
-export const DARK_TILE_URL = `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`;
+export const DARK_TILE_URL = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`;
 export const DARK_TILE_MAX_ZOOM = 20;
 export const DARK_TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -88,7 +97,12 @@ export function VehicleMap({
         scrollWheelZoom={fullscreen}
         style={{ height: fullscreen ? "100%" : 220, width: "100%", borderRadius: 10 }}
       >
-        <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
+        <TileLayer
+          className="map-tiles-dark"
+          attribution={DARK_TILE_ATTRIBUTION}
+          url={DARK_TILE_URL}
+          maxNativeZoom={DARK_TILE_MAX_ZOOM}
+        />
         <Marker position={[latitude, longitude]} icon={busIcon(tone)}>
           <Tooltip direction="top" offset={[0, -14]}>
             {vehicleTooltipText(vehicleCode, speedKmh)}

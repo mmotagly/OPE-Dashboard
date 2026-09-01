@@ -18,6 +18,7 @@ import {
   pmLabelTone,
   operationTone,
   statusLabel,
+  dateTime,
 } from "@/lib/format";
 import {
   loadNearestPm,
@@ -263,7 +264,7 @@ export async function OperationDrawer({
                 speedKmh={ping.speedKmh}
               />
               <p className="mt-2 text-[10.5px] text-ink-3">
-                {t("locationAsOf", { time: new Date(ping.recordedAt).toLocaleString() })}
+                {t("locationAsOf", { time: dateTime(ping.recordedAt) })}
               </p>
             </>
           ) : (
