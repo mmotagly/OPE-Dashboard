@@ -64,3 +64,24 @@ export async function sendPing(payload: PingPayload): Promise<boolean> {
     return false;
   }
 }
+
+export type LiveKitCredentials = { token: string; url: string };
+
+/**
+ * Same operationId-is-the-authorization-unit pattern as sendPing — the
+ * server re-validates this is genuinely today's assignment before minting
+ * a publish-only grant into that operation's room, never trusting
+ * anything else the client claims. Throws on failure (unlike sendPing —
+ * there's no queue to fall back to here; the camera screen surfaces the
+ * error directly).
+ */
+export async function fetchLiveKitToken(operationId: string): Promise<LiveKitCredentials> {
+  const res = await fetch(`${API_BASE_URL}/api/livekit/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ operationId }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error ?? `Request failed (${res.status})`);
+  return body;
+}

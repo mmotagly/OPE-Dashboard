@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { registerGlobals } from "@livekit/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { SessionProvider, useSession } from "../lib/session";
@@ -9,6 +10,11 @@ import { colors } from "../lib/theme";
 // event, so it's imported here at the root rather than lazily from the
 // shift screen.
 import "../lib/location-task";
+
+// Sets up the WebRTC globals LiveKit's RN SDK needs — required once, before
+// any camera screen mounts, not lazily inside it (LiveKit's own docs are
+// explicit about this).
+registerGlobals();
 
 /**
  * `Stack.Protected` is the SDK 53+ Expo Router auth-gating API — confirmed

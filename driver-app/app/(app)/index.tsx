@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Linking } from "react-native";
+import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { fetchAssignments, type DriverAssignment, type AssignmentResponse } from "../../lib/api";
 import {
@@ -26,6 +27,7 @@ type LoadState =
   | { kind: "ready"; assignment: DriverAssignment };
 
 export default function ShiftScreen() {
+  const router = useRouter();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [driver, setDriver] = useState<AssignmentResponse["driver"] | null>(null);
   const [tracking, setTracking] = useState(false);
@@ -225,6 +227,14 @@ export default function ShiftScreen() {
               amber marks "still running" so it reads apart from a
               completed/finished state at a glance, not just from the text. */}
           <Text style={styles.statusOn}>● Tracking active</Text>
+          <Pressable
+            style={styles.buttonSecondary}
+            onPress={() =>
+              router.push({ pathname: "/camera", params: { operationId: assignment.operationId } })
+            }
+          >
+            <Text style={styles.buttonSecondaryText}>Camera</Text>
+          </Pressable>
           <Pressable style={styles.buttonDanger} onPress={endShift}>
             <Text style={styles.buttonDangerText}>Stop shift</Text>
           </Pressable>
