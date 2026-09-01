@@ -32,6 +32,9 @@ type PingBody = {
   recordedAt: string;
   speedKmh?: number | null;
   headingDeg?: number | null;
+  /** Diagnostic only — not read here, just stored verbatim below in
+   * raw_payload for later inspection (see driver-app/lib/location-task.ts). */
+  accuracy?: number | null;
 };
 
 function isValidPing(body: unknown): body is PingBody {
