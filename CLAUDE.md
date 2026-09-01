@@ -268,6 +268,33 @@ background, and a scrim covers the table behind.
 - Structure, identical in every module: header with record code, status pill and
   close button · scrollable body · pinned footer, primary action first
 
+### Row click vs. code-link behavior
+Clicking anywhere in a row still opens the overlay Drawer, unchanged. Clicking
+the record's code/ID specifically — that one cell only — instead navigates
+(same tab) to a standalone full-page view at `/<module>/[id]`, e.g.
+`/vehicles/[id]`. This is genuinely new, added 2026-09-01; before it, no
+module had anything but the drawer.
+
+The two views share their detail content, never duplicate it: each module's
+drawer (`*-drawer.tsx`) exports its view-mode body as a separate
+`*DetailBody` component (e.g. `VehicleDetailBody`), which both the drawer
+and the `[id]/page.tsx` route render — just wrapped in different chrome
+(`Drawer`'s fixed-overlay/scrim vs. `DetailPage`'s plain-page `Panel` with a
+back link instead of a close button). `Drawer` and `DetailPage` are
+deliberately two separate components, not one branching on a mode — their
+positioning mechanics don't share enough to be worth unifying.
+
+The code-link cell stops click propagation so it doesn't also fire the row's
+own drawer-opening click handler.
+
+**Status: built for Vehicles only, as the reference implementation.** Every
+other module still only has the drawer — extending this is mechanical
+repetition of the same three-step pattern (extract `*DetailBody`, add
+`DetailPage` in a new `[id]/page.tsx`, make the code cell a stopPropagation
+`Link`), not a design decision, but it hasn't been done yet. Do it the same
+way for a module the next time you touch that module's drawer, rather than
+in one giant sweep.
+
 ### Form fields
 Any prefilled value carries a 10.5px `--color-ink-3` hint underneath saying
 where it came from — "From last reading", "Default driver for this bus".

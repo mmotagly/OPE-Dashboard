@@ -17,7 +17,11 @@ import {
   loadVehicle,
   loadVehicleOptions,
   toVehicleFormValues,
+  type VehicleRow,
+  type PmScheduleRow,
 } from "./queries";
+
+type LatestOperation = Awaited<ReturnType<typeof loadLatestOperation>>;
 import { VehicleForm } from "./vehicle-form";
 import { BuildPmSchedule } from "./build-pm-schedule";
 
@@ -41,98 +45,28 @@ const microTone = (status: PmStatus): "neutral" | "go" | "warn" | "stop" => {
 };
 
 /**
- * The vehicle drawer. Periodic maintenance opens this same drawer, which is why
- * the whole schedule lives here rather than on the PM page.
+ * The view-mode body — everything between the Drawer's header/footer chrome
+ * — factored out so the standalone full-page view at `/vehicles/[id]`
+ * (opened by clicking the vehicle code specifically, vs. clicking anywhere
+ * else in a row which still opens this same content in the overlay Drawer)
+ * can render the exact same content without duplicating it. See CLAUDE.md
+ * §"Row click vs. code-link behavior".
  */
-export async function VehicleDrawer({
-  mode,
-  id,
-  closeHref,
+export async function VehicleDetailBody({
+  vehicle,
+  schedule,
+  latest,
   canEdit,
 }: {
-  mode: "view" | "new" | "edit" | "import";
-  id?: string;
-  closeHref: CloseHref;
+  vehicle: VehicleRow;
+  schedule: PmScheduleRow[];
+  latest: LatestOperation;
   canEdit: boolean;
 }) {
   const t = await getTranslations("master");
-  const tCommon = await getTranslations("common");
   const tVehicle = await getTranslations("vehicle");
+  const tCommon = await getTranslations("common");
   const tStatus = await getTranslations("status");
-
-  if (mode === "import") {
-    return (
-      <Drawer
-        code={`${tCommon("importCsv")} · ${t("vehiclesTitle")}`}
-        closeHref={closeHref}
-        closeLabel={tCommon("cancel")}
-      >
-        <div className="p-4">
-          <CsvImportForm
-            previewAction={previewImportVehicles}
-            confirmAction={confirmImportVehicles}
-            templateHref="/api/import-template/vehicles"
-            extraColumns={[
-              { key: "plate_number", header: t("field.plateNumber") },
-              { key: "vendor_code", header: tVehicle("vendor") },
-            ]}
-          />
-        </div>
-      </Drawer>
-    );
-  }
-
-  if (mode === "new" || mode === "edit") {
-    const [options, vehicle] = await Promise.all([
-      loadVehicleOptions(),
-      mode === "edit" && id ? loadVehicle(id) : null,
-    ]);
-
-    if (mode === "edit" && !vehicle) {
-      return (
-        <Drawer code={t("editVehicle")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-          <Empty title={t("notFound")} hint={t("notFoundHint")} />
-        </Drawer>
-      );
-    }
-
-    return (
-      <Drawer
-        code={vehicle ? `${t("editVehicle")} · ${vehicle.vehicleCode}` : t("newVehicle")}
-        sub={vehicle?.plateNumber}
-        closeHref={closeHref}
-        closeLabel={tCommon("cancel")}
-      >
-        <VehicleForm
-          mode={vehicle ? "edit" : "create"}
-          vehicleId={vehicle?.id}
-          options={options}
-          initial={vehicle ? toVehicleFormValues(vehicle) : EMPTY_VEHICLE_FORM}
-          backTo={closeHref.query}
-          odometer={
-            vehicle
-              ? { km: vehicle.currentOdometerKm, date: vehicle.currentOdometerDate }
-              : undefined
-          }
-        />
-      </Drawer>
-    );
-  }
-
-  const vehicle = id ? await loadVehicle(id) : null;
-
-  if (!vehicle) {
-    return (
-      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
-      </Drawer>
-    );
-  }
-
-  const [schedule, latest] = await Promise.all([
-    loadPmSchedule(vehicle.id),
-    loadLatestOperation(vehicle.id),
-  ]);
 
   const nearest = schedule[0] ?? null;
   const licence = expiryState(vehicle.licenseExpiryDate);
@@ -143,32 +77,7 @@ export async function VehicleDrawer({
   };
 
   return (
-    <Drawer
-      code={vehicle.vehicleCode}
-      sub={`${vehicle.plateNumber}${vehicle.vendorName ? ` · ${vehicle.vendorName}` : ""}`}
-      pill={
-        vehicle.statusLabel ? (
-          <Pill tone={vehicle.statusCode === "active" ? "go" : "idle"}>
-            {vehicle.statusLabel}
-          </Pill>
-        ) : undefined
-      }
-      closeHref={closeHref}
-      closeLabel={tCommon("cancel")}
-      footer={
-        canEdit ? (
-          <Link
-            href={{
-              pathname: "/vehicles",
-              query: { mode: "edit", id: vehicle.id },
-            }}
-            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
-          >
-            {tCommon("edit")}
-          </Link>
-        ) : undefined
-      }
-    >
+    <>
       <Section title={tVehicle("odometer")}>
         <KmMeter
           startKm={latest?.startKm ?? vehicle.currentOdometerKm}
@@ -273,6 +182,131 @@ export async function VehicleDrawer({
           </ul>
         )}
       </Section>
+    </>
+  );
+}
+
+/**
+ * The vehicle drawer. Periodic maintenance opens this same drawer, which is why
+ * the whole schedule lives here rather than on the PM page.
+ */
+export async function VehicleDrawer({
+  mode,
+  id,
+  closeHref,
+  canEdit,
+}: {
+  mode: "view" | "new" | "edit" | "import";
+  id?: string;
+  closeHref: CloseHref;
+  canEdit: boolean;
+}) {
+  const t = await getTranslations("master");
+  const tCommon = await getTranslations("common");
+  const tVehicle = await getTranslations("vehicle");
+
+  if (mode === "import") {
+    return (
+      <Drawer
+        code={`${tCommon("importCsv")} · ${t("vehiclesTitle")}`}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <div className="p-4">
+          <CsvImportForm
+            previewAction={previewImportVehicles}
+            confirmAction={confirmImportVehicles}
+            templateHref="/api/import-template/vehicles"
+            extraColumns={[
+              { key: "plate_number", header: t("field.plateNumber") },
+              { key: "vendor_code", header: tVehicle("vendor") },
+            ]}
+          />
+        </div>
+      </Drawer>
+    );
+  }
+
+  if (mode === "new" || mode === "edit") {
+    const [options, vehicle] = await Promise.all([
+      loadVehicleOptions(),
+      mode === "edit" && id ? loadVehicle(id) : null,
+    ]);
+
+    if (mode === "edit" && !vehicle) {
+      return (
+        <Drawer code={t("editVehicle")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+          <Empty title={t("notFound")} hint={t("notFoundHint")} />
+        </Drawer>
+      );
+    }
+
+    return (
+      <Drawer
+        code={vehicle ? `${t("editVehicle")} · ${vehicle.vehicleCode}` : t("newVehicle")}
+        sub={vehicle?.plateNumber}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <VehicleForm
+          mode={vehicle ? "edit" : "create"}
+          vehicleId={vehicle?.id}
+          options={options}
+          initial={vehicle ? toVehicleFormValues(vehicle) : EMPTY_VEHICLE_FORM}
+          backTo={closeHref.query}
+          odometer={
+            vehicle
+              ? { km: vehicle.currentOdometerKm, date: vehicle.currentOdometerDate }
+              : undefined
+          }
+        />
+      </Drawer>
+    );
+  }
+
+  const vehicle = id ? await loadVehicle(id) : null;
+
+  if (!vehicle) {
+    return (
+      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
+      </Drawer>
+    );
+  }
+
+  const [schedule, latest] = await Promise.all([
+    loadPmSchedule(vehicle.id),
+    loadLatestOperation(vehicle.id),
+  ]);
+
+  return (
+    <Drawer
+      code={vehicle.vehicleCode}
+      sub={`${vehicle.plateNumber}${vehicle.vendorName ? ` · ${vehicle.vendorName}` : ""}`}
+      pill={
+        vehicle.statusLabel ? (
+          <Pill tone={vehicle.statusCode === "active" ? "go" : "idle"}>
+            {vehicle.statusLabel}
+          </Pill>
+        ) : undefined
+      }
+      closeHref={closeHref}
+      closeLabel={tCommon("cancel")}
+      footer={
+        canEdit ? (
+          <Link
+            href={{
+              pathname: "/vehicles",
+              query: { mode: "edit", id: vehicle.id },
+            }}
+            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+          >
+            {tCommon("edit")}
+          </Link>
+        ) : undefined
+      }
+    >
+      <VehicleDetailBody vehicle={vehicle} schedule={schedule} latest={latest} canEdit={canEdit} />
     </Drawer>
   );
 }

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
-import { Sidebar } from "@/components/nav/sidebar";
+import { AppShell } from "@/components/nav/app-shell";
 import { Topbar } from "@/components/nav/topbar";
 import { loadAlertCounts } from "./alerts/queries";
 
@@ -21,6 +21,7 @@ export default async function AppLayout({
   const user = await requireUser(locale);
   const cookieStore = await cookies();
   const initialTheme = cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+  const initialCollapsed = cookieStore.get("sidebarCollapsed")?.value === "true";
   // Proactive surfacing (roadmap item 5) — visible from any page, not just
   // when a user opens /alerts. A courtesy badge: loadAlertCounts() never
   // throws, so a failed count just shows no badge rather than blocking the
@@ -30,12 +31,15 @@ export default async function AppLayout({
   return (
     <>
       <Topbar user={user} initialTheme={initialTheme} alertCount={alertCount} />
-      <div className="grid items-start gap-3.5 px-5 pb-7 pt-3.5 xl:grid-cols-[232px_minmax(0,1fr)]">
-        <div className="hidden xl:block">
-          <Sidebar role={user.role} initialTheme={initialTheme} alertCount={alertCount} />
-        </div>
+      <AppShell
+        role={user.role}
+        user={user}
+        initialTheme={initialTheme}
+        alertCount={alertCount}
+        initialCollapsed={initialCollapsed}
+      >
         {children}
-      </div>
+      </AppShell>
     </>
   );
 }

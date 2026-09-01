@@ -62,7 +62,7 @@
     "rfrs": "طلبات الإصلاح",
     "workOrders": "أوامر العمل",
     "periodicMaintenance": "الصيانة الدورية",
-    "fleet": "المركبات والطاقم",
+    "fleet": "البيانات الأساسية",
     "vehicles": "المركبات",
     "drivers": "السائقون",
     "vendors": "الموردون",
@@ -82,7 +82,9 @@
     "lightMode": "فاتح",
     "darkMode": "داكن",
     "switchToLight": "التبديل إلى الوضع الفاتح",
-    "switchToDark": "التبديل إلى الوضع الداكن"
+    "switchToDark": "التبديل إلى الوضع الداكن",
+    "collapseSidebar": "طي الشريط الجانبي",
+    "expandSidebar": "توسيع الشريط الجانبي"
   },
   "auth": {
     "signIn": "تسجيل الدخول",

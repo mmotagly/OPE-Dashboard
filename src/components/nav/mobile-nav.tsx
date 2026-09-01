@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Sidebar } from "./sidebar";
 import type { AppRole } from "@/lib/roles";
+import type { CurrentUser } from "@/lib/auth";
 
 /**
  * Below `xl` the sidebar in the shell is hidden and there is no other way to
@@ -31,10 +32,12 @@ import type { AppRole } from "@/lib/roles";
  */
 export function MobileNav({
   role,
+  user,
   initialTheme,
   alertCount,
 }: {
   role: AppRole;
+  user: CurrentUser;
   initialTheme: "light" | "dark";
   alertCount: number;
 }) {
@@ -91,6 +94,7 @@ export function MobileNav({
             >
               <Sidebar
                 role={role}
+                user={user}
                 variant="mobile"
                 onNavigate={() => setOpen(false)}
                 initialTheme={initialTheme}

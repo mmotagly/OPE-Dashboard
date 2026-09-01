@@ -11,7 +11,13 @@ type Theme = "light" | "dark";
  * preference, not application data, so it's a plain cookie (read
  * server-side in the root layout, avoiding a flash) rather than a DB row.
  */
-export function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
+export function ThemeToggle({
+  initialTheme,
+  collapsed = false,
+}: {
+  initialTheme: Theme;
+  collapsed?: boolean;
+}) {
   const t = useTranslations("nav");
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
@@ -30,7 +36,9 @@ export function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
       onClick={toggle}
       aria-label={isLight ? t("switchToDark") : t("switchToLight")}
       title={isLight ? t("switchToDark") : t("switchToLight")}
-      className="mt-1.5 flex w-full items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-nav-item text-ink-2 transition-colors hover:bg-raise"
+      className={`mt-1.5 flex w-full items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-nav-item text-ink-2 transition-colors hover:bg-raise ${
+        collapsed ? "justify-center" : ""
+      }`}
     >
       <span aria-hidden className="grid h-3.5 w-3.5 place-items-center">
         {isLight ? (
@@ -52,7 +60,7 @@ export function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
           </svg>
         )}
       </span>
-      <span>{isLight ? t("lightMode") : t("darkMode")}</span>
+      {!collapsed && <span>{isLight ? t("lightMode") : t("darkMode")}</span>}
     </button>
   );
 }

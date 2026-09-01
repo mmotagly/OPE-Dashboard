@@ -2,6 +2,7 @@
 
 import type { QueryParams } from "@/lib/filters";
 import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/routing";
 import { DataTable, orDash, type Column } from "@/components/ui/data-table";
 import { Empty } from "@/components/ui/empty";
 import { Micro } from "@/components/ui/micro";
@@ -31,7 +32,18 @@ export function VehiclesTable({
       key: "code",
       header: t("field.vehicleCode"),
       sortValue: (r) => r.vehicleCode,
-      cell: (r) => <span className="tnum font-medium">{r.vehicleCode}</span>,
+      // The one cell that opens the standalone full-page view instead of
+      // the row's usual drawer — stopPropagation keeps the row's own click
+      // handler (which also opens the drawer) from firing at the same time.
+      cell: (r) => (
+        <Link
+          href={`/vehicles/${r.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="tnum font-medium text-ink underline decoration-hairline decoration-1 underline-offset-2 hover:decoration-ink-2"
+        >
+          {r.vehicleCode}
+        </Link>
+      ),
     },
     {
       key: "plate",

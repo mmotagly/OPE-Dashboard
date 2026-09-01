@@ -62,7 +62,7 @@
     "rfrs": "RFRs",
     "workOrders": "Work orders",
     "periodicMaintenance": "Periodic maintenance",
-    "fleet": "Vehicles & staff",
+    "fleet": "Master data",
     "vehicles": "Vehicles",
     "drivers": "Drivers",
     "vendors": "Vendors",
@@ -82,7 +82,9 @@
     "lightMode": "Light",
     "darkMode": "Dark",
     "switchToLight": "Switch to light mode",
-    "switchToDark": "Switch to dark mode"
+    "switchToDark": "Switch to dark mode",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
   },
   "auth": {
     "signIn": "Sign in",

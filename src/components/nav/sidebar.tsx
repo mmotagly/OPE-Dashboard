@@ -4,8 +4,34 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/lib/i18n/routing";
 import { canSeeMoney, isSuper, type AppRole } from "@/lib/roles";
 import { ThemeToggle } from "./theme-toggle";
+import { LocaleSwitch } from "./locale-switch";
+import {
+  CalendarDays,
+  BellRing,
+  ClipboardList,
+  BatteryCharging,
+  MapPin,
+  Users,
+  Wrench,
+  ClipboardCheck,
+  CalendarClock,
+  Bus,
+  IdCard,
+  Building2,
+  Route as RouteIcon,
+  Camera,
+  LayoutDashboard,
+  Award,
+  TrendingUp,
+  Receipt,
+  History,
+  Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
+  type LucideIcon,
+} from "lucide-react";
 
-type Item = { href: string; label: string; count?: number };
+type Item = { href: string; label: string; icon: LucideIcon; count?: number };
 type Group = { label: string; items: Item[] };
 
 /**
@@ -17,22 +43,36 @@ type Group = { label: string; items: Item[] };
  *
  * Also the content of the mobile nav sheet (`MobileNav`) below `xl`, where
  * `variant="mobile"` drops the desktop sticky/card chrome and `onNavigate`
- * closes the sheet after a link is tapped.
+ * closes the sheet after a link is tapped. Collapse (icons-only, `collapsed`/
+ * `onToggleCollapsed`) only applies to the desktop variant — a slide-in
+ * sheet has no reason to hide its own labels.
  */
 export function Sidebar({
   role,
+  user,
   variant = "desktop",
   onNavigate,
   initialTheme,
   alertCount,
+  collapsed = false,
+  onToggleCollapsed,
 }: {
   role: AppRole;
+  /** Was topbar-only; moved here (bottom-left, alongside the theme toggle)
+   * so the topbar stays a single short row regardless of name/job-title
+   * length — a long combination used to be able to wrap the topbar onto a
+   * second line, which broke every sticky `top-[68px]` offset in the app
+   * (table headers, this component's own desktop sticky position, and
+   * MobileNav's sheet) since they all assume a fixed single-row height. */
+  user: { fullName: string; jobTitle: string | null };
   variant?: "desktop" | "mobile";
   onNavigate?: () => void;
   initialTheme: "light" | "dark";
   /** Live due_now/overdue PM + aging RFR count — roadmap item 5's proactive
    * surfacing, visible from any page via the existing nav-item count badge. */
   alertCount: number;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -45,10 +85,11 @@ export function Sidebar({
     {
       label: t("overview"),
       items: [
-        { href: "/day-board", label: t("dayBoard") },
+        { href: "/day-board", label: t("dayBoard"), icon: CalendarDays },
         {
           href: "/alerts",
           label: t("alerts"),
+          icon: BellRing,
           count: alertCount > 0 ? alertCount : undefined,
         },
       ],
@@ -56,18 +97,18 @@ export function Sidebar({
     {
       label: t("operations"),
       items: [
-        { href: "/operations", label: t("dailyOperations") },
-        { href: "/charging", label: t("charging") },
-        { href: "/fleet-location", label: t("fleetLocation") },
-        { href: "/passenger-counts", label: t("passengerCounts") },
+        { href: "/operations", label: t("dailyOperations"), icon: ClipboardList },
+        { href: "/charging", label: t("charging"), icon: BatteryCharging },
+        { href: "/fleet-location", label: t("fleetLocation"), icon: MapPin },
+        { href: "/passenger-counts", label: t("passengerCounts"), icon: Users },
       ],
     },
     {
       label: t("maintenance"),
       items: [
-        { href: "/rfrs", label: t("rfrs") },
-        { href: "/work-orders", label: t("workOrders") },
-        { href: "/periodic-maintenance", label: t("periodicMaintenance") },
+        { href: "/rfrs", label: t("rfrs"), icon: Wrench },
+        { href: "/work-orders", label: t("workOrders"), icon: ClipboardCheck },
+        { href: "/periodic-maintenance", label: t("periodicMaintenance"), icon: CalendarClock },
       ],
     },
     {
@@ -75,11 +116,11 @@ export function Sidebar({
       // pages and in the Server Actions, not here.
       label: t("fleet"),
       items: [
-        { href: "/vehicles", label: t("vehicles") },
-        { href: "/drivers", label: t("drivers") },
-        { href: "/vendors", label: t("vendors") },
-        { href: "/routes", label: t("routes") },
-        { href: "/cameras", label: t("cameras") },
+        { href: "/vehicles", label: t("vehicles"), icon: Bus },
+        { href: "/drivers", label: t("drivers"), icon: IdCard },
+        { href: "/vendors", label: t("vendors"), icon: Building2 },
+        { href: "/routes", label: t("routes"), icon: RouteIcon },
+        { href: "/cameras", label: t("cameras"), icon: Camera },
       ],
     },
   ];
@@ -88,10 +129,10 @@ export function Sidebar({
     groups.push({
       label: t("finance"),
       items: [
-        { href: "/dashboard", label: t("dashboard") },
-        { href: "/scorecards", label: t("scorecards") },
-        { href: "/vendor-trends", label: t("vendorTrends") },
-        { href: "/invoices", label: t("invoices") },
+        { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+        { href: "/scorecards", label: t("scorecards"), icon: Award },
+        { href: "/vendor-trends", label: t("vendorTrends"), icon: TrendingUp },
+        { href: "/invoices", label: t("invoices"), icon: Receipt },
       ],
     });
   }
@@ -100,44 +141,85 @@ export function Sidebar({
     groups.push({
       label: t("admin"),
       items: [
-        { href: "/activity-log", label: t("activityLog") },
-        { href: "/settings", label: t("settings") },
+        { href: "/activity-log", label: t("activityLog"), icon: History },
+        { href: "/settings", label: t("settings"), icon: Settings },
       ],
     });
   }
 
-  const navClass =
-    variant === "desktop"
-      ? "sticky top-[68px] rounded-[14px] bg-surface px-2.5 py-3.5 rim"
-      : "px-2.5 py-3.5";
+  const isDesktop = variant === "desktop";
+  const isCollapsed = isDesktop && collapsed;
+
+  const navClass = isDesktop
+    ? "sticky top-[68px] rounded-[14px] bg-surface px-2.5 py-3.5 rim"
+    : "px-2.5 py-3.5";
 
   return (
     <nav className={navClass}>
+      {isDesktop && onToggleCollapsed && (
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-label={isCollapsed ? t("expandSidebar") : t("collapseSidebar")}
+          title={isCollapsed ? t("expandSidebar") : t("collapseSidebar")}
+          className={`mb-2 flex items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-ink-3 transition-colors hover:bg-raise hover:text-ink ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen className="h-4 w-4 shrink-0" aria-hidden />
+          ) : (
+            <PanelLeftClose className="h-4 w-4 shrink-0" aria-hidden />
+          )}
+        </button>
+      )}
+
       {groups.map((g) => (
         <div key={g.label}>
-          <p className="px-2.5 pb-1.5 pt-3.5 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
-            {g.label}
-          </p>
+          {!isCollapsed && (
+            <p className="px-2.5 pb-1.5 pt-3.5 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
+              {g.label}
+            </p>
+          )}
+          {isCollapsed && <div className="mt-3.5 border-t border-hairline pt-1.5" />}
           {g.items.map((item) => {
             // Segment match, not prefix match: /operations?mode=new stays
             // highlighted, and /routes never lights up /rfrs.
             const isActive = segment === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-nav-item transition-colors ${
-                  isActive
-                    ? "bg-accent-bg font-medium text-accent"
-                    : "text-ink-2 hover:bg-raise"
-                }`}
+                title={isCollapsed ? item.label : undefined}
+                className={`group relative flex items-center gap-2.5 rounded-[9px] px-2.5 py-1.5 text-nav-item transition-colors ${
+                  isCollapsed ? "justify-center" : ""
+                } ${isActive ? "bg-accent-bg font-medium text-accent" : "text-ink-2 hover:bg-raise"}`}
               >
-                <span>{item.label}</span>
-                {item.count !== undefined && (
+                <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                {!isCollapsed && <span>{item.label}</span>}
+                {!isCollapsed && item.count !== undefined && (
                   <span className="tnum ms-auto rounded-full bg-idle px-1.5 py-px text-[10.5px] font-semibold text-ink-2">
                     {item.count}
+                  </span>
+                )}
+                {isCollapsed && item.count !== undefined && (
+                  <span
+                    aria-hidden
+                    className="absolute end-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-warn"
+                  />
+                )}
+                {/* Tooltip: collapsed mode only, CSS-only (no JS/portal —
+                    z-30 keeps it under the topbar/drawer, above page
+                    content). */}
+                {isCollapsed && (
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute start-full top-1/2 z-30 ms-2 -translate-y-1/2 whitespace-nowrap rounded-[7px] bg-elev px-2 py-1 text-[11.5px] font-medium text-ink opacity-0 shadow-[0_4px_16px_rgb(0_0_0/0.4)] transition-opacity group-hover:opacity-100"
+                  >
+                    {item.label}
                   </span>
                 )}
               </Link>
@@ -147,7 +229,16 @@ export function Sidebar({
       ))}
 
       <div className="mt-3.5 border-t border-hairline pt-1.5">
-        <ThemeToggle initialTheme={initialTheme} />
+        {!isCollapsed && (
+          <div className="flex items-center gap-2.5 px-2.5 py-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium leading-tight">{user.fullName}</p>
+              <p className="truncate text-[11px] text-ink-3">{user.jobTitle ?? role}</p>
+            </div>
+            <LocaleSwitch />
+          </div>
+        )}
+        <ThemeToggle initialTheme={initialTheme} collapsed={isCollapsed} />
       </div>
     </nav>
   );
