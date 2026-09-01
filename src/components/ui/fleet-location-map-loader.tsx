@@ -22,6 +22,6 @@ function MapPlaceholder() {
   );
 }
 
-export function FleetLocationMapLoader(props: { initialRows: FleetLocationRow[] }) {
+export function FleetLocationMapLoader(props: { rows: FleetLocationRow[] }) {
   return <FleetLocationMap {...props} />;
 }

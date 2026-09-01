@@ -17,27 +17,14 @@ export type FleetLocationRow = {
 export async function loadFleetLocations(): Promise<FleetLocationRow[]> {
   const supabase = await createClient();
 
-  const vehicles = await supabase
-    .from("vehicles")
-    .select("id, vehicle_code, plate_number, vendors ( vendor_name )")
-    .order("vehicle_code");
-
-  // v_vehicle_latest_gps (0019_gps_pings.sql) isn't in the generated types
-  // yet, and the migration itself is still pending against the live
-  // database (roadmap: GPS integration is schema-ready, not yet run) — so
-  // this query can legitimately fail with "relation does not exist" right
-  // up until the user applies it. Treated as "no GPS data yet", not an
-  // error, so the page still renders every vehicle once the schema lands
-  // without a code change here.
-  let pings: any[] = [];
-  try {
-    const result = await (supabase as any).from("v_vehicle_latest_gps").select("*");
-    // Supabase-js reports a missing relation as `{ error }`, not a thrown
-    // exception — checked explicitly rather than relying on the catch below.
-    pings = result.error ? [] : (result.data ?? []);
-  } catch {
-    pings = [];
-  }
+  // Independent queries — run in parallel rather than one after the other.
+  const [vehicles, pings] = await Promise.all([
+    supabase
+      .from("vehicles")
+      .select("id, vehicle_code, plate_number, vendors ( vendor_name )")
+      .order("vehicle_code"),
+    loadLatestPings(supabase),
+  ]);
 
   const pingByVehicle = new Map(pings.map((p) => [p.vehicle_id, p]));
 
@@ -57,5 +44,25 @@ export async function loadFleetLocations(): Promise<FleetLocationRow[]> {
       provider: ping?.provider ?? null,
     };
   });
+}
+
+/**
+ * v_vehicle_latest_gps (0019_gps_pings.sql) isn't in the generated types
+ * yet, and the migration itself is still pending against the live database
+ * (roadmap: GPS integration is schema-ready, not yet run) — so this query
+ * can legitimately fail with "relation does not exist" right up until the
+ * user applies it. Treated as "no GPS data yet", not an error, so the page
+ * still renders every vehicle once the schema lands without a code change
+ * here.
+ */
+async function loadLatestPings(supabase: any): Promise<any[]> {
+  try {
+    const result = await supabase.from("v_vehicle_latest_gps").select("*");
+    // Supabase-js reports a missing relation as `{ error }`, not a thrown
+    // exception — checked explicitly rather than relying on the catch below.
+    return result.error ? [] : (result.data ?? []);
+  } catch {
+    return [];
+  }
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

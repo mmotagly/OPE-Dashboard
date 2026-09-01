@@ -10,6 +10,18 @@ import type { NormalizedGpsPing } from "./types";
  */
 const SPEED_DEADBAND_KMH = 1.5;
 
+/** A shuttle bus on a fixed local route will never legitimately hit this —
+ * a last-resort clamp against any jitter-driven spike that slips past the
+ * gates below. */
+const SPEED_CEILING_KMH = 100;
+
+/** Below this many seconds between consecutive pings, GPS position jitter
+ * (~3-5m of noise) dominates a distance/time speed estimate — half the
+ * normal ~10s ping cadence, chosen so a routine gap never gets discarded
+ * but a suspiciously tight one (e.g. queued pings draining after a
+ * reconnect) does. */
+const MIN_RELIABLE_INTERVAL_SEC = 5;
+
 /**
  * Writes normalized pings to `vehicle_gps_pings` via the service-role
  * client (webhook/poll routes have no logged-in user, so RLS's
@@ -44,30 +56,44 @@ export async function ingestPings(provider: string, pings: NormalizedGpsPing[]):
 }
 
 /**
- * Takes the larger of the device's own speed and a distance/time estimate
- * against the vehicle's immediately-preceding ping — not "trust the device,
- * fall back to the estimate only when the device gave nothing," which was
- * the bug here. Android's native `Location.getSpeed()` returns `0.0`, not
- * `null`, whenever it has no real speed to report (the field is
- * non-nullable on Android; `expo-location`'s own type only documents `null`
- * as a *Web* possibility) — so a JS `?? fallback` on that value never once
- * ran the fallback, because a real `0` isn't nullish. A device-reported `0`
- * can never make the position-derived estimate wrong (it just means the
- * device didn't supply anything useful), so taking the max is safe in both
- * directions: a genuinely stationary vehicle has both readings near zero
- * anyway, and a moving one with a spurious device `0` still gets a real
- * number from position deltas.
+ * Prefers the device's own speed when it's a real, non-zero reading —
+ * Doppler-based, and doesn't depend on elapsed time between pings the way
+ * a position-derived estimate does. Falls back to a distance/time estimate
+ * against the vehicle's immediately-preceding ping only when the device
+ * gave `0` or `null`.
+ *
+ * A first version of this combined the two via `Math.max()` — that was
+ * itself the bug behind erratic real-world readings: `Math.max` doesn't
+ * reduce noise, it keeps whichever of two independently-noisy sources
+ * happens to be higher, so a spike from *either* side (a jittery device
+ * reading, or a fallback computed over a too-short interval) always won.
+ * Preferring one source over the other, with a minimum-interval gate on
+ * the fallback and a sanity ceiling on the result, replaces that.
+ *
+ * (Android's native `Location.getSpeed()` returns `0.0`, not `null`,
+ * whenever it has nothing real to report — the field is non-nullable on
+ * Android; `expo-location`'s own type only documents `null` as a *Web*
+ * possibility — which is why `0` is treated as "no real reading" here,
+ * same as `null`.)
  */
 async function resolveSpeedKmh(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   p: NormalizedGpsPing,
 ): Promise<number | null> {
-  const fallback = await fallbackSpeedFromPriorPing(supabase, p);
-  if (p.speedKmh === null && fallback === null) return null;
+  if (p.speedKmh !== null && p.speedKmh > 0) {
+    return clampSpeed(p.speedKmh);
+  }
 
-  const kmh = Math.max(p.speedKmh ?? 0, fallback ?? 0);
-  return kmh < SPEED_DEADBAND_KMH ? 0 : kmh;
+  const fallback = await fallbackSpeedFromPriorPing(supabase, p);
+  if (fallback === null) return p.speedKmh === null ? null : 0;
+
+  return clampSpeed(fallback);
+}
+
+function clampSpeed(kmh: number): number {
+  const deadbanded = kmh < SPEED_DEADBAND_KMH ? 0 : kmh;
+  return Math.min(deadbanded, SPEED_CEILING_KMH);
 }
 
 async function fallbackSpeedFromPriorPing(
@@ -87,7 +113,7 @@ async function fallbackSpeedFromPriorPing(
   if (!data) return null;
 
   const elapsedSec = (new Date(p.recordedAt).getTime() - new Date(data.recorded_at).getTime()) / 1000;
-  if (elapsedSec <= 0) return null;
+  if (elapsedSec < MIN_RELIABLE_INTERVAL_SEC) return null;
 
   const distanceM = haversineMeters(data.latitude, data.longitude, p.latitude, p.longitude);
   return (distanceM / elapsedSec) * 3.6;

@@ -2,9 +2,15 @@
 
 import "leaflet/dist/leaflet.css";
 import { useState } from "react";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import { MapFullscreenFrame } from "./map-fullscreen-frame";
+
+/** Shared with fleet-location-map.tsx's imperative markers, so both maps'
+ * popups show identical content in identical wording. */
+export function vehicleTooltipText(vehicleCode: string, speedKmh: number | null): string {
+  return speedKmh !== null ? `${vehicleCode} · ${speedKmh} km/h` : vehicleCode;
+}
 
 /**
  * Leaflet's default marker icon resolves its image URLs relative to
@@ -68,10 +74,14 @@ export function VehicleMap({
   latitude,
   longitude,
   tone,
+  vehicleCode,
+  speedKmh,
 }: {
   latitude: number;
   longitude: number;
   tone: "warn" | "go";
+  vehicleCode: string;
+  speedKmh: number | null;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -86,7 +96,11 @@ export function VehicleMap({
       >
         <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_BASE_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
         <TileLayer url={DARK_TILE_LABELS_URL} maxNativeZoom={DARK_TILE_MAX_ZOOM} />
-        <Marker position={[latitude, longitude]} icon={busIcon(tone)} />
+        <Marker position={[latitude, longitude]} icon={busIcon(tone)}>
+          <Tooltip direction="top" offset={[0, -14]}>
+            {vehicleTooltipText(vehicleCode, speedKmh)}
+          </Tooltip>
+        </Marker>
       </MapContainer>
     </MapFullscreenFrame>
   );

@@ -28,6 +28,8 @@ export function VehicleMapLoader(props: {
   latitude: number;
   longitude: number;
   tone: "warn" | "go";
+  vehicleCode: string;
+  speedKmh: number | null;
 }) {
   return <VehicleMap {...props} />;
 }

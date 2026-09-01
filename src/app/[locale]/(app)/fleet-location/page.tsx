@@ -1,9 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
-import { FleetLocationMapLoader } from "@/components/ui/fleet-location-map-loader";
+import { FleetLocationLive } from "@/components/ui/fleet-location-live";
 import { loadFleetLocations } from "./queries";
-import { FleetLocationTable } from "./fleet-location-table";
 
 /**
  * Fleet location (roadmap: GPS Integration, item 2). Read-only — no drawer,
@@ -43,10 +42,7 @@ export default async function FleetLocationPage({
             {t("noProviderHint")}
           </p>
         )}
-        <div className="border-b border-hairline p-3">
-          <FleetLocationMapLoader initialRows={rows} />
-        </div>
-        <FleetLocationTable rows={rows} />
+        <FleetLocationLive initialRows={rows} />
       </Panel>
     </div>
   );

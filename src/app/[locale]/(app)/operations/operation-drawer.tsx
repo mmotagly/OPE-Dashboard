@@ -259,6 +259,8 @@ export async function OperationDrawer({
                 latitude={ping.latitude}
                 longitude={ping.longitude}
                 tone={operationTone(operation.statusCode ?? "") === "go" ? "go" : "warn"}
+                vehicleCode={operation.vehicleCode}
+                speedKmh={ping.speedKmh}
               />
               <p className="mt-2 text-[10.5px] text-ink-3">
                 {t("locationAsOf", { time: new Date(ping.recordedAt).toLocaleString() })}

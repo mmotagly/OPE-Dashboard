@@ -7,6 +7,7 @@ import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import L from "leaflet";
 import {
   busIcon,
+  vehicleTooltipText,
   DARK_TILE_BASE_URL,
   DARK_TILE_LABELS_URL,
   DARK_TILE_MAX_ZOOM,
@@ -15,13 +16,12 @@ import {
 import { MapFullscreenFrame } from "./map-fullscreen-frame";
 import type { FleetLocationRow } from "@/app/[locale]/(app)/fleet-location/queries";
 
-const POLL_MS = 7_000;
 const ANIMATE_MS = 900;
 /** Pyramids of Giza — fallback center when no vehicle has a position yet. */
 const GIZA_FALLBACK: [number, number] = [29.9792, 31.1342];
 
 function tooltipText(r: FleetLocationRow): string {
-  return r.speedKmh !== null ? `${r.vehicleCode} · ${r.speedKmh} km/h` : r.vehicleCode;
+  return vehicleTooltipText(r.vehicleCode, r.speedKmh);
 }
 
 /**
@@ -103,25 +103,10 @@ function LiveMarkers({ rows }: { rows: FleetLocationRow[] }) {
   return null;
 }
 
-export function FleetLocationMap({ initialRows }: { initialRows: FleetLocationRow[] }) {
-  const [rows, setRows] = useState(initialRows);
+export function FleetLocationMap({ rows }: { rows: FleetLocationRow[] }) {
   const [fullscreen, setFullscreen] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
   const hasFramedRef = useRef(false);
-
-  useEffect(() => {
-    const id = setInterval(async () => {
-      try {
-        const res = await fetch("/api/gps/fleet-positions", { cache: "no-store" });
-        if (!res.ok) return;
-        setRows(await res.json());
-      } catch {
-        // Transient network blip — keep showing the last good positions
-        // rather than clearing the map.
-      }
-    }, POLL_MS);
-    return () => clearInterval(id);
-  }, []);
 
   const withPosition = rows.filter(
     (r): r is FleetLocationRow & { latitude: number; longitude: number } =>
