@@ -133,6 +133,10 @@
     "noSelectionHint": "Pick a row to see the full entry.",
     "notFound": "That record no longer exists",
     "notFoundHint": "It may have been removed since this link was opened.",
+    "location": "Location",
+    "noLocationData": "No location data available",
+    "noLocationDataHint": "This vehicle has no GPS ping yet.",
+    "locationAsOf": "As of {time}",
     "field": {
       "date": "Date",
       "shift": "Shift",

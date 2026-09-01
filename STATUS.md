@@ -9,6 +9,59 @@ Last updated: 2026-09-01.
 
 ---
 
+## Autonomous overnight session (2026-09-01/02, user asleep, pre-authorized)
+
+Ten-item work list, ordered easiest/lowest-risk to hardest/highest-risk so a
+usage-limit interruption defers the riskiest item first. Each item is its
+own commit, pushed as it completes — see git log for the exact set. Full
+write-up of everything in this session goes at the point this comment is
+replaced (end of session); this entry starts with item 9's plan, written
+before implementing it, per instruction.
+
+### Item 9 plan — vehicle location map in Daily Operations
+
+**Goal**: inside the Daily Operations drawer's view mode, show the
+vehicle's current GPS position on a small live map. Degrade gracefully
+("no location data available") when the vehicle has no GPS ping yet — the
+expected state for most vehicles until GPS integration (roadmap item 2) has
+real hardware wired in. Only render the section at all for `operating` or
+`completed` status — a `planned` or `cancelled_*` operation has no
+meaningful "current location" to show.
+
+**Library choice**: Leaflet + `react-leaflet`, tiles from OpenStreetMap.
+Deliberately not Google Maps or Mapbox — both need an API key tied to a
+billing account, which is exactly the kind of external-account commitment
+this session is not authorized to create (same guardrail item 10 states
+explicitly for the camera work; applying the same judgment here even though
+it wasn't stated for this item). OSM's tile server is free for this
+dashboard's real usage pattern (an internal tool, a handful of staff,
+opened occasionally) — it does carry a usage policy that would matter if
+this dashboard's traffic ever grew large, worth knowing but not a blocker
+now.
+
+**Data source**: `v_vehicle_latest_gps` (migration `0019`, already run) —
+the exact same view `/fleet-location` already reads. New shared helper
+`src/lib/gps/latest-ping.ts` (`loadLatestGpsPing(vehicleId)`) rather than
+duplicating fleet-location's inline query, since this is now two callers.
+
+**Rendering**: Leaflet needs `window` at module load, which breaks Next.js
+SSR unless the map component is loaded with `next/dynamic(..., { ssr:
+false })` — and `ssr: false` is only legal inside a Client Component
+boundary in the App Router, not called directly from a Server Component.
+So: `VehicleMap` (the actual Leaflet map, "use client") is loaded through a
+small `VehicleMapLoader` Client Component wrapper that does the dynamic
+import; `OperationDrawer` (a Server Component, unchanged in that respect)
+renders `VehicleMapLoader` directly with plain lat/lng/recordedAt props.
+
+**New deps**: `leaflet`, `react-leaflet`, `@types/leaflet` (dev).
+
+**Built as planned above**, verified (typecheck/lint/build all clean).
+Marker color matches the operation's own status tone (`operationTone`) —
+amber while operating, green once completed — consistent with the rest of
+the app's color-as-information rule rather than a generic map pin.
+
+---
+
 ## Autonomous overnight session (2026-09-01, user away ~6h, pre-authorized)
 
 Working through `ROADMAP_NEXT.md`'s four items in priority order: CSV

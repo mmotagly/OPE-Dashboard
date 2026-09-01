@@ -133,6 +133,10 @@
     "noSelectionHint": "اختر صفًا لعرض بياناته كاملة.",
     "notFound": "هذا السجل لم يعد موجودًا",
     "notFoundHint": "ربما تم حذفه بعد فتح هذا الرابط.",
+    "location": "الموقع",
+    "noLocationData": "لا توجد بيانات موقع متاحة",
+    "noLocationDataHint": "لم تصل بعد أي إشارة GPS من هذه المركبة.",
+    "locationAsOf": "كما في {time}",
     "field": {
       "date": "التاريخ",
       "shift": "الوردية",

@@ -7,6 +7,8 @@ import { KmMeter } from "@/components/ui/km-meter";
 import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
+import { VehicleMapLoader } from "@/components/ui/vehicle-map-loader";
+import { loadLatestGpsPing } from "@/lib/gps/latest-ping";
 import {
   km,
   money,
@@ -178,7 +180,17 @@ export async function OperationDrawer({
   const status = operation.statusCode
     ? { code: operation.statusCode, labelEn: operation.statusLabel ?? operation.statusCode }
     : null;
-  const pm = operation.vehicleId ? await loadNearestPm(operation.vehicleId) : null;
+  // Only a live or finished shift has a meaningful "current location" —
+  // planned/cancelled/under-maintenance rows show no map section at all.
+  const showsLocation =
+    operation.statusCode === "operating" || operation.statusCode === "completed";
+
+  const [pm, ping] = await Promise.all([
+    operation.vehicleId ? loadNearestPm(operation.vehicleId) : Promise.resolve(null),
+    operation.vehicleId && showsLocation
+      ? loadLatestGpsPing(operation.vehicleId)
+      : Promise.resolve(null),
+  ]);
   const pmStatus = pm?.status ?? null;
 
   return (
@@ -231,6 +243,25 @@ export async function OperationDrawer({
           </div>
         )}
       </Section>
+
+      {showsLocation && (
+        <Section title={t("location")}>
+          {ping ? (
+            <>
+              <VehicleMapLoader
+                latitude={ping.latitude}
+                longitude={ping.longitude}
+                tone={operationTone(operation.statusCode ?? "") === "go" ? "go" : "warn"}
+              />
+              <p className="mt-2 text-[10.5px] text-ink-3">
+                {t("locationAsOf", { time: new Date(ping.recordedAt).toLocaleString() })}
+              </p>
+            </>
+          ) : (
+            <Empty title={t("noLocationData")} hint={t("noLocationDataHint")} />
+          )}
+        </Section>
+      )}
 
       <Section title={t("record")}>
         <KeyValue>
