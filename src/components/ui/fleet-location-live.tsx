@@ -31,13 +31,14 @@ export function FleetLocationLive({ initialRows }: { initialRows: FleetLocationR
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("vehicle_gps_pings-live")
+      .channel("vehicle_gps_pings-live", { config: { private: true } })
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "vehicle_gps_pings" },
         (payload) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const p = payload.new as any;
+          console.log("[fleet-location] realtime insert received", p);
           setRows((prev) =>
             prev.map((r) =>
               r.id === p.vehicle_id
@@ -55,7 +56,13 @@ export function FleetLocationLive({ initialRows }: { initialRows: FleetLocationR
           );
         },
       )
-      .subscribe();
+      // Diagnostic logging — a channel that fails to connect or gets
+      // rejected by RLS fails *silently* by default (no thrown error, no
+      // console output), which is exactly what made this impossible to
+      // debug without visibility into the actual subscribe status.
+      .subscribe((status, err) => {
+        console.log("[fleet-location] realtime subscribe status:", status, err ?? "");
+      });
 
     return () => {
       supabase.removeChannel(channel);
