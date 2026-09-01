@@ -125,6 +125,14 @@
       0 0 0 1px rgb(255 255 255 / 0.1),
       0 18px 44px rgb(0 0 0 / 0.55);
   }
+  /* CARTO Voyager tiles darkened to match the app's dark theme, without
+     switching to CARTO's separately-designed dark_all style (that one
+     dims roads/labels by design — fighting it back up has a low ceiling).
+     Voyager has much higher inherent road/water/label contrast; this keeps
+     that clarity while reading as dark overall. See vehicle-map.tsx. */
+  .map-tiles-dark {
+    filter: brightness(0.62) contrast(1.08) saturate(0.85);
+  }
 }
 
 [data-theme="light"] .rim {

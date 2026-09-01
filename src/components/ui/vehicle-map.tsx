@@ -39,14 +39,18 @@ export function busIcon(tone: "warn" | "go" | "idle") {
 /**
  * CARTO's free basemap tiles — no API key/account needed (unlike Google
  * Maps or Mapbox, deliberately avoided elsewhere in this app for exactly
- * that reason — see STATUS.md). Dark and minimal-label out of the box,
- * matching the app's own dark theme instead of a bright default OSM map.
- * Path is `dark_all`, not the commonly-referenced `dark_matter` — that one
- * 404s on CARTO's current CDN; verified directly against
- * a.basemaps.cartocdn.com before using it here.
+ * that reason — see STATUS.md).
+ *
+ * Voyager, not the `dark_all` ("Dark Matter") style tried first: dark_all
+ * is deliberately minimal — roads/labels are dimmed by design, and pushing
+ * them back up with a brightness filter fights that design with a low
+ * ceiling on the result. Voyager is CARTO's general-purpose style with far
+ * more inherent road/water/label contrast; darkening *that* down via
+ * `.map-tiles-dark` (globals.css) keeps its clarity while reading as dark
+ * overall — verified directly against a.basemaps.cartocdn.com.
  */
 export const DARK_TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 export const DARK_TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -69,7 +73,7 @@ export function VehicleMap({
         scrollWheelZoom={fullscreen}
         style={{ height: fullscreen ? "100%" : 220, width: "100%", borderRadius: 10 }}
       >
-        <TileLayer attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
+        <TileLayer className="map-tiles-dark" attribution={DARK_TILE_ATTRIBUTION} url={DARK_TILE_URL} />
         <Marker position={[latitude, longitude]} icon={busIcon(tone)} />
       </MapContainer>
     </MapFullscreenFrame>
