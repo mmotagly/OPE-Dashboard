@@ -116,7 +116,13 @@ export function DataTable<T extends { id: string }>({
     // header actually reliable, since the scrolling ancestor is now
     // unambiguous.
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <table className="w-full table-fixed border-collapse">
+      {/* border-separate, not border-collapse: Chrome has a known rendering
+          bug where a collapsed-border table with a sticky <th> lets a
+          scrolled-past row's paint bleed through the header during scroll.
+          Only bottom borders are used (no top borders anywhere), so
+          border-spacing-0 renders identically to collapse — just without
+          the bug. */}
+      <table className="w-full table-fixed border-separate border-spacing-0">
         <thead>
           <tr>
             {columns.map((column) => {
