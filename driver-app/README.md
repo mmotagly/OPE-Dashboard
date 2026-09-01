@@ -68,6 +68,29 @@ eas build --profile preview --platform android
 Both profiles are `distribution: internal` — signed APKs distributed via
 EAS's own private link, never the Play Store.
 
+## Shipping a fix: `eas update` vs. `eas build`
+
+`expo-updates` is configured (`app.json`'s `updates`/`runtimeVersion`,
+`eas.json`'s per-profile `channel`). Once a phone has a build installed
+that includes `expo-updates` (the one after this note landed), most fixes
+don't need a new native build at all:
+
+```
+eas update --branch preview --message "what changed"
+```
+
+This pushes straight to phones with that build installed — no APK,
+nothing to reinstall, no EAS build queue. Use it for anything that's pure
+JS: bug fixes, logic changes, UI tweaks, copy changes.
+
+Only reach for a full `eas build` (see above) when something *native*
+actually changes: a new native dependency (anything with its own Android
+code, not a pure-JS package), an `app.json` permission/plugin change, or
+the app icon/splash assets. `runtimeVersion` is pinned to `policy:
+"appVersion"`, so a build only accepts updates published against the same
+`version` in `app.json` — bump `version` (and do a new `eas build`) if an
+update ever needs to target a build it isn't compatible with.
+
 ## Permission flow, on purpose in this order
 
 1. Foreground location (`requestForegroundPermissionsAsync`).
