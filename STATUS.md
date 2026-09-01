@@ -60,6 +60,64 @@ Marker color matches the operation's own status tone (`operationTone`) —
 amber while operating, green once completed — consistent with the rest of
 the app's color-as-information rule rather than a generic map pin.
 
+### Item 10 — camera streaming, LiveKit architecture
+
+Built per the earlier LiveKit-based plan, up to the account-creation
+boundary the instructions drew — real code on both ends, genuinely unable
+to be end-to-end tested tonight since it needs a LiveKit server that
+doesn't exist yet.
+
+**Web side** (`src/app/api/livekit/token/route.ts`,
+`src/components/ui/camera-viewer.tsx`): a token-minting route with two
+grants — a driver (Bearer token) gets a publish-only grant into
+`op-<operationId>`, re-validated against today's actual assignment exactly
+like `/api/gps/driver/ping` already does (never trust a client-claimed
+operationId); a staff member (cookie session) gets a subscribe-only grant,
+gated by the same RLS-scoped operation lookup every other staff read goes
+through. `CameraViewer` in the operations drawer, shown only while
+`statusCode === "operating"`, is a deliberate tap-to-connect ("Watch
+live") rather than auto-connecting — opening a WebRTC connection for every
+operation row a staff member happens to glance at would be real waste and
+noise.
+
+**Driver app** (`app/(app)/camera.tsx`, reached from a new "Camera" button
+on the shift screen, shown only while tracking is active): connects via
+`@livekit/react-native`, auto-publishing camera+mic on connect, showing a
+local preview. Installed `@livekit/react-native`, `@livekit/react-native-webrtc`,
+`livekit-client`, `@config-plugins/react-native-webrtc` — checked
+carefully given tonight's earlier `react-native-worklets` native-build
+saga: `npm install` (including a from-scratch clean reinstall) showed no
+ERESOLVE peer-conflict warnings this time (worklets showed one explicitly,
+which was the actual signal something was wrong there), `npx expo-doctor`
+is 21/21 clean, and `npm run typecheck` passes against LiveKit's real
+type definitions, not a guessed API shape — an initial draft using an
+online example's API (`participant`, a plain `{participant, source}`
+track ref) failed typecheck immediately and was corrected to the actual
+exported shape (`localParticipant`, `cameraTrack`, a full `TrackReference`
+with `publication`). A real EAS build was still triggered afterward (see
+below) rather than stopping at doctor+typecheck, specifically because
+tonight already showed once that clean-looking dependency installs can
+still break native compilation — cheap enough to check given it doesn't
+block anything else while it runs.
+
+**What's needed to activate this — the account/signup step**: a LiveKit
+server. Two ways to get one, your call:
+- **LiveKit Cloud** (fastest): sign up at livekit.io, create a project,
+  copy its URL/API key/API secret.
+- **Self-hosted**: run LiveKit's open-source server yourself (Docker image,
+  `livekit-server`) — no account needed at all, but you own the ops burden
+  (uptime, TURN relay for NAT traversal, updates).
+
+Either way, set three env vars and nothing else changes:
+- Web app (Vercel): `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+- Driver app: nothing — it only ever talks to the web app's own
+  `/api/livekit/token`, never to LiveKit directly for credentials
+
+Until those three vars are set, `/api/livekit/token` fails closed with a
+503 ("LiveKit is not configured") — same fail-closed convention as
+`GPS_WEBHOOK_SECRET`/`GPS_PROVIDER`. Nothing was created, signed up for,
+or committed to on your behalf.
+
 ---
 
 ## Autonomous overnight session (2026-09-01, user away ~6h, pre-authorized)

@@ -137,6 +137,11 @@
     "noLocationData": "No location data available",
     "noLocationDataHint": "This vehicle has no GPS ping yet.",
     "locationAsOf": "As of {time}",
+    "liveCamera": "Live camera",
+    "watchLive": "Watch live",
+    "connecting": "Connecting…",
+    "waitingForStream": "Waiting for the driver to start streaming…",
+    "cameraUnavailable": "Live camera isn't available right now.",
     "field": {
       "date": "Date",
       "shift": "Shift",

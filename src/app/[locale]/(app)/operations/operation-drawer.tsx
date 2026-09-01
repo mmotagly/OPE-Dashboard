@@ -8,6 +8,7 @@ import { Micro } from "@/components/ui/micro";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
 import { VehicleMapLoader } from "@/components/ui/vehicle-map-loader";
+import { CameraViewer } from "@/components/ui/camera-viewer";
 import { loadLatestGpsPing } from "@/lib/gps/latest-ping";
 import {
   km,
@@ -243,6 +244,12 @@ export async function OperationDrawer({
           </div>
         )}
       </Section>
+
+      {operation.statusCode === "operating" && (
+        <Section title={t("liveCamera")}>
+          <CameraViewer operationId={operation.id} />
+        </Section>
+      )}
 
       {showsLocation && (
         <Section title={t("location")}>

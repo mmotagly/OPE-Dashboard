@@ -137,6 +137,11 @@
     "noLocationData": "لا توجد بيانات موقع متاحة",
     "noLocationDataHint": "لم تصل بعد أي إشارة GPS من هذه المركبة.",
     "locationAsOf": "كما في {time}",
+    "liveCamera": "البث المباشر",
+    "watchLive": "مشاهدة البث المباشر",
+    "connecting": "جارٍ الاتصال…",
+    "waitingForStream": "بانتظار بدء السائق للبث…",
+    "cameraUnavailable": "البث المباشر غير متاح حاليًا.",
     "field": {
       "date": "التاريخ",
       "shift": "الوردية",
