@@ -13,9 +13,112 @@ import {
   loadDriver,
   loadDriverOptions,
   toDriverFormValues,
+  type DriverRow,
 } from "./queries";
 import { DriverForm } from "./driver-form";
 import { confirmImportDrivers, previewImportDrivers } from "./actions";
+
+/**
+ * View-mode body, factored out so `/drivers/[id]` (reached by clicking a
+ * driver's code, as opposed to elsewhere in the row) can render the exact
+ * same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
+ */
+export async function DriverDetailBody({ driver }: { driver: DriverRow }) {
+  const t = await getTranslations("master");
+
+  const licence = expiryState(driver.licenseExpiryDate);
+  const tourism = driver.hasTourismId
+    ? expiryState(driver.tourismIdExpiryDate)
+    : "unknown";
+
+  const expiryValue = (
+    date: string | null,
+    state: ExpiryState,
+    expired: string,
+    expiring: string,
+  ) =>
+    date ? (
+      <span className="flex items-center justify-end gap-2">
+        <span className="tnum">{date}</span>
+        {(state === "expired" || state === "expiring") && (
+          <Micro tone={expiryTone(state)}>
+            {state === "expired" ? expired : expiring}
+          </Micro>
+        )}
+      </span>
+    ) : (
+      "—"
+    );
+
+  return (
+    <>
+      <Section title={t("record")}>
+        <KeyValue>
+          <Row label={t("field.driverName")}>{driver.driverName}</Row>
+          <Row label={t("field.vendor")} muted>
+            {driver.vendorName ?? t("companyDriver")}
+          </Row>
+          <Row label={t("field.mobile")} muted>
+            {driver.mobileNumber ? (
+              <span className="tnum" dir="ltr">
+                {driver.mobileNumber}
+              </span>
+            ) : (
+              "—"
+            )}
+          </Row>
+          <Row label={t("field.hiringDate")} muted>
+            {driver.hiringDate ? <span className="tnum">{driver.hiringDate}</span> : "—"}
+          </Row>
+        </KeyValue>
+      </Section>
+
+      <Section title={t("licence")}>
+        <KeyValue>
+          <Row label={t("field.licenseNumber")}>
+            {driver.licenseNumber ? (
+              <span className="tnum">{driver.licenseNumber}</span>
+            ) : (
+              "—"
+            )}
+          </Row>
+          <Row label={t("field.licenseGrade")} muted>
+            {driver.licenseGradeLabel ?? "—"}
+          </Row>
+          <Row label={t("field.licenseExpiry")}>
+            {expiryValue(
+              driver.licenseExpiryDate,
+              licence,
+              t("licenceExpired"),
+              t("licenceExpiring"),
+            )}
+          </Row>
+        </KeyValue>
+      </Section>
+
+      <Section title={t("tourismId")}>
+        {driver.hasTourismId ? (
+          <KeyValue>
+            <Row label={t("field.tourismIssuer")} muted>
+              {driver.tourismIdIssuingCompany ?? "—"}
+            </Row>
+            <Row label={t("field.tourismExpiry")}>
+              {expiryValue(
+                driver.tourismIdExpiryDate,
+                tourism,
+                t("tourismExpired"),
+                t("tourismExpiring"),
+              )}
+            </Row>
+          </KeyValue>
+        ) : (
+          <p className="text-[13px] text-ink-3">{t("noTourismId")}</p>
+        )}
+      </Section>
+    </>
+  );
+}
 
 export async function DriverDrawer({
   mode,
@@ -95,30 +198,6 @@ export async function DriverDrawer({
     );
   }
 
-  const licence = expiryState(driver.licenseExpiryDate);
-  const tourism = driver.hasTourismId
-    ? expiryState(driver.tourismIdExpiryDate)
-    : "unknown";
-
-  const expiryValue = (
-    date: string | null,
-    state: ExpiryState,
-    expired: string,
-    expiring: string,
-  ) =>
-    date ? (
-      <span className="flex items-center justify-end gap-2">
-        <span className="tnum">{date}</span>
-        {(state === "expired" || state === "expiring") && (
-          <Micro tone={expiryTone(state)}>
-            {state === "expired" ? expired : expiring}
-          </Micro>
-        )}
-      </span>
-    ) : (
-      "—"
-    );
-
   return (
     <Drawer
       code={driver.driverCode}
@@ -143,69 +222,7 @@ export async function DriverDrawer({
         ) : undefined
       }
     >
-      <Section title={t("record")}>
-        <KeyValue>
-          <Row label={t("field.driverName")}>{driver.driverName}</Row>
-          <Row label={t("field.vendor")} muted>
-            {driver.vendorName ?? t("companyDriver")}
-          </Row>
-          <Row label={t("field.mobile")} muted>
-            {driver.mobileNumber ? (
-              <span className="tnum" dir="ltr">
-                {driver.mobileNumber}
-              </span>
-            ) : (
-              "—"
-            )}
-          </Row>
-          <Row label={t("field.hiringDate")} muted>
-            {driver.hiringDate ? <span className="tnum">{driver.hiringDate}</span> : "—"}
-          </Row>
-        </KeyValue>
-      </Section>
-
-      <Section title={t("licence")}>
-        <KeyValue>
-          <Row label={t("field.licenseNumber")}>
-            {driver.licenseNumber ? (
-              <span className="tnum">{driver.licenseNumber}</span>
-            ) : (
-              "—"
-            )}
-          </Row>
-          <Row label={t("field.licenseGrade")} muted>
-            {driver.licenseGradeLabel ?? "—"}
-          </Row>
-          <Row label={t("field.licenseExpiry")}>
-            {expiryValue(
-              driver.licenseExpiryDate,
-              licence,
-              t("licenceExpired"),
-              t("licenceExpiring"),
-            )}
-          </Row>
-        </KeyValue>
-      </Section>
-
-      <Section title={t("tourismId")}>
-        {driver.hasTourismId ? (
-          <KeyValue>
-            <Row label={t("field.tourismIssuer")} muted>
-              {driver.tourismIdIssuingCompany ?? "—"}
-            </Row>
-            <Row label={t("field.tourismExpiry")}>
-              {expiryValue(
-                driver.tourismIdExpiryDate,
-                tourism,
-                t("tourismExpired"),
-                t("tourismExpiring"),
-              )}
-            </Row>
-          </KeyValue>
-        ) : (
-          <p className="text-[13px] text-ink-3">{t("noTourismId")}</p>
-        )}
-      </Section>
+      <DriverDetailBody driver={driver} />
     </Drawer>
   );
 }

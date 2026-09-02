@@ -10,10 +10,80 @@ import {
   loadChargingOptions,
   loadChargingSession,
   toChargingFormValues,
+  type ChargingRow,
 } from "./queries";
 import { ChargingForm } from "./charging-form";
 
 const stamp = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : null);
+
+/**
+ * View-mode body, factored out so `/charging/[id]` (reached by clicking a
+ * session's code, as opposed to elsewhere in the row) can render the exact
+ * same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
+ */
+export async function ChargingDetailBody({ session }: { session: ChargingRow }) {
+  const t = await getTranslations("charging");
+
+  return (
+    <>
+      <Section title={t("session")}>
+        <KeyValue>
+          <Row label={t("field.vehicle")}>
+            {session.vehicleCode}
+            <span className="ms-2 text-[12px] text-ink-3">{session.plateNumber}</span>
+          </Row>
+          <Row label={t("field.charger")}>
+            {session.chargerCode}
+            {session.chargerLocation && (
+              <span className="ms-2 text-[12px] text-ink-3">{session.chargerLocation}</span>
+            )}
+          </Row>
+          <Row label={t("field.plugs")}>{session.plugsUsed}</Row>
+          <Row label={t("field.startTime")}>
+            {stamp(session.startTime) ? (
+              <span className="tnum">{stamp(session.startTime)}</span>
+            ) : (
+              "—"
+            )}
+          </Row>
+          <Row label={t("field.endTime")}>
+            {stamp(session.endTime) ? (
+              <span className="tnum">{stamp(session.endTime)}</span>
+            ) : (
+              "—"
+            )}
+          </Row>
+          <Row label={t("field.duration")} hint={t("generated")} muted>
+            {/* Generated column — read, never written. */}
+            {session.duration ? <span className="tnum">{session.duration}</span> : "—"}
+          </Row>
+          <Row label={t("field.battery")}>
+            {session.batteryStartPct === null && session.batteryEndPct === null
+              ? "—"
+              : t("batteryRange", {
+                  from: session.batteryStartPct ?? "—",
+                  to: session.batteryEndPct ?? "—",
+                })}
+          </Row>
+          <Row label={t("field.energy")} muted>
+            {session.energyKwh === null ? (
+              "—"
+            ) : (
+              <span className="tnum">{session.energyKwh} kWh</span>
+            )}
+          </Row>
+        </KeyValue>
+      </Section>
+
+      {session.notes && (
+        <Section title={t("field.notes")}>
+          <p className="text-[13px] leading-relaxed text-ink-2">{session.notes}</p>
+        </Section>
+      )}
+    </>
+  );
+}
 
 export async function ChargingDrawer({
   mode,
@@ -92,60 +162,7 @@ export async function ChargingDrawer({
         ) : undefined
       }
     >
-      <Section title={t("session")}>
-        <KeyValue>
-          <Row label={t("field.vehicle")}>
-            {session.vehicleCode}
-            <span className="ms-2 text-[12px] text-ink-3">{session.plateNumber}</span>
-          </Row>
-          <Row label={t("field.charger")}>
-            {session.chargerCode}
-            {session.chargerLocation && (
-              <span className="ms-2 text-[12px] text-ink-3">{session.chargerLocation}</span>
-            )}
-          </Row>
-          <Row label={t("field.plugs")}>{session.plugsUsed}</Row>
-          <Row label={t("field.startTime")}>
-            {stamp(session.startTime) ? (
-              <span className="tnum">{stamp(session.startTime)}</span>
-            ) : (
-              "—"
-            )}
-          </Row>
-          <Row label={t("field.endTime")}>
-            {stamp(session.endTime) ? (
-              <span className="tnum">{stamp(session.endTime)}</span>
-            ) : (
-              "—"
-            )}
-          </Row>
-          <Row label={t("field.duration")} hint={t("generated")} muted>
-            {/* Generated column — read, never written. */}
-            {session.duration ? <span className="tnum">{session.duration}</span> : "—"}
-          </Row>
-          <Row label={t("field.battery")}>
-            {session.batteryStartPct === null && session.batteryEndPct === null
-              ? "—"
-              : t("batteryRange", {
-                  from: session.batteryStartPct ?? "—",
-                  to: session.batteryEndPct ?? "—",
-                })}
-          </Row>
-          <Row label={t("field.energy")} muted>
-            {session.energyKwh === null ? (
-              "—"
-            ) : (
-              <span className="tnum">{session.energyKwh} kWh</span>
-            )}
-          </Row>
-        </KeyValue>
-      </Section>
-
-      {session.notes && (
-        <Section title={t("field.notes")}>
-          <p className="text-[13px] leading-relaxed text-ink-2">{session.notes}</p>
-        </Section>
-      )}
+      <ChargingDetailBody session={session} />
     </Drawer>
   );
 }

@@ -13,9 +13,103 @@ import {
   loadVendor,
   loadVendorOptions,
   toVendorFormValues,
+  type VendorRow,
 } from "./queries";
 import { VendorForm } from "./vendor-form";
 import { confirmImportVendors, previewImportVendors } from "./actions";
+
+/**
+ * View-mode body, factored out so `/vendors/[id]` (reached by clicking a
+ * vendor's code, as opposed to elsewhere in the row) can render the exact
+ * same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
+ */
+export async function VendorDetailBody({ vendor }: { vendor: VendorRow }) {
+  const t = await getTranslations("master");
+  const tFinance = await getTranslations("finance");
+
+  const basisLabel =
+    vendor.billingBasis === "per_bus_day"
+      ? t("basisPerBusDay")
+      : vendor.billingBasis === "per_avg_bus_month"
+        ? t("basisPerAvgBusMonth")
+        : null;
+
+  // The formula in words, so the terms read without opening an invoice.
+  const formula =
+    vendor.billingBasis === "per_avg_bus_month"
+      ? tFinance("formulaOwned")
+      : vendor.billingBasis === "per_bus_day"
+        ? tFinance("formulaRental")
+        : null;
+
+  return (
+    <>
+      <Section title={t("billingTerms")}>
+        {formula ? (
+          <p className="mb-3 rounded-[9px] border border-hairline bg-raise px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-2">
+            {formula}
+          </p>
+        ) : (
+          <p className="mb-3 text-[13px] text-ink-3">{t("noBillingTermsHint")}</p>
+        )}
+
+        <KeyValue>
+          <Row label={tFinance("basis")}>{basisLabel ?? "—"}</Row>
+          <Row
+            label={
+              vendor.billingBasis === "per_avg_bus_month"
+                ? tFinance("ratePerBus")
+                : t("field.rateAmount")
+            }
+          >
+            {vendor.rateAmount === null ? "—" : money(vendor.rateAmount, vendor.currency)}
+          </Row>
+          <Row label={t("field.applyKpi")}>
+            {vendor.applyKpi ? (
+              <Micro tone="go">{t("kpiApplies")}</Micro>
+            ) : (
+              <span className="text-ink-2">{t("kpiDoesNotApply")}</span>
+            )}
+          </Row>
+          <Row label={t("field.currency")} muted>
+            <span dir="ltr">{vendor.currency}</span>
+          </Row>
+        </KeyValue>
+
+        {vendor.billingNotes && (
+          <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
+            {vendor.billingNotes}
+          </p>
+        )}
+      </Section>
+
+      <Section title={t("record")}>
+        <KeyValue>
+          <Row label={t("field.vendorName")}>{vendor.vendorName}</Row>
+          <Row label={t("field.vendorType")} muted>
+            {vendor.vendorTypeLabel ?? "—"}
+          </Row>
+          <Row label={t("field.contactPerson")} muted>
+            {vendor.contactPerson ?? "—"}
+          </Row>
+          <Row label={t("field.mobile")} muted>
+            {vendor.mobileNumber ? (
+              <span className="tnum" dir="ltr">
+                {vendor.mobileNumber}
+              </span>
+            ) : (
+              "—"
+            )}
+          </Row>
+          <Row label={t("field.email")} muted>
+            {vendor.emailAddress ? <span dir="ltr">{vendor.emailAddress}</span> : "—"}
+          </Row>
+        </KeyValue>
+      </Section>
+    </>
+  );
+}
 
 export async function VendorDrawer({
   mode,
@@ -30,7 +124,6 @@ export async function VendorDrawer({
 }) {
   const t = await getTranslations("master");
   const tCommon = await getTranslations("common");
-  const tFinance = await getTranslations("finance");
 
   if (mode === "import") {
     return (
@@ -96,21 +189,6 @@ export async function VendorDrawer({
     );
   }
 
-  const basisLabel =
-    vendor.billingBasis === "per_bus_day"
-      ? t("basisPerBusDay")
-      : vendor.billingBasis === "per_avg_bus_month"
-        ? t("basisPerAvgBusMonth")
-        : null;
-
-  // The formula in words, so the terms read without opening an invoice.
-  const formula =
-    vendor.billingBasis === "per_avg_bus_month"
-      ? tFinance("formulaOwned")
-      : vendor.billingBasis === "per_bus_day"
-        ? tFinance("formulaRental")
-        : null;
-
   return (
     <Drawer
       code={vendor.vendorCode}
@@ -138,68 +216,7 @@ export async function VendorDrawer({
         ) : undefined
       }
     >
-      <Section title={t("billingTerms")}>
-        {formula ? (
-          <p className="mb-3 rounded-[9px] border border-hairline bg-raise px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-2">
-            {formula}
-          </p>
-        ) : (
-          <p className="mb-3 text-[13px] text-ink-3">{t("noBillingTermsHint")}</p>
-        )}
-
-        <KeyValue>
-          <Row label={tFinance("basis")}>{basisLabel ?? "—"}</Row>
-          <Row
-            label={
-              vendor.billingBasis === "per_avg_bus_month"
-                ? tFinance("ratePerBus")
-                : t("field.rateAmount")
-            }
-          >
-            {vendor.rateAmount === null ? "—" : money(vendor.rateAmount, vendor.currency)}
-          </Row>
-          <Row label={t("field.applyKpi")}>
-            {vendor.applyKpi ? (
-              <Micro tone="go">{t("kpiApplies")}</Micro>
-            ) : (
-              <span className="text-ink-2">{t("kpiDoesNotApply")}</span>
-            )}
-          </Row>
-          <Row label={t("field.currency")} muted>
-            <span dir="ltr">{vendor.currency}</span>
-          </Row>
-        </KeyValue>
-
-        {vendor.billingNotes && (
-          <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
-            {vendor.billingNotes}
-          </p>
-        )}
-      </Section>
-
-      <Section title={t("record")}>
-        <KeyValue>
-          <Row label={t("field.vendorName")}>{vendor.vendorName}</Row>
-          <Row label={t("field.vendorType")} muted>
-            {vendor.vendorTypeLabel ?? "—"}
-          </Row>
-          <Row label={t("field.contactPerson")} muted>
-            {vendor.contactPerson ?? "—"}
-          </Row>
-          <Row label={t("field.mobile")} muted>
-            {vendor.mobileNumber ? (
-              <span className="tnum" dir="ltr">
-                {vendor.mobileNumber}
-              </span>
-            ) : (
-              "—"
-            )}
-          </Row>
-          <Row label={t("field.email")} muted>
-            {vendor.emailAddress ? <span dir="ltr">{vendor.emailAddress}</span> : "—"}
-          </Row>
-        </KeyValue>
-      </Section>
+      <VendorDetailBody vendor={vendor} />
     </Drawer>
   );
 }

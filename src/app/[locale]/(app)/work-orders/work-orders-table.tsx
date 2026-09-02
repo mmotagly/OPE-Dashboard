@@ -47,7 +47,18 @@ export function WorkOrdersTable({
       key: "number",
       header: t("field.number"),
       sortValue: (r) => r.workOrderNumber,
-      cell: (r) => <span className="tnum font-medium">{r.workOrderNumber}</span>,
+      // The one cell that opens the standalone full-page view instead of
+      // the row's usual drawer — stopPropagation keeps the row's own click
+      // handler (which also opens the drawer) from firing at the same time.
+      cell: (r) => (
+        <Link
+          href={`/work-orders/${r.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="tnum font-medium text-ink underline decoration-hairline decoration-1 underline-offset-2 hover:decoration-ink-2"
+        >
+          {r.workOrderNumber}
+        </Link>
+      ),
     },
     {
       key: "rfr",

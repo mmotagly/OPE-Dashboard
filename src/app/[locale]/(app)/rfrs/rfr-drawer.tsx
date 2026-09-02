@@ -17,110 +17,45 @@ import {
   loadRfrWorkOrders,
   loadStageVisits,
   toRfrFormValues,
+  type RfrIssueRow,
+  type RfrOptions,
+  type RfrRow,
+  type RfrWorkOrderRow,
 } from "./queries";
 import { railState, stagePillTone } from "./stage-tone";
 import { IssueList } from "./issue-list";
 import { StageActions } from "./stage-actions";
 import { RfrForm } from "./rfr-form";
 
-export async function RfrDrawer({
-  mode,
-  id,
+/**
+ * View-mode body, factored out so `/rfrs/[id]` (reached by clicking an
+ * RFR's number, as opposed to elsewhere in the row) can render the exact
+ * same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
+ */
+export async function RfrDetailBody({
+  rfr,
+  issues,
+  workOrders,
+  options,
   stages,
-  closeHref,
+  rail,
   canEdit,
   isSuperAdmin,
 }: {
-  mode: "view" | "new" | "edit";
-  id?: string;
+  rfr: RfrRow;
+  issues: RfrIssueRow[];
+  workOrders: RfrWorkOrderRow[];
+  options: RfrOptions;
   stages: LookupOption[];
-  closeHref: CloseHref;
+  rail: Stage[];
   canEdit: boolean;
   isSuperAdmin: boolean;
 }) {
   const t = await getTranslations("rfr");
-  const tCommon = await getTranslations("common");
-
-  if (mode === "new" || mode === "edit") {
-    const [options, rfr] = await Promise.all([
-      loadRfrOptions(),
-      mode === "edit" && id ? loadRfr(id) : null,
-    ]);
-
-    if (mode === "edit" && !rfr) {
-      return (
-        <Drawer code={t("editRfr")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-          <Empty title={t("notFound")} hint={t("notFoundHint")} />
-        </Drawer>
-      );
-    }
-
-    const initial = rfr ? await toRfrFormValues(rfr) : EMPTY_RFR_FORM;
-
-    return (
-      <Drawer
-        code={rfr ? `${t("editRfr")} · ${rfr.rfrNumber}` : t("newRfr")}
-        sub={rfr ? `${rfr.vehicleCode} · ${rfr.plateNumber}` : undefined}
-        closeHref={closeHref}
-        closeLabel={tCommon("cancel")}
-      >
-        <RfrForm
-          mode={rfr ? "edit" : "create"}
-          rfrId={rfr?.id}
-          options={options}
-          initial={initial}
-          backTo={closeHref.query}
-        />
-      </Drawer>
-    );
-  }
-
-  const rfr = id ? await loadRfr(id) : null;
-
-  if (!rfr) {
-    return (
-      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
-      </Drawer>
-    );
-  }
-
-  const [issues, workOrders, visits, options] = await Promise.all([
-    loadRfrIssues(rfr.id),
-    loadRfrWorkOrders(rfr.id),
-    loadStageVisits(rfr.id),
-    loadRfrOptions(),
-  ]);
-
-  const visited = new Set(visits.map((v) => v.stageId));
-  const rail: Stage[] = stages.map((s) => ({
-    code: s.code,
-    label: s.labelEn,
-    state: railState(s.code, s.id === rfr.stageId, visited.has(s.id)),
-  }));
 
   return (
-    <Drawer
-      code={rfr.rfrNumber}
-      sub={`${rfr.vehicleCode} · ${rfr.plateNumber} · ${rfr.requestAt.slice(0, 16).replace("T", " ")}`}
-      pill={
-        rfr.stageLabel ? (
-          <Pill tone={stagePillTone(rfr.stageCode)}>{rfr.stageLabel}</Pill>
-        ) : undefined
-      }
-      closeHref={closeHref}
-      closeLabel={tCommon("cancel")}
-      footer={
-        canEdit ? (
-          <Link
-            href={{ pathname: "/rfrs", query: { ...closeHref.query, mode: "edit", id: rfr.id } }}
-            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
-          >
-            {tCommon("edit")}
-          </Link>
-        ) : undefined
-      }
-    >
+    <>
       <Section title={t("stage")}>
         {canEdit ? (
           <StageActions
@@ -249,6 +184,118 @@ export async function RfrDrawer({
           </ul>
         )}
       </Section>
+    </>
+  );
+}
+
+export async function RfrDrawer({
+  mode,
+  id,
+  stages,
+  closeHref,
+  canEdit,
+  isSuperAdmin,
+}: {
+  mode: "view" | "new" | "edit";
+  id?: string;
+  stages: LookupOption[];
+  closeHref: CloseHref;
+  canEdit: boolean;
+  isSuperAdmin: boolean;
+}) {
+  const t = await getTranslations("rfr");
+  const tCommon = await getTranslations("common");
+
+  if (mode === "new" || mode === "edit") {
+    const [options, rfr] = await Promise.all([
+      loadRfrOptions(),
+      mode === "edit" && id ? loadRfr(id) : null,
+    ]);
+
+    if (mode === "edit" && !rfr) {
+      return (
+        <Drawer code={t("editRfr")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+          <Empty title={t("notFound")} hint={t("notFoundHint")} />
+        </Drawer>
+      );
+    }
+
+    const initial = rfr ? await toRfrFormValues(rfr) : EMPTY_RFR_FORM;
+
+    return (
+      <Drawer
+        code={rfr ? `${t("editRfr")} · ${rfr.rfrNumber}` : t("newRfr")}
+        sub={rfr ? `${rfr.vehicleCode} · ${rfr.plateNumber}` : undefined}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <RfrForm
+          mode={rfr ? "edit" : "create"}
+          rfrId={rfr?.id}
+          options={options}
+          initial={initial}
+          backTo={closeHref.query}
+        />
+      </Drawer>
+    );
+  }
+
+  const rfr = id ? await loadRfr(id) : null;
+
+  if (!rfr) {
+    return (
+      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
+      </Drawer>
+    );
+  }
+
+  const [issues, workOrders, visits, options] = await Promise.all([
+    loadRfrIssues(rfr.id),
+    loadRfrWorkOrders(rfr.id),
+    loadStageVisits(rfr.id),
+    loadRfrOptions(),
+  ]);
+
+  const visited = new Set(visits.map((v) => v.stageId));
+  const rail: Stage[] = stages.map((s) => ({
+    code: s.code,
+    label: s.labelEn,
+    state: railState(s.code, s.id === rfr.stageId, visited.has(s.id)),
+  }));
+
+  return (
+    <Drawer
+      code={rfr.rfrNumber}
+      sub={`${rfr.vehicleCode} · ${rfr.plateNumber} · ${rfr.requestAt.slice(0, 16).replace("T", " ")}`}
+      pill={
+        rfr.stageLabel ? (
+          <Pill tone={stagePillTone(rfr.stageCode)}>{rfr.stageLabel}</Pill>
+        ) : undefined
+      }
+      closeHref={closeHref}
+      closeLabel={tCommon("cancel")}
+      footer={
+        canEdit ? (
+          <Link
+            href={{ pathname: "/rfrs", query: { ...closeHref.query, mode: "edit", id: rfr.id } }}
+            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+          >
+            {tCommon("edit")}
+          </Link>
+        ) : undefined
+      }
+    >
+      <RfrDetailBody
+        rfr={rfr}
+        issues={issues}
+        workOrders={workOrders}
+        options={options}
+        stages={stages}
+        rail={rail}
+        canEdit={canEdit}
+        isSuperAdmin={isSuperAdmin}
+      />
     </Drawer>
   );
 }

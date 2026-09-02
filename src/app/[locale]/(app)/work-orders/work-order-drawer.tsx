@@ -13,6 +13,9 @@ import {
   loadWorkOrder,
   loadWorkOrderOptions,
   toWorkOrderFormValues,
+  type PartOption,
+  type RepeatIndex,
+  type WorkOrderRow,
   type WorkOrderStatus,
 } from "./queries";
 import { WorkOrderForm } from "./work-order-form";
@@ -26,109 +29,26 @@ const STATUS_TONE: Record<WorkOrderStatus, "go" | "warn" | "stop" | "idle"> = {
 
 const stamp = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : null);
 
-export async function WorkOrderDrawer({
-  mode,
-  id,
-  rfrId,
-  closeHref,
-  canEdit,
+/**
+ * View-mode body, factored out so `/work-orders/[id]` (reached by clicking
+ * a work order's number, as opposed to elsewhere in the row) can render the
+ * exact same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
+ */
+export async function WorkOrderDetailBody({
+  workOrder,
+  parts,
+  repeat,
 }: {
-  mode: "view" | "new" | "edit";
-  id?: string;
-  /** Only for `new` — a work order is always raised against a request. */
-  rfrId?: string;
-  closeHref: CloseHref;
-  canEdit: boolean;
+  workOrder: WorkOrderRow;
+  parts: PartOption[];
+  repeat: RepeatIndex | null;
 }) {
   const t = await getTranslations("workOrder");
-  const tCommon = await getTranslations("common");
   const tRfr = await getTranslations("rfr");
 
-  if (mode === "new" || mode === "edit") {
-    const existing = mode === "edit" && id ? await loadWorkOrder(id) : null;
-
-    if (mode === "edit" && !existing) {
-      return (
-        <Drawer code={t("edit")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-          <Empty title={t("notFound")} hint={t("notFoundHint")} />
-        </Drawer>
-      );
-    }
-
-    const contextId = existing?.rfrId ?? rfrId;
-    const [options, rfr] = await Promise.all([
-      loadWorkOrderOptions(),
-      contextId ? loadRfrContext(contextId) : null,
-    ]);
-
-    // Without a request there is nothing to raise the order against.
-    if (!rfr) {
-      return (
-        <Drawer code={t("new")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-          <Empty title={t("needsRfr")} hint={t("needsRfrHint")} />
-        </Drawer>
-      );
-    }
-
-    return (
-      <Drawer
-        code={existing ? `${t("edit")} · ${existing.workOrderNumber}` : t("new")}
-        sub={`${rfr.rfrNumber} · ${rfr.vehicleCode}`}
-        closeHref={closeHref}
-        closeLabel={tCommon("cancel")}
-      >
-        <WorkOrderForm
-          mode={existing ? "edit" : "create"}
-          workOrderId={existing?.id}
-          rfr={rfr}
-          options={options}
-          initial={existing ? toWorkOrderFormValues(existing) : EMPTY_WORK_ORDER_FORM}
-          backTo={closeHref.query}
-        />
-      </Drawer>
-    );
-  }
-
-  const workOrder = id ? await loadWorkOrder(id) : null;
-
-  if (!workOrder) {
-    return (
-      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
-      </Drawer>
-    );
-  }
-
-  const [repeat, options] = await Promise.all([
-    loadRepeatIndex(workOrder.id),
-    loadWorkOrderOptions(),
-  ]);
-
-  const parts = options.parts.filter((p) => workOrder.partIds.includes(p.id));
-
   return (
-    <Drawer
-      code={workOrder.workOrderNumber}
-      sub={`${workOrder.rfrNumber} · ${workOrder.vehicleCode} · ${workOrder.plateNumber}`}
-      pill={
-        <Pill tone={STATUS_TONE[workOrder.status]}>{t(`status.${workOrder.status}`)}</Pill>
-      }
-      closeHref={closeHref}
-      closeLabel={tCommon("cancel")}
-      footer={
-        canEdit ? (
-          <Link
-            href={{
-              pathname: "/work-orders",
-              query: { ...closeHref.query, mode: "edit", id: workOrder.id },
-            }}
-            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
-          >
-            {tCommon("edit")}
-          </Link>
-        ) : undefined
-      }
-    >
+    <>
       <Section title={t("repair")}>
         <KeyValue>
           <Row label={t("field.engineer")}>{workOrder.engineerName ?? "—"}</Row>
@@ -249,6 +169,113 @@ export async function WorkOrderDrawer({
           {workOrder.vehicleCode} · {workOrder.plateNumber}
         </p>
       </Section>
+    </>
+  );
+}
+
+export async function WorkOrderDrawer({
+  mode,
+  id,
+  rfrId,
+  closeHref,
+  canEdit,
+}: {
+  mode: "view" | "new" | "edit";
+  id?: string;
+  /** Only for `new` — a work order is always raised against a request. */
+  rfrId?: string;
+  closeHref: CloseHref;
+  canEdit: boolean;
+}) {
+  const t = await getTranslations("workOrder");
+  const tCommon = await getTranslations("common");
+
+  if (mode === "new" || mode === "edit") {
+    const existing = mode === "edit" && id ? await loadWorkOrder(id) : null;
+
+    if (mode === "edit" && !existing) {
+      return (
+        <Drawer code={t("edit")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+          <Empty title={t("notFound")} hint={t("notFoundHint")} />
+        </Drawer>
+      );
+    }
+
+    const contextId = existing?.rfrId ?? rfrId;
+    const [options, rfr] = await Promise.all([
+      loadWorkOrderOptions(),
+      contextId ? loadRfrContext(contextId) : null,
+    ]);
+
+    // Without a request there is nothing to raise the order against.
+    if (!rfr) {
+      return (
+        <Drawer code={t("new")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+          <Empty title={t("needsRfr")} hint={t("needsRfrHint")} />
+        </Drawer>
+      );
+    }
+
+    return (
+      <Drawer
+        code={existing ? `${t("edit")} · ${existing.workOrderNumber}` : t("new")}
+        sub={`${rfr.rfrNumber} · ${rfr.vehicleCode}`}
+        closeHref={closeHref}
+        closeLabel={tCommon("cancel")}
+      >
+        <WorkOrderForm
+          mode={existing ? "edit" : "create"}
+          workOrderId={existing?.id}
+          rfr={rfr}
+          options={options}
+          initial={existing ? toWorkOrderFormValues(existing) : EMPTY_WORK_ORDER_FORM}
+          backTo={closeHref.query}
+        />
+      </Drawer>
+    );
+  }
+
+  const workOrder = id ? await loadWorkOrder(id) : null;
+
+  if (!workOrder) {
+    return (
+      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
+      </Drawer>
+    );
+  }
+
+  const [repeat, options] = await Promise.all([
+    loadRepeatIndex(workOrder.id),
+    loadWorkOrderOptions(),
+  ]);
+
+  const parts = options.parts.filter((p) => workOrder.partIds.includes(p.id));
+
+  return (
+    <Drawer
+      code={workOrder.workOrderNumber}
+      sub={`${workOrder.rfrNumber} · ${workOrder.vehicleCode} · ${workOrder.plateNumber}`}
+      pill={
+        <Pill tone={STATUS_TONE[workOrder.status]}>{t(`status.${workOrder.status}`)}</Pill>
+      }
+      closeHref={closeHref}
+      closeLabel={tCommon("cancel")}
+      footer={
+        canEdit ? (
+          <Link
+            href={{
+              pathname: "/work-orders",
+              query: { ...closeHref.query, mode: "edit", id: workOrder.id },
+            }}
+            className="rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+          >
+            {tCommon("edit")}
+          </Link>
+        ) : undefined
+      }
+    >
+      <WorkOrderDetailBody workOrder={workOrder} parts={parts} repeat={repeat} />
     </Drawer>
   );
 }
