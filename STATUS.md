@@ -5,7 +5,36 @@ snapshot) this file is meant to be updated as work lands, so any session on
 any machine can `git pull` and know exactly where things stand. Read
 `CLAUDE.md` first for domain rules; this file is state, not spec.
 
-Last updated: 2026-09-02 (overnight autonomous session, see below).
+Last updated: 2026-09-02 (row-click/code-link rollout, see below).
+
+---
+
+## Row-click/code-link rollout to every fitting module (2026-09-02)
+
+Extended CLAUDE.md's row-click-vs-code-link pattern (built for Vehicles
+only, as the reference implementation) to every other module that fits it:
+**Charging Sessions, RFRs, Work Orders, Drivers, Vendors, Daily Operations,
+Invoices, Scorecards, Routes & Stations, and Cameras & Bridges** — 10
+modules, 3 commits (`614e34e`, `9525b63`, `09d8ccf`), each
+typecheck/lint/build-verified and confirmed live before the next. The two
+dual-entity modules (Routes/Stations, Cameras/Bridges) route as
+`/<module>/[id]?entity=<kind>`, mirroring how their drawers already branch.
+
+Deliberately left out, with reasons now recorded in `CLAUDE.md` itself:
+Periodic Maintenance, Alerts, and Fleet Location (no entity of their own —
+derived views into other modules' records); Dashboard, Activity log, Vendor
+trends (pure aggregates, no single-record identity); Day board (different,
+already-settled interaction model); Settings (codes aren't globally
+unique).
+
+**Status: functionally complete, confirmed by the user** — code links land
+on the correct standalone page with identical content to the drawer,
+row clicks elsewhere still open the drawer unchanged, and the Edit action
+from a detail page correctly opens that record in edit mode back on the
+list. **A dedicated per-module polish/edit pass is still planned before
+this goes live for real use** — not a correctness concern, just refinement
+the user wants to do deliberately rather than folded into this mechanical
+rollout.
 
 ---
 
