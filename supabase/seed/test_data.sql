@@ -732,7 +732,7 @@ shaped as (
 ),
 energy_calc as (
   select *,
-    round(300 * (battery_end - battery_start) / 100.0 * (1.05 + random() * 0.07), 2) as energy_kwh
+    round((300 * (battery_end - battery_start) / 100.0 * (1.05 + random() * 0.07))::numeric, 2) as energy_kwh
   from shaped
 ),
 final as (
