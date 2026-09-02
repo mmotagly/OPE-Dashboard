@@ -13,12 +13,69 @@ import {
   loadCameraOptions,
   toCameraBridgeFormValues,
   toCameraFormValues,
+  type CameraBridgeRow,
   type CameraEntity,
+  type CameraRow,
 } from "./queries";
 import { CameraBridgeForm, CameraForm } from "./camera-form";
 
 const editButton =
   "rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
+
+/**
+ * View-mode body for a bridge, factored out so `/cameras/[id]?entity=bridge`
+ * (reached by clicking a bridge's code, as opposed to elsewhere in the row)
+ * can render the exact same content as the Drawer without duplicating it.
+ * See CLAUDE.md's row-click-vs-code-link convention.
+ */
+export async function CameraBridgeDetailBody({ bridge }: { bridge: CameraBridgeRow }) {
+  const t = await getTranslations("cameras");
+
+  return (
+    <Section title={t("record")}>
+      <KeyValue>
+        <Row label={t("field.baseUrl")}>{bridge.baseUrl ?? "—"}</Row>
+        <Row label={t("field.cameraCount")} muted>
+          <span className="tnum">{bridge.cameraCount}</span>
+        </Row>
+        <Row label={t("field.lastSeen")} muted>
+          {bridge.lastSeenAt ? new Date(bridge.lastSeenAt).toLocaleString() : t("neverSeen")}
+        </Row>
+      </KeyValue>
+    </Section>
+  );
+}
+
+/**
+ * View-mode body for a camera — same reasoning as `CameraBridgeDetailBody`,
+ * for `/cameras/[id]?entity=camera`.
+ */
+export async function CameraDetailBody({ camera }: { camera: CameraRow }) {
+  const t = await getTranslations("cameras");
+
+  return (
+    <>
+      <Section title={t("record")}>
+        <KeyValue>
+          <Row label={t("field.bridge")}>{camera.bridgeCode}</Row>
+          <Row label={t("field.isapiChannel")} muted>
+            <span className="tnum">{camera.isapiChannel}</span>
+          </Row>
+          <Row label={t("field.capabilities")} muted>
+            <span className="flex justify-end gap-1.5">
+              {camera.supportsLive && <Pill tone="idle">{t("live")}</Pill>}
+              {camera.supportsCounting && <Pill tone="idle">{t("counting")}</Pill>}
+            </span>
+          </Row>
+        </KeyValue>
+      </Section>
+
+      <Section title={t("liveAndPlayback")}>
+        <p className="text-[12.5px] text-ink-3">{t("bridgeProxyHint")}</p>
+      </Section>
+    </>
+  );
+}
 
 /**
  * Cameras and bridges share this page/drawer the same way routes/stations do
@@ -124,17 +181,7 @@ export async function CameraDrawer({
           ) : undefined
         }
       >
-        <Section title={t("record")}>
-          <KeyValue>
-            <Row label={t("field.baseUrl")}>{bridge.baseUrl ?? "—"}</Row>
-            <Row label={t("field.cameraCount")} muted>
-              <span className="tnum">{bridge.cameraCount}</span>
-            </Row>
-            <Row label={t("field.lastSeen")} muted>
-              {bridge.lastSeenAt ? new Date(bridge.lastSeenAt).toLocaleString() : t("neverSeen")}
-            </Row>
-          </KeyValue>
-        </Section>
+        <CameraBridgeDetailBody bridge={bridge} />
       </Drawer>
     );
   }
@@ -163,24 +210,7 @@ export async function CameraDrawer({
         ) : undefined
       }
     >
-      <Section title={t("record")}>
-        <KeyValue>
-          <Row label={t("field.bridge")}>{camera.bridgeCode}</Row>
-          <Row label={t("field.isapiChannel")} muted>
-            <span className="tnum">{camera.isapiChannel}</span>
-          </Row>
-          <Row label={t("field.capabilities")} muted>
-            <span className="flex justify-end gap-1.5">
-              {camera.supportsLive && <Pill tone="idle">{t("live")}</Pill>}
-              {camera.supportsCounting && <Pill tone="idle">{t("counting")}</Pill>}
-            </span>
-          </Row>
-        </KeyValue>
-      </Section>
-
-      <Section title={t("liveAndPlayback")}>
-        <p className="text-[12.5px] text-ink-3">{t("bridgeProxyHint")}</p>
-      </Section>
+      <CameraDetailBody camera={camera} />
     </Drawer>
   );
 }

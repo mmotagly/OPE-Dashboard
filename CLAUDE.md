@@ -287,13 +287,26 @@ positioning mechanics don't share enough to be worth unifying.
 The code-link cell stops click propagation so it doesn't also fire the row's
 own drawer-opening click handler.
 
-**Status: built for Vehicles only, as the reference implementation.** Every
-other module still only has the drawer — extending this is mechanical
-repetition of the same three-step pattern (extract `*DetailBody`, add
-`DetailPage` in a new `[id]/page.tsx`, make the code cell a stopPropagation
-`Link`), not a design decision, but it hasn't been done yet. Do it the same
-way for a module the next time you touch that module's drawer, rather than
-in one giant sweep.
+**Status: rolled out to every module that fits the pattern**, as of
+2026-09-02 — Vehicles (the original reference implementation), Charging
+Sessions, RFRs, Work Orders, Drivers, Vendors, Daily Operations, Invoices,
+Scorecards, Routes & Stations, and Cameras & Bridges. Dual-entity modules
+(Routes/Stations, Cameras/Bridges — two record types sharing one drawer via
+an `entity` param) route as `/<module>/[id]?entity=<kind>`, same branching
+the drawer already does.
+
+Deliberately **not** built for: **Periodic Maintenance**, **Alerts**, and
+**Fleet Location** — these are derived/read-only views with no entity of
+their own (PM's rows are per-vehicle-per-*part*; Alerts/Fleet Location
+surface other modules' vehicles/RFRs). Clicking through them still opens
+the *other* module's drawer today; pointing those cells at that module's
+`[id]` page instead (now that one exists) is a reasonable follow-up, not
+done yet. Also not built for **Dashboard**, **Activity log**, **Vendor
+trends** (pure aggregate tables, no single-record identity), **Day board**
+(a different interaction model — client-side `RecordCard` selection, not
+this URL-driven `Drawer` pattern; a deliberate decision, not an oversight),
+and **Settings** (`lookups.code` isn't globally unique, `users` has no code
+at all — low value for an invented identifier).
 
 ### Form fields
 Any prefilled value carries a 10.5px `--color-ink-3` hint underneath saying

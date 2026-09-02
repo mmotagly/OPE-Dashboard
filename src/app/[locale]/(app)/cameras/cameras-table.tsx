@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Link } from "@/lib/i18n/routing";
 import { DataTable, orDash, type Column } from "@/components/ui/data-table";
 import { Empty } from "@/components/ui/empty";
 import { Pill } from "@/components/ui/pill";
@@ -24,7 +25,18 @@ export function CameraBridgesTable({
       key: "bridgeCode",
       header: t("field.bridgeCode"),
       sortValue: (r) => r.bridgeCode,
-      cell: (r) => <span className="tnum font-medium">{r.bridgeCode}</span>,
+      // The one cell that opens the standalone full-page view instead of
+      // the row's usual drawer — stopPropagation keeps the row's own click
+      // handler (which also opens the drawer) from firing at the same time.
+      cell: (r) => (
+        <Link
+          href={`/cameras/${r.id}?entity=bridge`}
+          onClick={(e) => e.stopPropagation()}
+          className="tnum font-medium text-ink underline decoration-hairline decoration-1 underline-offset-2 hover:decoration-ink-2"
+        >
+          {r.bridgeCode}
+        </Link>
+      ),
     },
     { key: "siteName", header: t("field.siteName"), cell: (r) => r.siteName },
     {
@@ -74,7 +86,18 @@ export function CamerasTable({
       key: "cameraCode",
       header: t("field.cameraCode"),
       sortValue: (r) => r.cameraCode,
-      cell: (r) => <span className="tnum font-medium">{r.cameraCode}</span>,
+      // The one cell that opens the standalone full-page view instead of
+      // the row's usual drawer — stopPropagation keeps the row's own click
+      // handler (which also opens the drawer) from firing at the same time.
+      cell: (r) => (
+        <Link
+          href={`/cameras/${r.id}?entity=camera`}
+          onClick={(e) => e.stopPropagation()}
+          className="tnum font-medium text-ink underline decoration-hairline decoration-1 underline-offset-2 hover:decoration-ink-2"
+        >
+          {r.cameraCode}
+        </Link>
+      ),
     },
     { key: "bridgeCode", header: t("field.bridge"), cell: (r) => r.bridgeCode },
     {

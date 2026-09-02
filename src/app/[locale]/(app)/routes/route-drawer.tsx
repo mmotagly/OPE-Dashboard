@@ -18,12 +18,102 @@ import {
   toRouteFormValues,
   toStationFormValues,
   type RouteEntity,
+  type RouteOptions,
+  type RouteRow,
+  type RouteStationRow,
+  type StationRow,
 } from "./queries";
 import { RouteForm, StationForm } from "./route-form";
 import { RouteStationsEditor } from "./route-stations-editor";
 
 const editButton =
   "rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
+
+/**
+ * View-mode body for a station, factored out so `/routes/[id]?entity=station`
+ * (reached by clicking a station's code, as opposed to elsewhere in the
+ * row) can render the exact same content as the Drawer without duplicating
+ * it. See CLAUDE.md's row-click-vs-code-link convention.
+ */
+export async function StationDetailBody({ station }: { station: StationRow }) {
+  const t = await getTranslations("master");
+
+  return (
+    <Section title={t("record")}>
+      <KeyValue>
+        <Row label={t("field.stationName")}>{station.stationName}</Row>
+        <Row label={t("field.stationCode")} muted>
+          <span className="tnum">{station.stationCode}</span>
+        </Row>
+      </KeyValue>
+    </Section>
+  );
+}
+
+/**
+ * View-mode body for a route — same reasoning as `StationDetailBody`, for
+ * `/routes/[id]?entity=route`.
+ */
+export async function RouteDetailBody({
+  route,
+  stops,
+  options,
+  canEdit,
+}: {
+  route: RouteRow;
+  stops: RouteStationRow[];
+  options: RouteOptions;
+  canEdit: boolean;
+}) {
+  const t = await getTranslations("master");
+
+  return (
+    <>
+      <Section title={t("record")}>
+        <KeyValue>
+          <Row label={t("field.routeName")}>{route.routeName}</Row>
+          <Row label={t("field.routeDistance")}>
+            {route.routeDistanceKm === null ? (
+              "—"
+            ) : (
+              <span className="tnum">{km(route.routeDistanceKm)} km</span>
+            )}
+          </Row>
+          <Row label={t("field.numberOfStations")} muted>
+            {route.numberOfStations === null ? (
+              "—"
+            ) : (
+              <span className="tnum">{route.numberOfStations}</span>
+            )}
+          </Row>
+          <Row label={t("field.legTime")} muted>
+            {route.standardLegTime ? (
+              <span className="tnum">{route.standardLegTime}</span>
+            ) : (
+              "—"
+            )}
+          </Row>
+          <Row label={t("field.roundTripTime")} muted>
+            {route.standardRoundTripTime ? (
+              <span className="tnum">{route.standardRoundTripTime}</span>
+            ) : (
+              "—"
+            )}
+          </Row>
+        </KeyValue>
+      </Section>
+
+      <Section title={t("stopsInSequence")}>
+        <RouteStationsEditor
+          routeId={route.id}
+          stops={stops}
+          options={options}
+          canEdit={canEdit}
+        />
+      </Section>
+    </>
+  );
+}
 
 /**
  * Routes and stations share the page, so they share the drawer. Which entity is
@@ -168,14 +258,7 @@ export async function RouteDrawer({
           ) : undefined
         }
       >
-        <Section title={t("record")}>
-          <KeyValue>
-            <Row label={t("field.stationName")}>{station.stationName}</Row>
-            <Row label={t("field.stationCode")} muted>
-              <span className="tnum">{station.stationCode}</span>
-            </Row>
-          </KeyValue>
-        </Section>
+        <StationDetailBody station={station} />
       </Drawer>
     );
   }
@@ -216,48 +299,7 @@ export async function RouteDrawer({
         ) : undefined
       }
     >
-      <Section title={t("record")}>
-        <KeyValue>
-          <Row label={t("field.routeName")}>{route.routeName}</Row>
-          <Row label={t("field.routeDistance")}>
-            {route.routeDistanceKm === null ? (
-              "—"
-            ) : (
-              <span className="tnum">{km(route.routeDistanceKm)} km</span>
-            )}
-          </Row>
-          <Row label={t("field.numberOfStations")} muted>
-            {route.numberOfStations === null ? (
-              "—"
-            ) : (
-              <span className="tnum">{route.numberOfStations}</span>
-            )}
-          </Row>
-          <Row label={t("field.legTime")} muted>
-            {route.standardLegTime ? (
-              <span className="tnum">{route.standardLegTime}</span>
-            ) : (
-              "—"
-            )}
-          </Row>
-          <Row label={t("field.roundTripTime")} muted>
-            {route.standardRoundTripTime ? (
-              <span className="tnum">{route.standardRoundTripTime}</span>
-            ) : (
-              "—"
-            )}
-          </Row>
-        </KeyValue>
-      </Section>
-
-      <Section title={t("stopsInSequence")}>
-        <RouteStationsEditor
-          routeId={route.id}
-          stops={stops}
-          options={options}
-          canEdit={canEdit}
-        />
-      </Section>
+      <RouteDetailBody route={route} stops={stops} options={options} canEdit={canEdit} />
     </Drawer>
   );
 }
