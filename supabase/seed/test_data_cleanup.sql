@@ -30,6 +30,15 @@ begin;
 delete from vendor_invoices
 where vendor_id in (select id from vendors where vendor_code like 'TEST-%');
 
+-- charging_sessions.vehicle_id is `not null references vehicles(id)` with
+-- the default RESTRICT — must go before vehicles. charger_id restricts
+-- chargers the same way, so chargers has to wait until this is gone too.
+delete from charging_sessions
+where charging_session_code like 'TEST-%';
+
+delete from chargers
+where charger_code like 'TEST-%';
+
 -- vehicle_part_schedules.last_work_order_id restricts work_orders (no
 -- cascade) — fn_recalc_pm_schedules (called inside fn_init_pm_schedules)
 -- sets it automatically for any vehicle whose completed work order
@@ -90,6 +99,8 @@ begin
   raise notice '  daily operations:   %', (select count(*) from daily_vehicle_operations where operation_code like 'TEST-%');
   raise notice '  RFRs:               %', (select count(*) from rfrs where rfr_number like 'TEST-%');
   raise notice '  work orders:        %', (select count(*) from work_orders where work_order_number like 'TEST-%');
+  raise notice '  chargers:           %', (select count(*) from chargers where charger_code like 'TEST-%');
+  raise notice '  charging sessions:  %', (select count(*) from charging_sessions where charging_session_code like 'TEST-%');
 end $$;
 
 commit;

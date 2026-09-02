@@ -623,6 +623,153 @@ begin
 end $$;
 
 -- ============================================================================
+-- 11. CHARGERS + CHARGING SESSIONS
+-- ============================================================================
+-- Placed last rather than right after Vehicles purely for file layout — it
+-- only depends on tmp_test_vehicles (section 3), which is `on commit drop`
+-- (persists for the whole transaction, not per statement), so it's still in
+-- scope here.
+--
+-- Only electric vehicles can take a session (see charging/queries.ts's own
+-- picker) — section 3 alternates fuel type by seq, even = electric, giving
+-- 7 of the 15 test vehicles. Each of those 7 gets its own dedicated test
+-- charger below: not a random pairing, a deliberate one, since it makes
+-- fn_charging_no_plug_clash's overlap check structurally impossible to
+-- trip — no charger here is ever touched by more than one vehicle, so no
+-- two seeded sessions can ever compete for the same plug regardless of
+-- timing, without having to compute overlap windows by hand.
+
+create temp table tmp_test_electric_vehicles (
+  seq int, vehicle_id uuid, vehicle_code text
+) on commit drop;
+
+insert into tmp_test_electric_vehicles (seq, vehicle_id, vehicle_code)
+select row_number() over (order by seq), id, vehicle_code
+from tmp_test_vehicles
+where seq % 2 = 0;
+
+-- Capacity mix drives realistic duration variety (a 22kW overnight charger
+-- takes visibly longer than a 150kW fast one for the same energy amount).
+-- Two are dual-plug (A+B) fast chargers — still zero clash risk, since each
+-- is single-vehicle for its whole history below.
+create temp table tmp_test_chargers (
+  seq int, id uuid, charger_code text, capacity_kw numeric, plugs text
+) on commit drop;
+
+with rows as (
+  select * from (values
+    (1, 'TEST-CHG-01', 'Test Depot A',  22.00::numeric, 'A'),
+    (2, 'TEST-CHG-02', 'Test Depot A',  60.00::numeric, 'A'),
+    (3, 'TEST-CHG-03', 'Test Depot A', 100.00::numeric, 'A+B'),
+    (4, 'TEST-CHG-04', 'Test Depot B',  22.00::numeric, 'A'),
+    (5, 'TEST-CHG-05', 'Test Depot B',  60.00::numeric, 'A'),
+    (6, 'TEST-CHG-06', 'Test Depot B', 150.00::numeric, 'A+B'),
+    (7, 'TEST-CHG-07', 'Test Depot C',  60.00::numeric, 'A')
+  ) as t(seq, charger_code, location, capacity_kw, plugs)
+),
+ins as (
+  insert into chargers
+    (charger_code, charger_location, manufacturing_year, charger_capacity_kw,
+     charger_voltage, status_id)
+  select
+    r.charger_code, r.location, 2023, r.capacity_kw,
+    case when r.capacity_kw >= 100 then 400 else 230 end,
+    (select id from tmp_lookups where key = 'generic_status:active')
+  from rows r
+  returning id, charger_code
+)
+insert into tmp_test_chargers (seq, id, charger_code, capacity_kw, plugs)
+select r.seq, ins.id, ins.charger_code, r.capacity_kw, r.plugs
+from ins join rows r on r.charger_code = ins.charger_code;
+
+create temp table tmp_vehicle_charger (
+  vehicle_seq int, vehicle_id uuid, vehicle_code text,
+  charger_id uuid, charger_code text, capacity_kw numeric, plugs text
+) on commit drop;
+
+insert into tmp_vehicle_charger
+select ev.seq, ev.vehicle_id, ev.vehicle_code, c.id, c.charger_code, c.capacity_kw, c.plugs
+from tmp_test_electric_vehicles ev
+join tmp_test_chargers c on c.seq = ev.seq;
+
+-- ---- finished sessions: current_date-90 .. current_date-1, ~30% of nights
+-- per vehicle get a session (real fleets don't charge every single night on
+-- a 300kWh pack over a short fixed loop), ~10% of those are short daytime
+-- top-ups instead of the usual overnight pattern. energy_consumed_kwh is
+-- derived from the battery delta and a real 5-12% charging-loss factor, not
+-- an arbitrary number; charging_end_time is derived from that energy figure
+-- and the vehicle's own charger capacity, so slower chargers really do take
+-- longer here, not just cosmetically. charging_duration is left alone — it
+-- is the table's own generated column.
+with calendar as (
+  select generate_series(current_date - 90, current_date - 1, interval '1 day')::date as session_date
+),
+grid as (
+  select
+    vc.*, c.session_date,
+    random() as keep_roll,
+    random() as topup_roll,
+    round((10 + random() * 35)::numeric, 1) as start_overnight,
+    round((75 + random() * 25)::numeric, 1) as end_overnight,
+    round((40 + random() * 20)::numeric, 1) as start_topup,
+    round((15 + random() * 15)::numeric, 1) as delta_topup
+  from tmp_vehicle_charger vc
+  cross join calendar c
+),
+filtered as (
+  select * from grid where keep_roll < 0.30
+),
+shaped as (
+  select
+    *,
+    case when topup_roll < 0.10 then start_topup else start_overnight end as battery_start,
+    case when topup_roll < 0.10 then least(99.9, start_topup + delta_topup) else end_overnight end as battery_end,
+    case when topup_roll < 0.10
+      then session_date + time '11:00' + (random() * interval '4 hours')
+      else session_date + time '20:00' + (random() * interval '3 hours')
+    end as start_ts
+  from filtered
+),
+energy_calc as (
+  select *,
+    round(300 * (battery_end - battery_start) / 100.0 * (1.05 + random() * 0.07), 2) as energy_kwh
+  from shaped
+),
+final as (
+  select *,
+    start_ts + make_interval(secs => round(energy_kwh / capacity_kw * 3600)::int) as end_ts
+  from energy_calc
+)
+insert into charging_sessions
+  (charging_session_code, vehicle_id, charger_id, plugs_used, battery_start_pct,
+   battery_end_pct, charging_start_time, charging_end_time, energy_consumed_kwh, notes)
+select
+  'TEST-CH-' || f.vehicle_code || '-' || to_char(f.session_date, 'YYYYMMDD'),
+  f.vehicle_id, f.charger_id, f.plugs::plug_selection,
+  f.battery_start, f.battery_end, f.start_ts, f.end_ts, f.energy_kwh,
+  case when random() < 0.15 then
+    (array[
+      'Test: routine overnight charge', 'Test: charger inspected, running normally',
+      'Test: reduced rate due to grid limit', 'Test: quick top-up before afternoon shift'
+    ])[1 + floor(random() * 4)::int]
+  else null end
+from final f;
+
+-- ---- 3 currently-open sessions (no end time/energy yet) — a real "still
+-- charging" state, and the only rows the `finished` filter's false case has
+-- to match against.
+insert into charging_sessions
+  (charging_session_code, vehicle_id, charger_id, plugs_used, battery_start_pct,
+   charging_start_time)
+select
+  'TEST-CH-' || vc.vehicle_code || '-' || to_char(current_date, 'YYYYMMDD') || '-OPEN',
+  vc.vehicle_id, vc.charger_id, vc.plugs::plug_selection,
+  round((15 + random() * 20)::numeric, 1),
+  now() - interval '1 hour' - (random() * interval '3 hours')
+from tmp_vehicle_charger vc
+where vc.vehicle_seq in (1, 2, 3);
+
+-- ============================================================================
 -- SUMMARY
 -- ============================================================================
 
@@ -639,6 +786,8 @@ begin
   raise notice '  PM schedules:       %', (select count(*) from vehicle_part_schedules vps join vehicles v on v.id = vps.vehicle_id where v.vehicle_code like 'TEST-%');
   raise notice '  scorecards:         %', (select count(*) from vendor_scorecards sc join vendors v on v.id = sc.vendor_id where v.vendor_code like 'TEST-%');
   raise notice '  invoices:           %', (select count(*) from vendor_invoices vi join vendors v on v.id = vi.vendor_id where v.vendor_code like 'TEST-%');
+  raise notice '  chargers:           %', (select count(*) from chargers where charger_code like 'TEST-%');
+  raise notice '  charging sessions:  %', (select count(*) from charging_sessions where charging_session_code like 'TEST-%');
 end $$;
 
 commit;
