@@ -13,7 +13,7 @@ const editButton =
 /**
  * Standalone full-page view — reached by clicking a route's or station's
  * code in the list, as opposed to clicking anywhere else in the row (which
- * still opens the overlay Drawer at /routes?id=...). Which entity is shown
+ * still opens the overlay Drawer at /trips?id=...). Which entity is shown
  * follows `?entity=`, same as the Drawer follows the table's own `entity`
  * filter. Same detail content (RouteDetailBody / StationDetailBody),
  * different chrome (DetailPage vs. Drawer). See CLAUDE.md's
@@ -50,13 +50,13 @@ export default async function RouteOrStationDetailPage({
               </Pill>
             ) : undefined
           }
-          backHref="/routes"
+          backHref="/trips"
           backLabel={t("routesTitle")}
           actions={
             canEdit ? (
               <Link
                 href={{
-                  pathname: "/routes",
+                  pathname: "/trips",
                   query: { entity: "stations", mode: "edit", id: station.id },
                 }}
                 className={editButton}
@@ -92,12 +92,12 @@ export default async function RouteOrStationDetailPage({
             </Pill>
           ) : undefined
         }
-        backHref="/routes"
+        backHref="/trips"
         backLabel={t("routesTitle")}
         actions={
           canEdit ? (
             <Link
-              href={{ pathname: "/routes", query: { mode: "edit", id: route.id } }}
+              href={{ pathname: "/trips", query: { mode: "edit", id: route.id } }}
               className={editButton}
             >
               {tCommon("edit")}

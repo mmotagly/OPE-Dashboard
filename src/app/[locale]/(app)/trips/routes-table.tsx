@@ -39,7 +39,7 @@ export function RoutesTable({
       // handler (which also opens the drawer) from firing at the same time.
       cell: (r) => (
         <Link
-          href={`/routes/${r.id}?entity=route`}
+          href={`/trips/${r.id}?entity=route`}
           onClick={(e) => e.stopPropagation()}
           className="tnum font-medium text-ink underline decoration-hairline decoration-1 underline-offset-2 hover:decoration-ink-2"
         >
@@ -106,7 +106,7 @@ export function RoutesTable({
       columns={columns}
       rows={rows}
       selectedId={selectedId}
-      pathname="/routes"
+      pathname="/trips"
       query={query}
       sort={sort}
       dir={dir}
@@ -141,7 +141,7 @@ export function StationsTable({
       // handler (which also opens the drawer) from firing at the same time.
       cell: (r) => (
         <Link
-          href={`/routes/${r.id}?entity=station`}
+          href={`/trips/${r.id}?entity=station`}
           onClick={(e) => e.stopPropagation()}
           className="tnum font-medium text-ink underline decoration-hairline decoration-1 underline-offset-2 hover:decoration-ink-2"
         >
@@ -168,7 +168,7 @@ export function StationsTable({
       columns={columns}
       rows={rows}
       selectedId={selectedId}
-      pathname="/routes"
+      pathname="/trips"
       query={query}
       sort={sort}
       dir={dir}

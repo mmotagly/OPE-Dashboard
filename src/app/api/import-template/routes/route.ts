@@ -1,6 +1,6 @@
 import { toCsv, csvResponse } from "@/lib/csv";
 import { getRouteUser } from "@/lib/route-auth";
-import { ROUTE_IMPORT_COLUMNS } from "@/app/[locale]/(app)/routes/schema";
+import { ROUTE_IMPORT_COLUMNS } from "@/app/[locale]/(app)/trips/schema";
 
 export async function GET() {
   const user = await getRouteUser();

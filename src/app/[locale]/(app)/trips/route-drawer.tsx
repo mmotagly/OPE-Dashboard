@@ -30,7 +30,7 @@ const editButton =
   "rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
 
 /**
- * View-mode body for a station, factored out so `/routes/[id]?entity=station`
+ * View-mode body for a station, factored out so `/trips/[id]?entity=station`
  * (reached by clicking a station's code, as opposed to elsewhere in the
  * row) can render the exact same content as the Drawer without duplicating
  * it. See CLAUDE.md's row-click-vs-code-link convention.
@@ -52,7 +52,7 @@ export async function StationDetailBody({ station }: { station: StationRow }) {
 
 /**
  * View-mode body for a route — same reasoning as `StationDetailBody`, for
- * `/routes/[id]?entity=route`.
+ * `/trips/[id]?entity=route`.
  */
 export async function RouteDetailBody({
   route,
@@ -248,7 +248,7 @@ export async function RouteDrawer({
           canEdit ? (
             <Link
               href={{
-                pathname: "/routes",
+                pathname: "/trips",
                 query: { entity: "stations", mode: "edit", id: station.id },
               }}
               className={editButton}
@@ -291,7 +291,7 @@ export async function RouteDrawer({
       footer={
         canEdit ? (
           <Link
-            href={{ pathname: "/routes", query: { mode: "edit", id: route.id } }}
+            href={{ pathname: "/trips", query: { mode: "edit", id: route.id } }}
             className={editButton}
           >
             {tCommon("edit")}

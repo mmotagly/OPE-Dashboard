@@ -64,7 +64,7 @@ export default async function CamerasPage({
     <div className="font-inter contents">
       <Panel clip={false} fill>
         <PanelHead
-          eyebrow={tNav("fleet")}
+          eyebrow={tNav("gpsAndCameras")}
           title={isBridges ? t("bridgesTitle") : t("camerasTitle")}
           actions={
             canEdit ? (

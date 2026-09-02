@@ -85,9 +85,20 @@ export function Sidebar({
 
   const groups: Group[] = [
     {
-      label: t("overview"),
+      label: t("operations"),
       items: [
         { href: "/day-board", label: t("dayBoard"), icon: CalendarDays },
+        { href: "/operations", label: t("dailyOperations"), icon: ClipboardList },
+        { href: "/trips", label: t("trips"), icon: RouteIcon },
+        { href: "/charging", label: t("charging"), icon: BatteryCharging },
+      ],
+    },
+    {
+      label: t("maintenance"),
+      items: [
+        { href: "/rfrs", label: t("rfrs"), icon: Wrench },
+        { href: "/work-orders", label: t("workOrders"), icon: ClipboardCheck },
+        { href: "/periodic-maintenance", label: t("periodicMaintenance"), icon: CalendarClock },
         {
           href: "/alerts",
           label: t("alerts"),
@@ -97,20 +108,11 @@ export function Sidebar({
       ],
     },
     {
-      label: t("operations"),
+      label: t("gpsAndCameras"),
       items: [
-        { href: "/operations", label: t("dailyOperations"), icon: ClipboardList },
-        { href: "/charging", label: t("charging"), icon: BatteryCharging },
         { href: "/fleet-location", label: t("fleetLocation"), icon: MapPin },
+        { href: "/cameras", label: t("cameras"), icon: Camera },
         { href: "/passenger-counts", label: t("passengerCounts"), icon: Users },
-      ],
-    },
-    {
-      label: t("maintenance"),
-      items: [
-        { href: "/rfrs", label: t("rfrs"), icon: Wrench },
-        { href: "/work-orders", label: t("workOrders"), icon: ClipboardCheck },
-        { href: "/periodic-maintenance", label: t("periodicMaintenance"), icon: CalendarClock },
       ],
     },
     {
@@ -118,11 +120,9 @@ export function Sidebar({
       // pages and in the Server Actions, not here.
       label: t("fleet"),
       items: [
+        { href: "/vendors", label: t("vendors"), icon: Building2 },
         { href: "/vehicles", label: t("vehicles"), icon: Bus },
         { href: "/drivers", label: t("drivers"), icon: IdCard },
-        { href: "/vendors", label: t("vendors"), icon: Building2 },
-        { href: "/routes", label: t("routes"), icon: RouteIcon },
-        { href: "/cameras", label: t("cameras"), icon: Camera },
       ],
     },
   ];
@@ -132,8 +132,8 @@ export function Sidebar({
       label: t("finance"),
       items: [
         { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
-        { href: "/scorecards", label: t("scorecards"), icon: Award },
         { href: "/vendor-trends", label: t("vendorTrends"), icon: TrendingUp },
+        { href: "/scorecards", label: t("scorecards"), icon: Award },
         { href: "/invoices", label: t("invoices"), icon: Receipt },
       ],
     });

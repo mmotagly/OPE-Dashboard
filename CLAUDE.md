@@ -236,6 +236,32 @@ Two regions: nav tree (232px) and content, which takes all remaining width.
 There is no record-list column. Below `xl` the sidebar hides and the content
 region is the whole screen.
 
+### Sidebar navigation
+Six groups, in this order, all visible to every role except where noted:
+
+| Group | Pages | Gating |
+|---|---|---|
+| Operations | Day Board, Daily Operations, Trips, Charging Sessions | all roles |
+| Maintenance | RFRs, Work Orders, Periodic Maintenance, Maintenance Alerts | all roles |
+| GPS & Cameras | Fleet Location, Cameras, Passenger Counts | all roles |
+| Master Data | Vendors, Vehicles, Drivers | all roles |
+| Finance | Dashboard, Vendor Trends, Scorecards, Invoices | `canSeeMoney(role)` |
+| Administration | Activity Log, Settings | `isSuper(role)` |
+
+"Trips" (2026-09) is a sidebar label and URL rename of "Routes &
+Stations" — the page moved from `/routes` to `/trips`, with a redirect
+in `src/middleware.ts` for old links. Nothing else about the module
+changed: the `routes` / `route_stations` database tables, the internal
+file and component names (`route-drawer.tsx`, `RoutesTable`,
+`loadRoute`, …), and the CSV `/api/export/routes` /
+`/api/import-template/routes` endpoints all still say "route" on
+purpose, because the domain entity itself was not renamed — only how
+it's labelled and linked to in the sidebar. Don't read that mismatch as
+something to "fix."
+
+"Maintenance Alerts" is a label-only rename of "Alerts" — the page,
+route, and code all stay `alerts`.
+
 ### Lists are tables
 Every list page is one dense table filling the content width — RFRs, work
 orders, operations, vehicles, drivers, vendors, routes, part schedules. One row

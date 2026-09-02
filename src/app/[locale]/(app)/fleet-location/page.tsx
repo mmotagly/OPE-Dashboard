@@ -29,7 +29,7 @@ export default async function FleetLocationPage({
     <div className="font-inter contents">
       <Panel clip={false} fill>
         <PanelHead
-          eyebrow={tNav("operations")}
+          eyebrow={tNav("gpsAndCameras")}
           title={t("title")}
           actions={
             <span className="tnum text-ink-3">

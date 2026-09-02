@@ -51,13 +51,14 @@
     "back": "رجوع"
   },
   "nav": {
-    "overview": "نظرة عامة",
     "dayBoard": "لوحة اليوم",
-    "alerts": "التنبيهات",
+    "alerts": "تنبيهات الصيانة",
     "fleetStatus": "حالة الأسطول",
     "operations": "التشغيل",
     "dailyOperations": "التشغيل اليومي",
+    "trips": "الرحلات",
     "charging": "جلسات الشحن",
+    "gpsAndCameras": "المواقع والكاميرات",
     "fleetLocation": "موقع الأسطول",
     "passengerCounts": "عدد الركاب",
     "maintenance": "الصيانة",
@@ -68,7 +69,6 @@
     "vehicles": "المركبات",
     "drivers": "السائقون",
     "vendors": "الموردون",
-    "routes": "المسارات والمحطات",
     "cameras": "الكاميرات",
     "finance": "المالية",
     "dashboard": "لوحة المعلومات",
@@ -843,7 +843,7 @@
     }
   },
   "alerts": {
-    "eyebrow": "نظرة عامة",
+    "eyebrow": "الصيانة",
     "pmTitle": "صيانة مستحقة",
     "pmUpcomingTitle": "صيانة قادمة قريبًا",
     "rfrTitle": "طلبات إصلاح متأخرة",

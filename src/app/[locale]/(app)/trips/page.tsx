@@ -107,7 +107,7 @@ export default async function RoutesPage({
     <div className="font-inter contents">
       <Panel clip={false} fill>
         <PanelHead
-          eyebrow={tNav("fleet")}
+          eyebrow={tNav("operations")}
           title={isStations ? t("stationsTitle") : t("routesTitle")}
           actions={
             canEdit ? (
@@ -116,7 +116,7 @@ export default async function RoutesPage({
                   <>
                     <ExportCsvLink href="/api/export/routes" label={tCommon("exportCsv")} />
                     <Link
-                      href={{ pathname: "/routes", query: { ...query, mode: "import" } }}
+                      href={{ pathname: "/trips", query: { ...query, mode: "import" } }}
                       className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
                     >
                       {tCommon("importCsv")}
@@ -124,7 +124,7 @@ export default async function RoutesPage({
                   </>
                 )}
                 <Link
-                  href={{ pathname: "/routes", query: { ...query, mode: "new" } }}
+                  href={{ pathname: "/trips", query: { ...query, mode: "new" } }}
                   className={newButton}
                 >
                   {newLabel}
@@ -135,7 +135,7 @@ export default async function RoutesPage({
         />
 
         <FilterBar
-          pathname="/routes"
+          pathname="/trips"
           controls={
             isStations ? toControls(stationFilters) : toControls(routeFilters)
           }
@@ -145,7 +145,7 @@ export default async function RoutesPage({
           savedViews={
             <SavedViewsTabs
               module={moduleKey}
-              pathname="/routes"
+              pathname="/trips"
               views={saved}
               state={filterState}
               baseQuery={baseQuery}
@@ -157,7 +157,7 @@ export default async function RoutesPage({
           chips={chips}
           active={isStations ? "stations" : ""}
           param="entity"
-          pathname="/routes"
+          pathname="/trips"
           extraQuery={filterQuery}
         />
 
@@ -185,7 +185,7 @@ export default async function RoutesPage({
           entity={entity}
           mode={drawerMode}
           id={id}
-          closeHref={{ pathname: "/routes", query }}
+          closeHref={{ pathname: "/trips", query }}
           canEdit={canEdit}
         />
       )}

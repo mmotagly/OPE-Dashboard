@@ -66,9 +66,9 @@ export async function createRoute(
 
   if (error) return dbErrorToState(error, ROUTE_UNIQUE);
 
-  revalidatePath("/[locale]/routes", "page");
+  revalidatePath("/[locale]/trips", "page");
   return redirect({
-    href: { pathname: "/routes", query: { selected: data.id } },
+    href: { pathname: "/trips", query: { selected: data.id } },
     locale: gate.locale,
   });
 }
@@ -91,9 +91,9 @@ export async function updateRoute(
 
   if (error) return dbErrorToState(error, ROUTE_UNIQUE);
 
-  revalidatePath("/[locale]/routes", "page");
+  revalidatePath("/[locale]/trips", "page");
   return redirect({
-    href: { pathname: "/routes", query: { selected: id } },
+    href: { pathname: "/trips", query: { selected: id } },
     locale: gate.locale,
   });
 }
@@ -184,7 +184,7 @@ export async function confirmImportRoutes(
     },
   );
 
-  revalidatePath("/[locale]/routes", "page");
+  revalidatePath("/[locale]/trips", "page");
   return { formError: null, report };
 }
 
@@ -211,9 +211,9 @@ export async function createStation(
 
   if (error) return dbErrorToState(error, STATION_UNIQUE);
 
-  revalidatePath("/[locale]/routes", "page");
+  revalidatePath("/[locale]/trips", "page");
   return redirect({
-    href: { pathname: "/routes", query: { entity: "stations", selected: data.id } },
+    href: { pathname: "/trips", query: { entity: "stations", selected: data.id } },
     locale: gate.locale,
   });
 }
@@ -239,9 +239,9 @@ export async function updateStation(
 
   if (error) return dbErrorToState(error, STATION_UNIQUE);
 
-  revalidatePath("/[locale]/routes", "page");
+  revalidatePath("/[locale]/trips", "page");
   return redirect({
-    href: { pathname: "/routes", query: { entity: "stations", selected: id } },
+    href: { pathname: "/trips", query: { entity: "stations", selected: id } },
     locale: gate.locale,
   });
 }
@@ -325,7 +325,7 @@ export async function editRouteStations(
     });
 
     if (error) return dbErrorToState(error);
-    revalidatePath("/[locale]/routes", "page");
+    revalidatePath("/[locale]/trips", "page");
     return { formError: null, fieldErrors: {} };
   }
 
@@ -344,7 +344,7 @@ export async function editRouteStations(
     const renumberError = await renumber(supabase, routeId, remaining);
     if (renumberError) return dbErrorToState(renumberError);
 
-    revalidatePath("/[locale]/routes", "page");
+    revalidatePath("/[locale]/trips", "page");
     return { formError: null, fieldErrors: {} };
   }
 
@@ -359,6 +359,6 @@ export async function editRouteStations(
   const renumberError = await renumber(supabase, routeId, reordered);
   if (renumberError) return dbErrorToState(renumberError);
 
-  revalidatePath("/[locale]/routes", "page");
+  revalidatePath("/[locale]/trips", "page");
   return { formError: null, fieldErrors: {} };
 }

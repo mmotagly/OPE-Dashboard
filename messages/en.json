@@ -51,13 +51,14 @@
     "back": "Back"
   },
   "nav": {
-    "overview": "Overview",
     "dayBoard": "Day board",
-    "alerts": "Alerts",
+    "alerts": "Maintenance alerts",
     "fleetStatus": "Fleet status",
     "operations": "Operations",
     "dailyOperations": "Daily operations",
+    "trips": "Trips",
     "charging": "Charging sessions",
+    "gpsAndCameras": "GPS & cameras",
     "fleetLocation": "Fleet location",
     "passengerCounts": "Passenger counts",
     "maintenance": "Maintenance",
@@ -68,7 +69,6 @@
     "vehicles": "Vehicles",
     "drivers": "Drivers",
     "vendors": "Vendors",
-    "routes": "Routes & stations",
     "cameras": "Cameras",
     "finance": "Finance",
     "dashboard": "Dashboard",
@@ -843,7 +843,7 @@
     }
   },
   "alerts": {
-    "eyebrow": "Overview",
+    "eyebrow": "Maintenance",
     "pmTitle": "Maintenance due",
     "pmUpcomingTitle": "Maintenance coming up",
     "rfrTitle": "RFRs aging",

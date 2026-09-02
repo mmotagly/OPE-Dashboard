@@ -98,7 +98,7 @@ export default async function DayBoardPage({
   return (
     <div className="font-inter contents">
       <Panel clip={false}>
-        <PanelHead eyebrow={tNav("overview")} title={`${t("dayBoard.title")} · ${day}`} />
+        <PanelHead eyebrow={tNav("operations")} title={`${t("dayBoard.title")} · ${day}`} />
         <StatBar>
           <Stat label={t("status.operating")} value={operatingCount} tone="go" />
           <Stat label={t("status.completed")} value={completedCount} tone="go" />

@@ -181,7 +181,7 @@ export function RouteForm({
         <Button type="submit" variant="primary" disabled={pending} className="flex-1 xl:flex-none">
           {pending ? tCommon("loading") : tCommon("save")}
         </Button>
-        <Link href={{ pathname: "/routes", query: backTo }} className={cancelLink}>
+        <Link href={{ pathname: "/trips", query: backTo }} className={cancelLink}>
           {tCommon("cancel")}
         </Link>
       </FormActions>
@@ -282,7 +282,7 @@ export function StationForm({
         <Button type="submit" variant="primary" disabled={pending} className="flex-1 xl:flex-none">
           {pending ? tCommon("loading") : tCommon("save")}
         </Button>
-        <Link href={{ pathname: "/routes", query: backTo }} className={cancelLink}>
+        <Link href={{ pathname: "/trips", query: backTo }} className={cancelLink}>
           {tCommon("cancel")}
         </Link>
       </FormActions>

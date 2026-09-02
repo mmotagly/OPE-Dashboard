@@ -1,6 +1,6 @@
 import { csvResponse, toCsv } from "@/lib/csv";
 import { getRouteUser } from "@/lib/route-auth";
-import { loadRoutes } from "@/app/[locale]/(app)/routes/queries";
+import { loadRoutes } from "@/app/[locale]/(app)/trips/queries";
 
 /** CSV export for route master data (roadmap item 1) — routes only, not the
  * stop list (see routes/schema.ts). Columns match ROUTE_IMPORT_COLUMNS. */
