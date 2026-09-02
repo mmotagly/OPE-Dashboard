@@ -6,7 +6,13 @@ import { KeyValue, Row } from "@/components/ui/key-value";
 import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
 import { money, percent } from "@/lib/format";
-import { loadBusCounts, loadInvoice, type InvoiceStatus } from "./queries";
+import {
+  loadBusCounts,
+  loadInvoice,
+  type BusCounts,
+  type InvoiceRow,
+  type InvoiceStatus,
+} from "./queries";
 import { InvoiceStatusActions } from "./invoice-status";
 
 const STATUS_TONE: Record<InvoiceStatus, "go" | "warn" | "stop" | "idle"> = {
@@ -17,67 +23,27 @@ const STATUS_TONE: Record<InvoiceStatus, "go" | "warn" | "stop" | "idle"> = {
 };
 
 /**
- * Everything that fed the number, so a disputed figure can be traced without
- * opening the database: the formula in words, the rate and quantity it used,
- * the operational counts behind the quantity, and the scorecard behind the
- * percentage.
+ * View-mode body, factored out so `/invoices/[id]` (reached by clicking a
+ * row's vendor code, as opposed to elsewhere in the row) can render the
+ * exact same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
  */
-export async function InvoiceDrawer({
-  id,
-  closeHref,
-  canEdit,
+export async function InvoiceDetailBody({
+  invoice,
+  counts,
 }: {
-  id: string;
-  closeHref: CloseHref;
-  canEdit: boolean;
+  invoice: InvoiceRow;
+  counts: BusCounts | null;
 }) {
   const t = await getTranslations("invoice");
-  const tCommon = await getTranslations("common");
   const tFinance = await getTranslations("finance");
-
-  const invoice = await loadInvoice(id);
-
-  if (!invoice) {
-    return (
-      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
-        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
-      </Drawer>
-    );
-  }
-
-  const counts = await loadBusCounts(
-    invoice.vendorId,
-    invoice.periodMonth,
-    invoice.shiftTypeId,
-  );
 
   const perBusDay = invoice.billingBasis === "per_bus_day";
   const formula = perBusDay ? tFinance("formulaRental") : tFinance("formulaOwned");
-
   const basisLabel = perBusDay ? t("basisPerBusDay") : t("basisPerAvgBusMonth");
 
   return (
-    <Drawer
-      code={invoice.vendorCode}
-      sub={`${invoice.vendorName} · ${invoice.periodMonth.slice(0, 7)}${
-        invoice.shiftLabel ? ` · ${invoice.shiftLabel}` : ""
-      }`}
-      pill={<Pill tone={STATUS_TONE[invoice.status]}>{t(`status.${invoice.status}`)}</Pill>}
-      closeHref={closeHref}
-      closeLabel={tCommon("cancel")}
-      footer={
-        <>
-          <Link
-            href={{ pathname: "/print/invoice", query: { id: invoice.id } }}
-            target="_blank"
-            className="rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
-          >
-            {tCommon("printPdf")}
-          </Link>
-          {canEdit && <InvoiceStatusActions invoiceId={invoice.id} status={invoice.status} />}
-        </>
-      }
-    >
+    <>
       <Section title={t("netPayable")}>
         <div className="tnum text-2xl font-semibold tracking-[-0.02em]">
           {invoice.netAmount === null ? "—" : money(invoice.netAmount, invoice.currency)}
@@ -162,6 +128,67 @@ export async function InvoiceDrawer({
           <p className="text-[13px] leading-relaxed text-ink-2">{invoice.notes}</p>
         </Section>
       )}
+    </>
+  );
+}
+
+/**
+ * Everything that fed the number, so a disputed figure can be traced without
+ * opening the database: the formula in words, the rate and quantity it used,
+ * the operational counts behind the quantity, and the scorecard behind the
+ * percentage.
+ */
+export async function InvoiceDrawer({
+  id,
+  closeHref,
+  canEdit,
+}: {
+  id: string;
+  closeHref: CloseHref;
+  canEdit: boolean;
+}) {
+  const t = await getTranslations("invoice");
+  const tCommon = await getTranslations("common");
+
+  const invoice = await loadInvoice(id);
+
+  if (!invoice) {
+    return (
+      <Drawer code={t("noSelection")} closeHref={closeHref} closeLabel={tCommon("cancel")}>
+        <Empty title={t("noSelection")} hint={t("noSelectionHint")} />
+      </Drawer>
+    );
+  }
+
+  const counts = await loadBusCounts(
+    invoice.vendorId,
+    invoice.periodMonth,
+    invoice.shiftTypeId,
+  );
+
+  return (
+    <Drawer
+      code={invoice.vendorCode}
+      sub={`${invoice.vendorName} · ${invoice.periodMonth.slice(0, 7)}${
+        invoice.shiftLabel ? ` · ${invoice.shiftLabel}` : ""
+      }`}
+      pill={<Pill tone={STATUS_TONE[invoice.status]}>{t(`status.${invoice.status}`)}</Pill>}
+      closeHref={closeHref}
+      closeLabel={tCommon("cancel")}
+      footer={
+        <>
+          <Link
+            href={{ pathname: "/print/invoice", query: { id: invoice.id } }}
+            target="_blank"
+            className="rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
+          >
+            {tCommon("printPdf")}
+          </Link>
+          {canEdit && <InvoiceStatusActions invoiceId={invoice.id} status={invoice.status} />}
+        </>
+      }
+    >
+      <InvoiceDetailBody invoice={invoice} counts={counts} />
     </Drawer>
   );
 }

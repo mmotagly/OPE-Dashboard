@@ -9,7 +9,7 @@ import { Pill } from "@/components/ui/pill";
 import { Empty } from "@/components/ui/empty";
 import { VehicleMapLoader } from "@/components/ui/vehicle-map-loader";
 import { CameraViewer } from "@/components/ui/camera-viewer";
-import { loadLatestGpsPing } from "@/lib/gps/latest-ping";
+import { loadLatestGpsPing, type LatestGpsPing } from "@/lib/gps/latest-ping";
 import {
   km,
   money,
@@ -25,6 +25,8 @@ import {
   loadOperation,
   loadPickerOptions,
   toFormValues,
+  type NearestPm,
+  type OperationRow,
   type ShiftOption,
 } from "./queries";
 import { OperationForm } from "./operation-form";
@@ -41,6 +43,153 @@ const PM_STATUS_KEY: Record<string, string> = {
 
 const actionLink =
   "rounded-control border border-hairline bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:bg-raise";
+
+/**
+ * View-mode body, factored out so `/operations/[id]` (reached by clicking
+ * an operation's code, as opposed to elsewhere in the row) can render the
+ * exact same content as the Drawer without duplicating it. See CLAUDE.md's
+ * row-click-vs-code-link convention.
+ */
+export async function OperationDetailBody({
+  operation,
+  shifts,
+  pm,
+  ping,
+}: {
+  operation: OperationRow;
+  shifts: ShiftOption[];
+  pm: NearestPm | null;
+  ping: LatestGpsPing | null;
+}) {
+  const t = await getTranslations("operations");
+  const tCommon = await getTranslations("common");
+  const tVehicle = await getTranslations("vehicle");
+  const tShift = await getTranslations("shift");
+  const tStatus = await getTranslations("status");
+
+  const shiftLabel = (shiftId: string | null) => {
+    const shift = shifts.find((s) => s.id === shiftId);
+    if (!shift) return null;
+    return tShift.has(shift.code) ? tShift(shift.code) : shift.labelEn;
+  };
+
+  const showsLocation =
+    operation.statusCode === "operating" || operation.statusCode === "completed";
+  const pmStatus = pm?.status ?? null;
+
+  return (
+    <>
+      <Section title={tVehicle("odometer")}>
+        <KmMeter
+          startKm={operation.startKm}
+          endKm={operation.endKm}
+          large
+          pmProgress={
+            pm && pm.intervalKm !== null && pm.intervalKm > 0 && pm.kmRemaining !== null
+              ? ((pm.intervalKm - pm.kmRemaining) / pm.intervalKm) * 100
+              : null
+          }
+          pmTone={pmBarTone(pmStatus)}
+          pmLabel={
+            pm ? t("pmLabel", { part: pm.partName, km: km(pm.kmRemaining) }) : undefined
+          }
+        />
+        {pm && (
+          <div className="mt-2.5">
+            <Micro tone={pmLabelTone(pmStatus)}>
+              {tStatus.has(PM_STATUS_KEY[pm.status] ?? pm.status)
+                ? tStatus(PM_STATUS_KEY[pm.status] ?? pm.status)
+                : pm.status}
+            </Micro>
+          </div>
+        )}
+      </Section>
+
+      {operation.statusCode === "operating" && (
+        <Section title={t("liveCamera")}>
+          <CameraViewer operationId={operation.id} />
+        </Section>
+      )}
+
+      {showsLocation && (
+        <Section title={t("location")}>
+          {ping ? (
+            <>
+              <VehicleMapLoader
+                latitude={ping.latitude}
+                longitude={ping.longitude}
+                tone={operationTone(operation.statusCode ?? "") === "go" ? "go" : "warn"}
+                vehicleCode={operation.vehicleCode}
+                speedKmh={ping.speedKmh}
+              />
+              <p className="mt-2 text-[10.5px] text-ink-3">
+                {t("locationAsOf", { time: dateTime(ping.recordedAt) })}
+              </p>
+            </>
+          ) : (
+            <Empty title={t("noLocationData")} hint={t("noLocationDataHint")} />
+          )}
+        </Section>
+      )}
+
+      <Section title={t("record")}>
+        <KeyValue>
+          <Row label={t("field.date")}>
+            <span className="tnum">{operation.date}</span>
+          </Row>
+          <Row label={t("field.shift")}>{shiftLabel(operation.shiftId) ?? "—"}</Row>
+          <Row label={tVehicle("vendor")} muted>
+            {operation.vendorName ?? "—"}
+          </Row>
+          <Row label={t("field.driver")}>
+            {operation.driverName ?? "—"}
+            {operation.driverCode && (
+              <span className="ms-2 text-[12px] text-ink-3">{operation.driverCode}</span>
+            )}
+          </Row>
+          <Row label={t("field.route")} muted>
+            {operation.routeName ?? tCommon("none")}
+          </Row>
+          <Row label={t("field.startingKm")}>
+            <span className="tnum">{km(operation.startKm)}</span>
+          </Row>
+          <Row label={t("field.endingKm")}>
+            {operation.statusCode === "operating" ? (
+              <span className="text-warn-text">{tStatus("noEndKm")}</span>
+            ) : (
+              <span className="tnum">{km(operation.endKm)}</span>
+            )}
+          </Row>
+          <Row label={t("field.distance")} muted>
+            {operation.distanceKm === null ? (
+              "—"
+            ) : (
+              <span className="tnum">{km(operation.distanceKm)} km</span>
+            )}
+          </Row>
+          <Row label={t("field.battery")} muted>
+            {operation.batteryStart !== null && operation.batteryEnd !== null
+              ? t("batteryRange", {
+                  from: operation.batteryStart,
+                  to: operation.batteryEnd,
+                })
+              : "—"}
+          </Row>
+          <Row label={t("field.operatingPct")}>{percent(operation.operatingPct)}</Row>
+          <Row label={t("field.driverTips")} muted>
+            {money(operation.driverTips)}
+          </Row>
+        </KeyValue>
+      </Section>
+
+      {operation.remarks && (
+        <Section title={t("field.remarks")}>
+          <p className="text-[13px] leading-relaxed text-ink-2">{operation.remarks}</p>
+        </Section>
+      )}
+    </>
+  );
+}
 
 /**
  * The operations drawer: view, create and edit in the one overlay, chosen by
@@ -67,15 +216,7 @@ export async function OperationDrawer({
 }) {
   const t = await getTranslations("operations");
   const tCommon = await getTranslations("common");
-  const tVehicle = await getTranslations("vehicle");
-  const tShift = await getTranslations("shift");
   const tStatus = await getTranslations("status");
-
-  const shiftLabel = (shiftId: string | null) => {
-    const shift = shifts.find((s) => s.id === shiftId);
-    if (!shift) return null;
-    return tShift.has(shift.code) ? tShift(shift.code) : shift.labelEn;
-  };
 
   /* ---- bulk plan ---- */
 
@@ -193,7 +334,6 @@ export async function OperationDrawer({
       ? loadLatestGpsPing(operation.vehicleId)
       : Promise.resolve(null),
   ]);
-  const pmStatus = pm?.status ?? null;
 
   return (
     <Drawer
@@ -220,114 +360,7 @@ export async function OperationDrawer({
         ) : undefined
       }
     >
-      <Section title={tVehicle("odometer")}>
-        <KmMeter
-          startKm={operation.startKm}
-          endKm={operation.endKm}
-          large
-          pmProgress={
-            pm && pm.intervalKm !== null && pm.intervalKm > 0 && pm.kmRemaining !== null
-              ? ((pm.intervalKm - pm.kmRemaining) / pm.intervalKm) * 100
-              : null
-          }
-          pmTone={pmBarTone(pmStatus)}
-          pmLabel={
-            pm ? t("pmLabel", { part: pm.partName, km: km(pm.kmRemaining) }) : undefined
-          }
-        />
-        {pm && (
-          <div className="mt-2.5">
-            <Micro tone={pmLabelTone(pmStatus)}>
-              {tStatus.has(PM_STATUS_KEY[pm.status] ?? pm.status)
-                ? tStatus(PM_STATUS_KEY[pm.status] ?? pm.status)
-                : pm.status}
-            </Micro>
-          </div>
-        )}
-      </Section>
-
-      {operation.statusCode === "operating" && (
-        <Section title={t("liveCamera")}>
-          <CameraViewer operationId={operation.id} />
-        </Section>
-      )}
-
-      {showsLocation && (
-        <Section title={t("location")}>
-          {ping ? (
-            <>
-              <VehicleMapLoader
-                latitude={ping.latitude}
-                longitude={ping.longitude}
-                tone={operationTone(operation.statusCode ?? "") === "go" ? "go" : "warn"}
-                vehicleCode={operation.vehicleCode}
-                speedKmh={ping.speedKmh}
-              />
-              <p className="mt-2 text-[10.5px] text-ink-3">
-                {t("locationAsOf", { time: dateTime(ping.recordedAt) })}
-              </p>
-            </>
-          ) : (
-            <Empty title={t("noLocationData")} hint={t("noLocationDataHint")} />
-          )}
-        </Section>
-      )}
-
-      <Section title={t("record")}>
-        <KeyValue>
-          <Row label={t("field.date")}>
-            <span className="tnum">{operation.date}</span>
-          </Row>
-          <Row label={t("field.shift")}>{shiftLabel(operation.shiftId) ?? "—"}</Row>
-          <Row label={tVehicle("vendor")} muted>
-            {operation.vendorName ?? "—"}
-          </Row>
-          <Row label={t("field.driver")}>
-            {operation.driverName ?? "—"}
-            {operation.driverCode && (
-              <span className="ms-2 text-[12px] text-ink-3">{operation.driverCode}</span>
-            )}
-          </Row>
-          <Row label={t("field.route")} muted>
-            {operation.routeName ?? tCommon("none")}
-          </Row>
-          <Row label={t("field.startingKm")}>
-            <span className="tnum">{km(operation.startKm)}</span>
-          </Row>
-          <Row label={t("field.endingKm")}>
-            {operation.statusCode === "operating" ? (
-              <span className="text-warn-text">{tStatus("noEndKm")}</span>
-            ) : (
-              <span className="tnum">{km(operation.endKm)}</span>
-            )}
-          </Row>
-          <Row label={t("field.distance")} muted>
-            {operation.distanceKm === null ? (
-              "—"
-            ) : (
-              <span className="tnum">{km(operation.distanceKm)} km</span>
-            )}
-          </Row>
-          <Row label={t("field.battery")} muted>
-            {operation.batteryStart !== null && operation.batteryEnd !== null
-              ? t("batteryRange", {
-                  from: operation.batteryStart,
-                  to: operation.batteryEnd,
-                })
-              : "—"}
-          </Row>
-          <Row label={t("field.operatingPct")}>{percent(operation.operatingPct)}</Row>
-          <Row label={t("field.driverTips")} muted>
-            {money(operation.driverTips)}
-          </Row>
-        </KeyValue>
-      </Section>
-
-      {operation.remarks && (
-        <Section title={t("field.remarks")}>
-          <p className="text-[13px] leading-relaxed text-ink-2">{operation.remarks}</p>
-        </Section>
-      )}
+      <OperationDetailBody operation={operation} shifts={shifts} pm={pm} ping={ping} />
     </Drawer>
   );
 }
