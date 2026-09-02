@@ -14,15 +14,18 @@ const intl = createIntlMiddleware(routing);
 const OLD_ROUTES_PATH = /^\/(en|ar)\/routes(\/.*)?$/;
 
 export async function middleware(request: NextRequest) {
-  const authResponse = await updateSession(request);
-  if (authResponse.headers.get("location")) return authResponse;
-
+  // Checked before auth: updateSession() builds its post-login "next" param
+  // from the raw pathname, so a logged-out hit on the old URL would otherwise
+  // survive the login round-trip and land back on the now-dead /routes.
   const oldRoutesMatch = request.nextUrl.pathname.match(OLD_ROUTES_PATH);
   if (oldRoutesMatch) {
     const url = request.nextUrl.clone();
     url.pathname = `/${oldRoutesMatch[1]}/trips${oldRoutesMatch[2] ?? ""}`;
     return NextResponse.redirect(url);
   }
+
+  const authResponse = await updateSession(request);
+  if (authResponse.headers.get("location")) return authResponse;
 
   const response = intl(request);
   authResponse.cookies.getAll().forEach(({ name, value }) => {
