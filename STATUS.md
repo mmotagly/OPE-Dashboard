@@ -5,7 +5,42 @@ snapshot) this file is meant to be updated as work lands, so any session on
 any machine can `git pull` and know exactly where things stand. Read
 `CLAUDE.md` first for domain rules; this file is state, not spec.
 
-Last updated: 2026-09-02 (row-click/code-link rollout, see below).
+Last updated: 2026-09-02 (sidebar reorg + Routes→Trips rename, see below).
+
+---
+
+## Sidebar reorg + Routes & Stations renamed to Trips (2026-09-02)
+
+Replaced the sidebar's grouping with the 6-group structure the user
+specified, 2 commits (`16fc7f2`, `a8932c7`), typecheck/lint/build-verified
+and confirmed live:
+
+- **Operations**: Day Board, Daily Operations, Trips, Charging Sessions
+- **Maintenance**: RFRs, Work Orders, Periodic Maintenance, Maintenance
+  Alerts (label-only rename of Alerts)
+- **GPS & Cameras**: Fleet Location, Cameras, Passenger Counts
+- **Master Data**: Vendors, Vehicles, Drivers
+- **Finance** (`canSeeMoney` gated): Dashboard, Vendor Trends, Scorecards,
+  Invoices
+- **Administration** (`isSuper` gated): Activity Log, Settings
+
+The old "Overview" group is gone (Day Board and Alerts moved into
+Operations and Maintenance respectively).
+
+**Routes & Stations renamed to "Trips"** — sidebar label and page URL only
+(`/routes` → `/trips`), via `git mv` to preserve history. Domain
+vocabulary deliberately unchanged: the `routes`/`route_stations` DB
+tables, internal file/component names, and the `/api/export/routes` /
+`/api/import-template/routes` CSV endpoints still say "route" — see
+`CLAUDE.md`'s new "Sidebar navigation" subsection for the full rationale.
+A middleware redirect (`src/middleware.ts`) sends old locale-prefixed
+`/routes` links to their `/trips` equivalent; it runs *before* auth
+resolution specifically so a logged-out bookmark hit doesn't get bounced
+back to the now-dead `/routes` after login (`a8932c7` fixed this after
+first-pass live verification caught it).
+
+**Status: confirmed live by the user** — sidebar structure, both relabels,
+and the old-bookmark redirect all check out.
 
 ---
 
