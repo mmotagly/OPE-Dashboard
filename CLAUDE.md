@@ -18,13 +18,29 @@ high input frequency. Correctness matters far more than throughput.
 
 Daily operations are still manual entry. GPS/telematics integration is under
 active build (see `ROADMAP_NEXT.md` item 2 and `STATUS.md`) — schema
-(`vehicle_gps_pings`, migration `0019`, not yet run against the live database),
-a provider-agnostic adapter layer (`src/lib/gps/`), and a read-only fleet
-location page exist and are ready to accept real config. What is **not** built,
-and stays a deliberate later decision: using GPS data to auto-fill or replace
-any manually-entered operations field — starting odometer, Operating %,
-status — stays exactly as section 2 describes below until that is explicitly
-revisited with real GPS accuracy in hand.
+(`vehicle_gps_pings`, migration `0019`, run against the live database
+2026-09-01), a provider-agnostic adapter layer (`src/lib/gps/`), and a
+read-only fleet location page exist and are ready to accept real config. What
+is **not** built, and stays a deliberate later decision: using GPS data to
+auto-fill or replace any manually-entered operations field — starting
+odometer, Operating %, status — stays exactly as section 2 describes below
+until that is explicitly revisited with real GPS accuracy in hand.
+
+Camera integration (general live/playback + passenger counting, roadmap
+items 3–4) is similarly under active build — schema (`camera_bridges`,
+`cameras`, `camera_clip_requests`, `bus_passenger_counts`, migration `0020`,
+run against the live database 2026-09-01), a real (not stubbed) Hikvision
+ISAPI bridge at `bridge/` (a separate standalone service, excluded from this
+app's typecheck/lint, never deployed to Vercel), backend proxy routes under
+`/api/cameras/[cameraId]/`, and the `/cameras` and `/passenger-counts` pages
+exist. The browser only ever calls this app's own proxy routes, never the
+bridge or a camera directly. **Further camera work is currently blocked** on
+one open question: whether the camera system has its own cloud/remote-access
+platform reachable via API (no on-site computer needed) or is local-network-
+only (what `bridge/` was built for) — see `STATUS.md`'s "General Camera
+Integration" section and `bridge/README.md` for the full reasoning. Live
+view specifically still needs an RTSP→HLS/WebRTC relay, deliberately not
+built yet — better done against real hardware than guessed at now.
 
 ---
 
