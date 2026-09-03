@@ -13,7 +13,7 @@ import { Pill } from "@/components/ui/pill";
 import { Micro } from "@/components/ui/micro";
 import { KmMeter } from "@/components/ui/km-meter";
 import { km, operationTone, pmBarTone, statusLabel } from "@/lib/format";
-import type { NearestPm, OperationRow } from "../operations/queries";
+import type { NearestPm, OperationRow, ShiftOption } from "../operations/queries";
 
 /** Statuses fn_validate_operation_status allows real operational data for —
  * every other status forbids driver/KM/battery/operating-% entirely, so
@@ -23,13 +23,25 @@ const HAS_OPERATIONAL_DATA = new Set(["operating", "completed"]);
 export function OperationList({
   rows,
   pmByVehicle,
+  shifts,
 }: {
   rows: OperationRow[];
   pmByVehicle: Map<string, NearestPm>;
+  shifts: ShiftOption[];
 }) {
   const t = useTranslations();
   const tStatus = useTranslations("status");
+  const tShift = useTranslations("shift");
   const [selected, setSelected] = useState<string | null>(rows[0]?.id ?? null);
+
+  // Same resolution operations-table.tsx uses: prefer the translated label
+  // for the fixed morning/night codes, fall back to the DB's own label for
+  // anything else.
+  const shiftLabel = (id: string | null) => {
+    const shift = shifts.find((s) => s.id === id);
+    if (!shift) return null;
+    return tShift.has(shift.code) ? tShift(shift.code) : shift.labelEn;
+  };
 
   return (
     <div className="p-1.5">
@@ -56,6 +68,7 @@ export function OperationList({
               <CardTop>
                 <Code>{r.vehicleCode}</Code>
                 {pill}
+                {shiftLabel(r.shiftId) && <Micro bar={false}>{shiftLabel(r.shiftId)}</Micro>}
                 {r.routeName && (
                   <span className="ms-auto min-w-0 max-w-[45%]">
                     <Micro bar={false}>
@@ -64,7 +77,14 @@ export function OperationList({
                   </span>
                 )}
               </CardTop>
-              <Sub>{r.plate}</Sub>
+              <Sub>
+                {r.plate} · {r.vendorName}
+              </Sub>
+              {r.remarks && (
+                <CardFoot>
+                  <span className="min-w-0 truncate text-[12.5px] text-ink-3">{r.remarks}</span>
+                </CardFoot>
+              )}
             </RecordCard>
           );
         }
@@ -84,6 +104,7 @@ export function OperationList({
             <CardTop>
               <Code>{r.vehicleCode}</Code>
               {pill}
+              {shiftLabel(r.shiftId) && <Micro bar={false}>{shiftLabel(r.shiftId)}</Micro>}
               {r.routeName && (
                 <span className="ms-auto min-w-0 max-w-[45%]">
                   <Micro bar={false}>
@@ -117,11 +138,16 @@ export function OperationList({
               />
             </div>
 
-            {r.operatingPct !== null && (
+            {(r.operatingPct !== null || r.remarks) && (
               <CardFoot>
-                <Micro tone="go">
-                  {t("operations.operatingPct", { pct: r.operatingPct })}
-                </Micro>
+                {r.operatingPct !== null && (
+                  <Micro tone="go">
+                    {t("operations.operatingPct", { pct: r.operatingPct })}
+                  </Micro>
+                )}
+                {r.remarks && (
+                  <span className="min-w-0 truncate text-[12.5px] text-ink-3">{r.remarks}</span>
+                )}
               </CardFoot>
             )}
           </RecordCard>

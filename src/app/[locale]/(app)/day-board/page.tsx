@@ -4,7 +4,7 @@ import { Panel, PanelHead } from "@/components/ui/panel";
 import { StatBar, Stat } from "@/components/ui/stat";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
 import { Empty } from "@/components/ui/empty";
-import { loadOperations, loadNearestPmForVehicles } from "../operations/queries";
+import { loadOperations, loadNearestPmForVehicles, loadShifts } from "../operations/queries";
 import { OperationList } from "./operation-list";
 
 /** The four statuses the "Not running" chip/stat groups — same set
@@ -18,6 +18,10 @@ const NOT_RUNNING = [
 
 /** Synthetic chip value for the grouped statuses — not a real status code. */
 const NOT_RUNNING_VALUE = "not_running";
+
+/** Synthetic chip value for "vehicle currently has an open RFR" — not a
+ * real status code, same idea as NOT_RUNNING_VALUE above. */
+const OPEN_RFRS_VALUE = "open_rfrs";
 
 /**
  * Reference implementation. Every other module copies this shape:
@@ -39,25 +43,14 @@ export default async function DayBoardPage({
   const { date, status } = await searchParams;
   const day = date ?? new Date().toISOString().slice(0, 10);
 
-  const [all, supabase] = await Promise.all([
+  const [all, shifts, supabase] = await Promise.all([
     loadOperations({ date: day }),
+    loadShifts(),
     createClient(),
   ]);
 
   const isIn = (r: (typeof all)[number], codes: readonly string[]) =>
     r.statusCode !== null && codes.includes(r.statusCode);
-
-  const rows =
-    status === NOT_RUNNING_VALUE
-      ? all.filter((r) => isIn(r, NOT_RUNNING))
-      : status
-        ? all.filter((r) => r.statusCode === status)
-        : all;
-
-  const operatingCount = all.filter((r) => r.statusCode === "operating").length;
-  const completedCount = all.filter((r) => r.statusCode === "completed").length;
-  const plannedCount = all.filter((r) => r.statusCode === "planned").length;
-  const notRunningCount = all.filter((r) => isIn(r, NOT_RUNNING)).length;
 
   // Open means the stage is neither Completed nor Skipped. Counting on
   // completed_at counts the closed ones instead.
@@ -69,15 +62,42 @@ export default async function DayBoardPage({
 
   const closedStageIds = (closedStages ?? []).map((s) => s.id);
 
-  let openRfrsQuery = supabase
-    .from("rfrs")
-    .select("id", { count: "exact", head: true });
+  let openRfrVehiclesQuery = supabase.from("rfrs").select("vehicle_id");
 
   if (closedStageIds.length > 0) {
-    openRfrsQuery = openRfrsQuery.not("stage_id", "in", `(${closedStageIds.join(",")})`);
+    openRfrVehiclesQuery = openRfrVehiclesQuery.not(
+      "stage_id",
+      "in",
+      `(${closedStageIds.join(",")})`,
+    );
   }
 
-  const { count: openRfrs } = await openRfrsQuery;
+  const { data: openRfrVehicles } = await openRfrVehiclesQuery;
+  const openRfrVehicleIds = new Set(
+    (openRfrVehicles ?? []).map((r) => String(r.vehicle_id)),
+  );
+
+  const hasOpenRfr = (r: (typeof all)[number]) =>
+    r.vehicleId !== null && openRfrVehicleIds.has(r.vehicleId);
+
+  const rows =
+    status === NOT_RUNNING_VALUE
+      ? all.filter((r) => isIn(r, NOT_RUNNING))
+      : status === OPEN_RFRS_VALUE
+        ? all.filter(hasOpenRfr)
+        : status
+          ? all.filter((r) => r.statusCode === status)
+          : all;
+
+  const operatingCount = all.filter((r) => r.statusCode === "operating").length;
+  const completedCount = all.filter((r) => r.statusCode === "completed").length;
+  const plannedCount = all.filter((r) => r.statusCode === "planned").length;
+  const notRunningCount = all.filter((r) => isIn(r, NOT_RUNNING)).length;
+  // Day-scoped, unlike the old fleet-wide head-count this replaces — vehicles
+  // with an open RFR that aren't on today's board don't inflate the number
+  // shown here, which is what makes the stat and the click-through filter
+  // agree on the same count.
+  const openRfrsCount = all.filter(hasOpenRfr).length;
 
   const vehicleIds = [...new Set(rows.map((r) => r.vehicleId).filter((v): v is string => v !== null))];
   const pmByVehicle = await loadNearestPmForVehicles(vehicleIds);
@@ -93,6 +113,12 @@ export default async function DayBoardPage({
       count: notRunningCount,
       tone: "stop",
     },
+    {
+      value: OPEN_RFRS_VALUE,
+      label: t("dayBoard.openRfrs"),
+      count: openRfrsCount,
+      tone: openRfrsCount > 0 ? "stop" : "neutral",
+    },
   ];
 
   return (
@@ -106,8 +132,8 @@ export default async function DayBoardPage({
           <Stat label={t("dayBoard.notRunning")} value={notRunningCount} tone="stop" />
           <Stat
             label={t("dayBoard.openRfrs")}
-            value={openRfrs ?? 0}
-            tone={(openRfrs ?? 0) > 0 ? "stop" : "neutral"}
+            value={openRfrsCount}
+            tone={openRfrsCount > 0 ? "stop" : "neutral"}
           />
         </StatBar>
 
@@ -122,7 +148,7 @@ export default async function DayBoardPage({
         {rows.length === 0 ? (
           <Empty title={t("common.empty")} hint={t("common.emptyHint")} />
         ) : (
-          <OperationList rows={rows} pmByVehicle={pmByVehicle} />
+          <OperationList rows={rows} pmByVehicle={pmByVehicle} shifts={shifts} />
         )}
       </Panel>
     </div>

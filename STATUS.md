@@ -1234,6 +1234,14 @@ Carried over from `HANDOVER.md`, not yet acted on. Re-check `HANDOVER.md`
 - **Lead Time KPI has no SLA target and access time is deliberately not
   wired into it** — settled decision, see `CLAUDE.md` §8. Do not revisit
   without an explicit ask.
+- **React key-prop console warning on `/operations`**: "Each child in a list
+  should have a unique 'key' prop... Check the render method of `FilterBar`.
+  It was passed a child from OperationsPage" — the `<SavedViewsTabs>` passed
+  into `FilterBar`'s `savedViews` prop. Found 2026-09-04 during live
+  verification of the Operations-group filter/Day-Board work, pre-existing
+  and unrelated to that session's changes. Cosmetic only (no functional
+  break observed), flagged for the next polish-review pass rather than
+  fixed on the spot.
 - Everything else in `HANDOVER.md` §8 (`operation_code`/`charging_session_code`
   generated in-app with collision retry, `experimental.typedRoutes`
   deprecation warning, `middleware` → `proxy` rename available via codemod,

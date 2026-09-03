@@ -569,6 +569,7 @@
     "noVehicles": "No vehicles",
     "ignitionOn": "Ignition on",
     "ignitionOff": "Ignition off",
+    "searchPlaceholder": "Search vehicle, plate or vendor",
     "field": {
       "vehicle": "Vehicle",
       "vendor": "Vendor",
@@ -582,6 +583,7 @@
     "title": "Passenger counts",
     "noDataHint": "No counter-cam data yet — every count comes from a bridge-connected camera with counting enabled.",
     "noCounts": "No counts recorded",
+    "searchPlaceholder": "Search vehicle, plate or camera",
     "field": {
       "vehicle": "Vehicle",
       "camera": "Camera",
@@ -849,6 +851,7 @@
     "eyebrow": "Administration",
     "title": "Activity log",
     "all": "All",
+    "searchPlaceholder": "Search actor or action",
     "entity": {
       "rfr": "RFR",
       "operation": "Operation",
