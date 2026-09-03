@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
-import { canWriteOps, requireUser } from "@/lib/auth";
+import { canWriteOps } from "@/lib/auth";
+import { deniedAction, makeActionGuard } from "@/lib/action-guard";
 import { dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
 import { parseWorkOrderForm, readPartIds, type WorkOrderInput } from "./schema";
 
@@ -18,15 +18,8 @@ import { parseWorkOrderForm, readPartIds, type WorkOrderInput } from "./schema";
  *   - it never counts prior work orders; the repeat index is a view
  */
 
-type Guard = { locale: string } | FormState;
-const denied = (g: Guard): g is FormState => "formError" in g;
-
-async function guardOps(): Promise<Guard> {
-  const locale = await getLocale();
-  const user = await requireUser(locale);
-  if (!canWriteOps(user.role)) return { formError: "forbidden", fieldErrors: {} };
-  return { locale };
-}
+const guardOps = makeActionGuard(canWriteOps);
+const denied = deniedAction;
 
 const refresh = () => revalidatePath("/[locale]/work-orders", "page");
 

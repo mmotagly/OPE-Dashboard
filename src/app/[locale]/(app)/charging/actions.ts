@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
-import { canWriteOps, requireUser } from "@/lib/auth";
+import { canWriteOps } from "@/lib/auth";
+import { deniedAction, makeActionGuard } from "@/lib/action-guard";
 import {
   dbErrorToState,
   firstFieldErrors,
@@ -22,15 +22,8 @@ import { parseChargingForm, type ChargingInput } from "./schema";
  * read afterwards, purely to name the session that conflicts.
  */
 
-type Guard = { locale: string } | FormState;
-const denied = (g: Guard): g is FormState => "formError" in g;
-
-async function guardOps(): Promise<Guard> {
-  const locale = await getLocale();
-  const user = await requireUser(locale);
-  if (!canWriteOps(user.role)) return { formError: "forbidden", fieldErrors: {} };
-  return { locale };
-}
+const guardOps = makeActionGuard(canWriteOps);
+const denied = deniedAction;
 
 const refresh = () => revalidatePath("/[locale]/charging", "page");
 

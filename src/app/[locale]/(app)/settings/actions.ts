@@ -1,24 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
-import { isSuper, requireUser } from "@/lib/auth";
+import { isSuper } from "@/lib/auth";
+import { deniedAction, makeActionGuard } from "@/lib/action-guard";
 import { dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
 import { parseLookupForm, parseThresholdsForm, parseUserForm } from "./schema";
 
 /** Settings is `super_admin` only, the whole page and every action on it. */
 
-type Guard = { locale: string } | FormState;
-const denied = (g: Guard): g is FormState => "formError" in g;
-
-async function guardSuper(): Promise<Guard> {
-  const locale = await getLocale();
-  const user = await requireUser(locale);
-  if (!isSuper(user.role)) return { formError: "forbidden", fieldErrors: {} };
-  return { locale };
-}
+const guardSuper = makeActionGuard(isSuper);
+const denied = deniedAction;
 
 const refresh = () => revalidatePath("/[locale]/settings", "page");
 

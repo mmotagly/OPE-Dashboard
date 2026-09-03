@@ -1,11 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
-import { canWriteOps, isSuper, requireUser } from "@/lib/auth";
-import type { AppRole } from "@/lib/auth";
+import { canWriteOps, isSuper } from "@/lib/auth";
+import { deniedAction, makeActionGuard } from "@/lib/action-guard";
 import { dbErrorToState, firstFieldErrors, type FormState } from "@/lib/forms";
 import {
   parseIssueSkipForm,
@@ -28,15 +27,8 @@ import { isSkipStage } from "./stage-tone";
  *     every stage change, including the one at insert
  */
 
-type Guard = { locale: string; role: AppRole } | FormState;
-const denied = (g: Guard): g is FormState => "formError" in g;
-
-async function guardOps(): Promise<Guard> {
-  const locale = await getLocale();
-  const user = await requireUser(locale);
-  if (!canWriteOps(user.role)) return { formError: "forbidden", fieldErrors: {} };
-  return { locale, role: user.role };
-}
+const guardOps = makeActionGuard(canWriteOps);
+const denied = deniedAction;
 
 async function stageByCode(
   supabase: Awaited<ReturnType<typeof createClient>>,

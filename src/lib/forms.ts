@@ -5,6 +5,12 @@ import { z } from "zod";
  * FormData in, zod at the boundary, a `FormState` back with next-intl message
  * keys rather than prose — the schema runs on the server where there is no
  * locale, so the form does the translating.
+ *
+ * Client-safe on purpose: several Client Components (e.g.
+ * settings-forms.tsx) import `FormState`/`EMPTY_FORM_STATE` from here, so
+ * this module must never import anything that reaches `next/headers` (no
+ * `@/lib/auth`, no `next-intl/server`) — see `lib/action-guard.ts` for the
+ * server-only counterpart that does.
  */
 
 export type FormState = {

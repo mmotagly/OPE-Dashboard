@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalId, requiredId } from "@/lib/forms";
 
 /**
  * Validation for a daily operation row.
@@ -27,20 +28,6 @@ const NEGATIVE = "negative";
 const PERCENT = "percent";
 const END_BEFORE_START = "endBeforeStart";
 const NOT_ALLOWED = "notAllowedForStatus";
-
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const requiredId = z
-  .string()
-  .trim()
-  .refine((v) => UUID.test(v), { message: REQUIRED });
-
-const optionalId = z
-  .string()
-  .trim()
-  .transform((v) => (v === "" ? null : v))
-  .refine((v) => v === null || UUID.test(v), { message: REQUIRED });
 
 const isoDate = z
   .string()

@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { redirect } from "@/lib/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
-import { isSuper, requireUser } from "@/lib/auth";
+import { isSuper } from "@/lib/auth";
+import { deniedAction, makeActionGuard } from "@/lib/action-guard";
 import {
   dbErrorToState,
   readFields,
@@ -22,15 +22,8 @@ import {
  * module calls it and translates what it raises.
  */
 
-type Guard = { locale: string } | FormState;
-const denied = (g: Guard): g is FormState => "formError" in g;
-
-async function guardSuper(): Promise<Guard> {
-  const locale = await getLocale();
-  const user = await requireUser(locale);
-  if (!isSuper(user.role)) return { formError: "forbidden", fieldErrors: {} };
-  return { locale };
-}
+const guardSuper = makeActionGuard(isSuper);
+const denied = deniedAction;
 
 const refresh = () => revalidatePath("/[locale]/invoices", "page");
 
