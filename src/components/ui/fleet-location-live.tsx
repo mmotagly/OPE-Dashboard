@@ -38,7 +38,9 @@ export function FleetLocationLive({ initialRows }: { initialRows: FleetLocationR
         (payload) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const p = payload.new as any;
-          console.log("[fleet-location] realtime insert received", p);
+          if (process.env.NODE_ENV !== "production") {
+            console.log("[fleet-location] realtime insert received", p);
+          }
           setRows((prev) =>
             prev.map((r) =>
               r.id === p.vehicle_id
@@ -61,7 +63,9 @@ export function FleetLocationLive({ initialRows }: { initialRows: FleetLocationR
       // console output), which is exactly what made this impossible to
       // debug without visibility into the actual subscribe status.
       .subscribe((status, err) => {
-        console.log("[fleet-location] realtime subscribe status:", status, err ?? "");
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[fleet-location] realtime subscribe status:", status, err ?? "");
+        }
       });
 
     return () => {
