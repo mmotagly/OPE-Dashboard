@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState, useTransition } from "react";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/i18n/routing";
 import {
@@ -85,13 +86,19 @@ function FieldsMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex items-center gap-1.5 rounded-[10px] border border-hairline px-3 py-2 text-[12.5px] font-medium whitespace-nowrap text-ink-2 transition-colors hover:bg-raise hover:text-ink"
+        aria-label={t("fields")}
+        title={t("fields")}
+        className="relative flex h-8 w-8 items-center justify-center rounded-[10px] border border-hairline text-ink-2 transition-colors hover:bg-raise hover:text-ink"
       >
-        {t("fields")}
-        {active.size > 0 && <span className="tnum text-ink-3">{active.size}</span>}
-        <span aria-hidden className="text-[9px] text-ink-3">
-          ▾
-        </span>
+        <Plus className="h-4 w-4" aria-hidden />
+        {active.size > 0 && (
+          <span
+            aria-hidden
+            className="tnum absolute -end-1.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-elev px-1 text-[10px] font-semibold text-ink-2"
+          >
+            {active.size}
+          </span>
+        )}
       </button>
 
       {open && (
