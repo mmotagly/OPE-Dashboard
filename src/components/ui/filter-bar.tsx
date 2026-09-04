@@ -285,8 +285,27 @@ function ValueControl({
   );
 }
 
-/** One composed filter, as a compact button that opens its value control. */
-function FilterButton({
+/**
+ * One composed filter, as an always-open box — label, an operator badge,
+ * and a value area — the one shape every field uses, whether it's a
+ * module's default-visible field or one added via "+". The only visual
+ * difference is the trailing "×": defaults are locked (nothing to remove,
+ * only to change the value of), added fields can be removed.
+ *
+ * The value area is a genuinely plain text input only for `text` fields —
+ * everything else (select/picker/boolean/number/dateRange) opens a popover
+ * holding `ValueControl`, since a checklist or a date-range picker is too
+ * tall to sit permanently open in the bar.
+ *
+ * The operator badge itself branches on how many operators the kind has:
+ * exactly 2 (text/select/picker/boolean, all in/notIn-only) is a direct
+ * single-click toggle that keeps the current value — flipping "in" to
+ * "not in" over the same picked set is still meaningful. More than 2
+ * (number/dateRange) opens a small choice list instead, and picking a
+ * genuinely different operator resets the value, since "between 10 and 20"
+ * and "greater than" don't share one.
+ */
+function FilterFieldBox({
   field,
   row,
   onPatch,
@@ -295,20 +314,21 @@ function FilterButton({
   field: FilterControl;
   row: FilterRow;
   onPatch: (patch: Partial<FilterRow>) => void;
-  /** Omitted for a module's default-visible fields — always shown, so
-   * there's nothing to remove, only to change the value of. */
+  /** Omitted for a module's default-visible fields. */
   onRemove?: () => void;
 }) {
   const t = useTranslations("filters");
   const hydrated = useHydrated();
-  const [open, setOpen] = useState(false);
-  const [showOperators, setShowOperators] = useState(false);
-
+  const [opOpen, setOpOpen] = useState(false);
+  const [valueOpen, setValueOpen] = useState(false);
   const operators = OPERATORS[field.kind];
+
   const options = field.kind === "boolean" ? booleanOptions(t) : field.options;
   const optionLabel = (v: string) => options?.find((o) => o.value === v)?.label ?? v;
 
-  /** What the button shows after the field name. */
+  /** What the value area shows — every operator this bar supports, not
+   * just in/notIn, since number/dateRange fields also render through here
+   * now instead of their own component. */
   function summarise(): string {
     if (isValueless(row.operator)) return t(`operator.${row.operator}`);
     if (row.value === "") return "";
@@ -339,243 +359,143 @@ function FilterButton({
     }
   }
 
-  const summary = summarise();
-  const isDefaultOperator = row.operator === defaultOperator(field.kind);
-
-  return (
-    <div className="relative">
-      <div
-        className={`flex items-center rounded-full border transition-colors ${
-          summary ? "border-white/10 bg-elev" : "border-hairline bg-canvas"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          className="flex max-w-[260px] items-center gap-1 py-1.5 pe-1.5 ps-3 text-[12.5px]"
-        >
-          <span className="whitespace-nowrap text-ink-3">{field.label}</span>
-          {summary && (
-            <>
-              <span className="text-ink-3">:</span>
-              <span className="min-w-0 truncate font-medium text-ink">{summary}</span>
-            </>
-          )}
-          <span aria-hidden className="text-[9px] text-ink-3">
-            ▾
-          </span>
-        </button>
-
-        {onRemove && (
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label={`${t("removeFilter")}: ${field.label}`}
-            title={t("removeFilter")}
-            className="pe-2.5 ps-0.5 text-[12px] text-ink-3 transition-colors hover:text-ink"
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {open && (
-        <>
-          <Backdrop
-            onClose={() => {
-              setOpen(false);
-              setShowOperators(false);
-            }}
-          />
-          <div
-            className={`${panel} start-0 ${
-              field.kind === "dateRange" && row.operator === "between"
-                ? "w-[min(560px,92vw)]"
-                : "w-[min(300px,90vw)]"
-            }`}
-          >
-            <ValueControl
-              field={field}
-              row={row}
-              onChange={(value) => onPatch({ value })}
-              onCommit={() => setOpen(false)}
-            />
-
-            {/* Quiet by design: most people never need another operator. */}
-            {operators.length > 1 && (
-              <div className="mt-2.5 border-t border-hairline pt-2.5">
-                {showOperators ? (
-                  <div className="grid gap-0.5">
-                    {operators.map((op) => (
-                      <button
-                        key={op}
-                        type="button"
-                        onClick={() => {
-                          // the old value rarely means the same thing
-                          onPatch({ operator: op, value: "" });
-                          setShowOperators(false);
-                        }}
-                        aria-pressed={row.operator === op}
-                        className={`rounded-[7px] px-2 py-1.5 text-start text-[12.5px] transition-colors hover:bg-raise ${
-                          row.operator === op ? "text-ink" : "text-ink-2"
-                        }`}
-                      >
-                        {t(`operator.${op}`)}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowOperators(true)}
-                    className="text-[11.5px] text-ink-3 transition-colors hover:text-ink"
-                  >
-                    {isDefaultOperator
-                      ? t("moreOperators")
-                      : `${t(`operator.${row.operator}`)} · ${t("changeOperator")}`}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-/**
- * A default-visible text field, always open — no popover, since its value
- * control is already just a plain input with nowhere useful to collapse to.
- * Picker/select/number/dateRange/boolean defaults stay on `FilterButton`
- * instead (a locked, unremovable pill): their value controls are a checkbox
- * list, a date-range picker, or similar — genuinely too tall to sit
- * permanently open in the bar without pushing everything below it down.
- */
-function InlineTextRow({
-  field,
-  row,
-  onPatch,
-}: {
-  field: FilterControl;
-  row: FilterRow;
-  onPatch: (patch: Partial<FilterRow>) => void;
-}) {
-  const t = useTranslations("filters");
-  const other = row.operator === "in" ? "notIn" : "in";
-
-  // Local + debounced, same reason FilterBar's own search box is: writing
-  // straight to the URL on every keystroke races the next keystroke against
-  // the URL→props round trip, so rapid typing loses characters.
-  const [value, setValue] = useState(row.value);
+  // Local + debounced, text kind only — writing straight to the URL on
+  // every keystroke races the next keystroke against the URL→props round
+  // trip, so rapid typing loses characters.
+  const [text, setText] = useState(row.value);
   const committed = useRef(row.value);
 
-  // The row's own value changes from outside typing too — a saved view
-  // being applied, or "Clear all" — and the input needs to pick that up.
   useEffect(() => {
+    if (field.kind !== "text") return;
     if (row.value !== committed.current) {
       committed.current = row.value;
-      setValue(row.value);
+      setText(row.value);
     }
-  }, [row.value]);
+  }, [row.value, field.kind]);
 
   useEffect(() => {
-    if (value === committed.current) return;
+    if (field.kind !== "text") return;
+    if (text === committed.current) return;
     const timer = setTimeout(() => {
-      committed.current = value;
-      onPatch({ value });
+      committed.current = text;
+      onPatch({ value: text });
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [text, field.kind]);
 
   return (
     <div className="flex w-[260px] min-w-[220px] items-center gap-2 rounded-[8px] border border-hairline bg-canvas px-2.5 py-1.5">
       <span className="whitespace-nowrap text-[12.5px] text-ink-3">{field.label}</span>
-      <button
-        type="button"
-        onClick={() => onPatch({ operator: other })}
-        title={t("changeOperator")}
-        className="whitespace-nowrap rounded-[5px] bg-elev px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink"
-      >
-        {t(`operator.${row.operator}`)}
-      </button>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={t("typeValues")}
-        aria-label={field.label}
-        className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
-      />
-    </div>
-  );
-}
 
-/**
- * A default-visible categorical field — select/picker/boolean, a genuinely
- * bounded set of values, unlike the free-text identifier fields above. Same
- * box treatment and operator toggle as InlineTextRow, but the value area
- * opens a checklist popover instead of taking typed text, since there's a
- * real (if sometimes long) list of valid values to pick from.
- */
-function InlineDropdownRow({
-  field,
-  row,
-  onPatch,
-}: {
-  field: FilterControl;
-  row: FilterRow;
-  onPatch: (patch: Partial<FilterRow>) => void;
-}) {
-  const t = useTranslations("filters");
-  const [open, setOpen] = useState(false);
-  const other = row.operator === "in" ? "notIn" : "in";
+      {operators.length <= 2 ? (
+        <button
+          type="button"
+          onClick={() => {
+            const other = operators.find((op) => op !== row.operator) ?? operators[0];
+            onPatch({ operator: other });
+          }}
+          title={t("changeOperator")}
+          className="whitespace-nowrap rounded-[5px] bg-elev px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink"
+        >
+          {t(`operator.${row.operator}`)}
+        </button>
+      ) : (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpOpen((o) => !o)}
+            title={t("changeOperator")}
+            className="whitespace-nowrap rounded-[5px] bg-elev px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink"
+          >
+            {t(`operator.${row.operator}`)}
+          </button>
+          {opOpen && (
+            <>
+              <Backdrop onClose={() => setOpOpen(false)} />
+              <div className={`${panel} start-0 w-[min(180px,80vw)]`}>
+                <div className="grid gap-0.5">
+                  {operators.map((op) => (
+                    <button
+                      key={op}
+                      type="button"
+                      onClick={() => {
+                        // the old value rarely means the same thing
+                        onPatch({ operator: op, value: "" });
+                        setOpOpen(false);
+                      }}
+                      aria-pressed={row.operator === op}
+                      className={`rounded-[7px] px-2 py-1.5 text-start text-[12.5px] transition-colors hover:bg-raise ${
+                        row.operator === op ? "text-ink" : "text-ink-2"
+                      }`}
+                    >
+                      {t(`operator.${op}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-  const options = field.kind === "boolean" ? booleanOptions(t) : (field.options ?? []);
-  const summary = decodeList(row.value)
-    .map((v) => options.find((o) => o.value === v)?.label ?? v)
-    .join(", ");
+      {field.kind === "text" ? (
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={t("typeValues")}
+          aria-label={field.label}
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+        />
+      ) : (
+        <div className="relative min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={() => setValueOpen((o) => !o)}
+            aria-expanded={valueOpen}
+            className="flex w-full min-w-0 items-center gap-1 text-start text-[13px]"
+          >
+            <span className="min-w-0 flex-1 truncate text-ink">
+              {summarise() || <span className="text-ink-3">{t("choose")}</span>}
+            </span>
+            <span aria-hidden className="text-[9px] text-ink-3">
+              ▾
+            </span>
+          </button>
 
-  return (
-    <div className="relative flex w-[260px] min-w-[220px] items-center gap-2 rounded-[8px] border border-hairline bg-canvas px-2.5 py-1.5">
-      <span className="whitespace-nowrap text-[12.5px] text-ink-3">{field.label}</span>
-      <button
-        type="button"
-        onClick={() => onPatch({ operator: other })}
-        title={t("changeOperator")}
-        className="whitespace-nowrap rounded-[5px] bg-elev px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink"
-      >
-        {t(`operator.${row.operator}`)}
-      </button>
+          {valueOpen && (
+            <>
+              <Backdrop onClose={() => setValueOpen(false)} />
+              <div
+                className={`${panel} start-0 ${
+                  field.kind === "dateRange" && row.operator === "between"
+                    ? "w-[min(560px,92vw)]"
+                    : "w-[min(300px,90vw)]"
+                }`}
+              >
+                <ValueControl
+                  field={field}
+                  row={row}
+                  onChange={(value) => onPatch({ value })}
+                  onCommit={() => setValueOpen(false)}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex min-w-0 flex-1 items-center gap-1 text-start text-[13px]"
-      >
-        <span className="min-w-0 flex-1 truncate text-ink">
-          {summary || <span className="text-ink-3">{t("choose")}</span>}
-        </span>
-        <span aria-hidden className="text-[9px] text-ink-3">
-          ▾
-        </span>
-      </button>
-
-      {open && (
-        <>
-          <Backdrop onClose={() => setOpen(false)} />
-          <div className={`${panel} start-0 w-[min(300px,90vw)]`}>
-            <ValueControl
-              field={field}
-              row={row}
-              onChange={(value) => onPatch({ value })}
-              onCommit={() => setOpen(false)}
-            />
-          </div>
-        </>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`${t("removeFilter")}: ${field.label}`}
+          title={t("removeFilter")}
+          className="text-[12px] text-ink-3 transition-colors hover:text-ink"
+        >
+          ×
+        </button>
       )}
     </div>
   );
@@ -679,26 +599,17 @@ export function FilterBar({
       {savedViews}
 
       <div className="flex flex-wrap items-center gap-1.5 px-4 py-3">
-        {defaultRows.map(({ field, row }) =>
-          field.kind === "text" ? (
-            <InlineTextRow
-              key={field.key}
-              field={field}
-              row={row}
-              onPatch={(patch) => patchField(field.key, patch)}
-            />
-          ) : (
-            <InlineDropdownRow
-              key={field.key}
-              field={field}
-              row={row}
-              onPatch={(patch) => patchField(field.key, patch)}
-            />
-          ),
-        )}
+        {defaultRows.map(({ field, row }) => (
+          <FilterFieldBox
+            key={field.key}
+            field={field}
+            row={row}
+            onPatch={(patch) => patchField(field.key, patch)}
+          />
+        ))}
 
         {extraRows.map(({ field, row, index }) => (
-          <FilterButton
+          <FilterFieldBox
             key={`${row.field}-${index}`}
             field={field}
             row={row}

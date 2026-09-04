@@ -162,6 +162,8 @@ const asArray = (v: FilterValue | FilterValue[]): FilterValue[] =>
 
 const isBlank = (v: FilterValue) => v === null || v === "" || v === undefined;
 
+const asLower = (v: FilterValue) => (v === null ? "" : String(v)).toLowerCase();
+
 function matchesRow<T>(def: FilterDef<T>, row: T, filter: FilterRow): boolean {
   const values = asArray(def.get(row));
 
@@ -172,16 +174,31 @@ function matchesRow<T>(def: FilterDef<T>, row: T, filter: FilterRow): boolean {
   if (filter.value === "") return true;
 
   switch (filter.operator) {
+    // `text` fields have no fixed option set to match exactly against — the
+    // value is freely typed, so "in"/"notIn" here means "contains any of
+    // these comma-separated terms", not "equals one of them". Every other
+    // kind (select/picker/boolean, chosen from a real bounded list) keeps
+    // exact membership.
     case "in": {
-      const wanted = new Set(decodeList(filter.value));
-      if (wanted.size === 0) return true;
-      return values.some((v) => v !== null && wanted.has(String(v)));
+      const wanted = decodeList(filter.value);
+      if (wanted.length === 0) return true;
+      if (def.kind === "text") {
+        const terms = wanted.map((w) => w.toLowerCase());
+        return values.some((v) => v !== null && terms.some((t) => asLower(v).includes(t)));
+      }
+      const set = new Set(wanted);
+      return values.some((v) => v !== null && set.has(String(v)));
     }
 
     case "notIn": {
-      const wanted = new Set(decodeList(filter.value));
-      if (wanted.size === 0) return true;
-      return !values.some((v) => v !== null && wanted.has(String(v)));
+      const wanted = decodeList(filter.value);
+      if (wanted.length === 0) return true;
+      if (def.kind === "text") {
+        const terms = wanted.map((w) => w.toLowerCase());
+        return !values.some((v) => v !== null && terms.some((t) => asLower(v).includes(t)));
+      }
+      const set = new Set(wanted);
+      return !values.some((v) => v !== null && set.has(String(v)));
     }
 
     case "gt":
