@@ -73,6 +73,7 @@ export default async function FleetLocationPage({
         <FilterBar
           pathname="/fleet-location"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "vendor"]}
           state={filterState}
           searchPlaceholder={t("searchPlaceholder")}
           savedViews={

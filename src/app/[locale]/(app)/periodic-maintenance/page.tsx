@@ -144,6 +144,7 @@ export default async function PeriodicMaintenancePage({
         <FilterBar
           pathname="/periodic-maintenance"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "status"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("search")}

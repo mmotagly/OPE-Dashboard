@@ -167,6 +167,7 @@ export default async function SettingsPage({
             <FilterBar
               pathname="/settings"
               controls={toControls(lookupFilters)}
+              defaultFieldKeys={["category", "code"]}
               state={filterState}
               baseQuery={baseQuery}
               searchPlaceholder={t("searchLookups")}

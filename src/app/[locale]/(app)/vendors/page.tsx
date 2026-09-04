@@ -118,6 +118,7 @@ export default async function VendorsPage({
         <FilterBar
           pathname="/vendors"
           controls={toControls(filters)}
+          defaultFieldKeys={["name", "type"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchVendors")}

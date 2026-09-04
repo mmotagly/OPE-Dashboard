@@ -133,6 +133,7 @@ export default async function VehiclesPage({
         <FilterBar
           pathname="/vehicles"
           controls={toControls(filters)}
+          defaultFieldKeys={["code", "vendor"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchVehicles")}

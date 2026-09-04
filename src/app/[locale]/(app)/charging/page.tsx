@@ -109,6 +109,7 @@ export default async function ChargingPage({
         <FilterBar
           pathname="/charging"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "finished"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("search")}

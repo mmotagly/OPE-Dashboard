@@ -85,6 +85,7 @@ export default async function ActivityLogPage({
         <FilterBar
           pathname="/activity-log"
           controls={toControls(filters)}
+          defaultFieldKeys={["actor", "action"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchPlaceholder")}

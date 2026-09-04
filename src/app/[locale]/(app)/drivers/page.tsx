@@ -153,6 +153,7 @@ export default async function DriversPage({
         <FilterBar
           pathname="/drivers"
           controls={toControls(filters)}
+          defaultFieldKeys={["name", "vendor"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchDrivers")}

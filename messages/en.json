@@ -928,6 +928,7 @@
     "search": "Search",
     "searchOptions": "Search options",
     "noOptions": "No matching options",
+    "typeValues": "Type a value, comma-separated",
     "yes": "Yes",
     "no": "No",
     "min": "Min",
@@ -969,9 +970,6 @@
     "noFields": "No matching fields",
     "removeFilter": "Remove filter",
     "operator": {
-      "contains": "contains",
-      "notContains": "does not contain",
-      "is": "is",
       "in": "in",
       "notIn": "not in",
       "between": "between",

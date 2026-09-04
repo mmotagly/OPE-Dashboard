@@ -13,9 +13,6 @@
 export type FilterKind = "text" | "select" | "picker" | "number" | "boolean" | "dateRange";
 
 export type FilterOperator =
-  | "contains"
-  | "notContains"
-  | "is"
   | "in"
   | "notIn"
   | "between"
@@ -24,13 +21,19 @@ export type FilterOperator =
   | "isEmpty"
   | "isNotEmpty";
 
-/** Which operators each field type offers, in the order they are listed. */
+/**
+ * Which operators each field type offers, in the order they are listed.
+ * `text`/`select`/`picker`/`boolean` are in/notIn-only by design — a
+ * deliberate simplification, not a gap. `number` and `dateRange` keep their
+ * range operators: "in/notIn" over a continuous quantity (KM, %, a date)
+ * means enumerating exact values, which isn't how anyone filters those.
+ */
 export const OPERATORS: Record<FilterKind, FilterOperator[]> = {
-  text: ["contains", "notContains", "is", "isEmpty", "isNotEmpty"],
-  select: ["in", "notIn", "isEmpty", "isNotEmpty"],
-  picker: ["in", "notIn", "isEmpty", "isNotEmpty"],
+  text: ["in", "notIn"],
+  select: ["in", "notIn"],
+  picker: ["in", "notIn"],
   number: ["between", "gt", "lt", "isEmpty", "isNotEmpty"],
-  boolean: ["is"],
+  boolean: ["in", "notIn"],
   dateRange: ["between", "isEmpty", "isNotEmpty"],
 };
 
@@ -183,20 +186,6 @@ function matchesRow<T>(def: FilterDef<T>, row: T, filter: FilterRow): boolean {
   if (filter.value === "") return true;
 
   switch (filter.operator) {
-    case "contains":
-      return values.some((v) => asText(v).includes(filter.value.toLowerCase()));
-
-    case "notContains":
-      return !values.some((v) => asText(v).includes(filter.value.toLowerCase()));
-
-    case "is": {
-      if (def.kind === "boolean") {
-        if (filter.value !== "true" && filter.value !== "false") return true;
-        return values.some((v) => Boolean(v) === (filter.value === "true"));
-      }
-      return values.some((v) => asText(v) === filter.value.toLowerCase());
-    }
-
     case "in": {
       const wanted = new Set(decodeList(filter.value));
       if (wanted.size === 0) return true;

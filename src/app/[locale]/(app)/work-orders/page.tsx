@@ -105,6 +105,7 @@ export default async function WorkOrdersPage({
         <FilterBar
           pathname="/work-orders"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "status"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("search")}

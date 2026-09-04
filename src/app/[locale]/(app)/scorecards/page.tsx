@@ -134,6 +134,7 @@ export default async function ScorecardsPage({
         <FilterBar
           pathname="/scorecards"
           controls={toControls(filters)}
+          defaultFieldKeys={["status", "approvedBy"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchPlaceholder")}

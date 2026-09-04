@@ -41,6 +41,14 @@ const control =
 const panel =
   "absolute top-full z-30 mt-1.5 rounded-[12px] border border-hairline bg-surface p-3 shadow-[0_18px_44px_rgb(0_0_0/0.55)]";
 
+/** A boolean field has no lookup table to draw options from — this is the
+ * one place its two possible values are named, shared by the value control
+ * and the button's own summary so they can't drift apart. */
+const booleanOptions = (t: (key: string) => string) => [
+  { value: "true", label: t("yes") },
+  { value: "false", label: t("no") },
+];
+
 function Backdrop({ onClose }: { onClose: () => void }) {
   return (
     <button
@@ -146,9 +154,22 @@ function ValueControl({
     return <p className="text-[12.5px] text-ink-3">{t("noValueNeeded")}</p>;
   }
 
+  if ((row.operator === "in" || row.operator === "notIn") && field.kind === "text") {
+    return (
+      <input
+        type="text"
+        value={row.value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={t("typeValues")}
+        aria-label={field.label}
+        className={`${control} w-full`}
+      />
+    );
+  }
+
   if (row.operator === "in" || row.operator === "notIn") {
     const selected = new Set(decodeList(row.value));
-    const options = field.options ?? [];
+    const options = field.kind === "boolean" ? booleanOptions(t) : (field.options ?? []);
     const matches =
       field.kind === "picker" && query.trim()
         ? options.filter((o) =>
@@ -253,31 +274,6 @@ function ValueControl({
     );
   }
 
-  if (field.kind === "boolean") {
-    return (
-      <div className="flex gap-1">
-        {(["true", "false"] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => {
-              onChange(v);
-              onCommit();
-            }}
-            aria-pressed={row.value === v}
-            className={`flex-1 rounded-[8px] border px-2 py-1.5 text-[12.5px] transition-colors ${
-              row.value === v
-                ? "border-white/10 bg-elev text-ink"
-                : "border-hairline text-ink-2 hover:bg-raise"
-            }`}
-          >
-            {v === "true" ? t("yes") : t("no")}
-          </button>
-        ))}
-      </div>
-    );
-  }
-
   return (
     <input
       type="text"
@@ -299,7 +295,9 @@ function FilterButton({
   field: FilterControl;
   row: FilterRow;
   onPatch: (patch: Partial<FilterRow>) => void;
-  onRemove: () => void;
+  /** Omitted for a module's default-visible fields — always shown, so
+   * there's nothing to remove, only to change the value of. */
+  onRemove?: () => void;
 }) {
   const t = useTranslations("filters");
   const hydrated = useHydrated();
@@ -307,8 +305,8 @@ function FilterButton({
   const [showOperators, setShowOperators] = useState(false);
 
   const operators = OPERATORS[field.kind];
-  const optionLabel = (v: string) =>
-    field.options?.find((o) => o.value === v)?.label ?? v;
+  const options = field.kind === "boolean" ? booleanOptions(t) : field.options;
+  const optionLabel = (v: string) => options?.find((o) => o.value === v)?.label ?? v;
 
   /** What the button shows after the field name. */
   function summarise(): string {
@@ -320,16 +318,6 @@ function FilterButton({
         return decodeList(row.value).map(optionLabel).join(", ");
       case "notIn":
         return `${t("shortNot")} ${decodeList(row.value).map(optionLabel).join(", ")}`;
-      case "contains":
-        return row.value;
-      case "notContains":
-        return `${t("shortNot")} ${row.value}`;
-      case "is":
-        return field.kind === "boolean"
-          ? row.value === "true"
-            ? t("yes")
-            : t("no")
-          : row.value;
       case "gt":
         return `> ${row.value}`;
       case "lt":
@@ -379,15 +367,17 @@ function FilterButton({
           </span>
         </button>
 
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`${t("removeFilter")}: ${field.label}`}
-          title={t("removeFilter")}
-          className="pe-2.5 ps-0.5 text-[12px] text-ink-3 transition-colors hover:text-ink"
-        >
-          ×
-        </button>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`${t("removeFilter")}: ${field.label}`}
+            title={t("removeFilter")}
+            className="pe-2.5 ps-0.5 text-[12px] text-ink-3 transition-colors hover:text-ink"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {open && (
@@ -455,6 +445,74 @@ function FilterButton({
   );
 }
 
+/**
+ * A default-visible text field, always open — no popover, since its value
+ * control is already just a plain input with nowhere useful to collapse to.
+ * Picker/select/number/dateRange/boolean defaults stay on `FilterButton`
+ * instead (a locked, unremovable pill): their value controls are a checkbox
+ * list, a date-range picker, or similar — genuinely too tall to sit
+ * permanently open in the bar without pushing everything below it down.
+ */
+function InlineTextRow({
+  field,
+  row,
+  onPatch,
+}: {
+  field: FilterControl;
+  row: FilterRow;
+  onPatch: (patch: Partial<FilterRow>) => void;
+}) {
+  const t = useTranslations("filters");
+  const other = row.operator === "in" ? "notIn" : "in";
+
+  // Local + debounced, same reason FilterBar's own search box is: writing
+  // straight to the URL on every keystroke races the next keystroke against
+  // the URL→props round trip, so rapid typing loses characters.
+  const [value, setValue] = useState(row.value);
+  const committed = useRef(row.value);
+
+  // The row's own value changes from outside typing too — a saved view
+  // being applied, or "Clear all" — and the input needs to pick that up.
+  useEffect(() => {
+    if (row.value !== committed.current) {
+      committed.current = row.value;
+      setValue(row.value);
+    }
+  }, [row.value]);
+
+  useEffect(() => {
+    if (value === committed.current) return;
+    const timer = setTimeout(() => {
+      committed.current = value;
+      onPatch({ value });
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <div className="flex w-[260px] min-w-[220px] items-center gap-2 rounded-[8px] border border-hairline bg-canvas px-2.5 py-1.5">
+      <span className="whitespace-nowrap text-[12.5px] text-ink-3">{field.label}</span>
+      <button
+        type="button"
+        onClick={() => onPatch({ operator: other })}
+        title={t("changeOperator")}
+        className="whitespace-nowrap rounded-[5px] bg-elev px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink"
+      >
+        {t(`operator.${row.operator}`)}
+      </button>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={t("typeValues")}
+        aria-label={field.label}
+        className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+      />
+    </div>
+  );
+}
+
 export function FilterBar({
   pathname,
   controls,
@@ -463,6 +521,7 @@ export function FilterBar({
   baseQuery = {},
   searchPlaceholder,
   savedViews,
+  defaultFieldKeys = [],
 }: {
   pathname: string;
   controls: FilterControl[];
@@ -471,6 +530,11 @@ export function FilterBar({
   searchPlaceholder: string;
   /** Slot for the saved-view tabs, rendered above the bar. */
   savedViews?: ReactNode;
+  /** A module's 1-2 most commonly-used fields — always visible, not tucked
+   * behind "+", and excluded from the Fields menu (there's nothing to add,
+   * they're already there). Everything else keeps today's pill-plus-popover
+   * pattern unchanged. */
+  defaultFieldKeys?: string[];
 }) {
   const t = useTranslations("filters");
   const router = useRouter();
@@ -488,6 +552,20 @@ export function FilterBar({
     );
 
   const setRows = (rows: FilterRow[]) => push({ ...state, rows });
+
+  /** Update a field's row, appending one if it doesn't exist in `state.rows`
+   * yet — the case for a default field's first value, since default fields
+   * render even when they have no row of their own. */
+  const patchField = (key: string, patch: Partial<FilterRow>) => {
+    const existing = state.rows.findIndex((r) => r.field === key);
+    if (existing >= 0) {
+      setRows(state.rows.map((r, i) => (i === existing ? { ...r, ...patch } : r)));
+      return;
+    }
+    const field = controls.find((c) => c.key === key);
+    if (!field) return;
+    setRows([...state.rows, { field: key, operator: defaultOperator(field.kind), value: "", ...patch }]);
+  };
 
   const toggleField = (key: string) => {
     const existing = state.rows.findIndex((r) => r.field === key);
@@ -520,6 +598,27 @@ export function FilterBar({
 
   const activeFields = new Set(state.rows.map((r) => r.field));
 
+  const defaultRows = defaultFieldKeys
+    .map((key) => controls.find((c) => c.key === key))
+    .filter((f): f is FilterControl => f !== undefined)
+    .map((field) => ({
+      field,
+      row: state.rows.find((r) => r.field === field.key) ?? {
+        field: field.key,
+        operator: defaultOperator(field.kind),
+        value: "",
+      },
+    }));
+
+  const extraRows = state.rows
+    .map((row, index) => ({ row, index, field: controls.find((c) => c.key === row.field) }))
+    .filter(
+      (r): r is { row: FilterRow; index: number; field: FilterControl } =>
+        r.field !== undefined && !defaultFieldKeys.includes(r.row.field),
+    );
+
+  const addableControls = controls.filter((c) => !defaultFieldKeys.includes(c.key));
+
   return (
     <div
       className={`border-b border-hairline transition-opacity ${
@@ -538,30 +637,50 @@ export function FilterBar({
           className="min-w-[120px] flex-1 rounded-[10px] border border-hairline bg-canvas px-3 py-2 text-[13.5px] text-ink"
         />
 
-        <FieldsMenu controls={controls} active={activeFields} onToggle={toggleField} />
+        <FieldsMenu controls={addableControls} active={activeFields} onToggle={toggleField} />
       </div>
+
+      {defaultRows.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
+          {defaultRows.map(({ field, row }) =>
+            field.kind === "text" ? (
+              <InlineTextRow
+                key={field.key}
+                field={field}
+                row={row}
+                onPatch={(patch) => patchField(field.key, patch)}
+              />
+            ) : (
+              <FilterButton
+                key={field.key}
+                field={field}
+                row={row}
+                onPatch={(patch) => patchField(field.key, patch)}
+              />
+            ),
+          )}
+        </div>
+      )}
 
       {state.rows.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
-          {state.rows.map((row, index) => {
-            const field = controls.find((c) => c.key === row.field);
-            if (!field) return null;
+          {extraRows.map(({ field, row, index }) => (
+            <FilterButton
+              key={`${row.field}-${index}`}
+              field={field}
+              row={row}
+              onPatch={(patch) =>
+                setRows(
+                  state.rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
+                )
+              }
+              onRemove={() => setRows(state.rows.filter((_, i) => i !== index))}
+            />
+          ))}
 
-            return (
-              <FilterButton
-                key={`${row.field}-${index}`}
-                field={field}
-                row={row}
-                onPatch={(patch) =>
-                  setRows(
-                    state.rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
-                  )
-                }
-                onRemove={() => setRows(state.rows.filter((_, i) => i !== index))}
-              />
-            );
-          })}
-
+          {/* Available whenever anything is composed — a default field's own
+              value included — alongside each pill's individual "×" above,
+              not instead of it. */}
           <button
             type="button"
             onClick={() => {

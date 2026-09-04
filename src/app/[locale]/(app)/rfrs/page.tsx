@@ -147,6 +147,7 @@ export default async function RfrsPage({
         <FilterBar
           pathname="/rfrs"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "stage"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchPlaceholder")}

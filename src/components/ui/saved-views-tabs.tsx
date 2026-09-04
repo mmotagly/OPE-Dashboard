@@ -58,7 +58,19 @@ export function SavedViewsTabs({
     });
   };
 
+  // `clear` stops a default view from immediately reapplying — same target
+  // FilterBar's own "Clear all" uses.
+  const clear = () => {
+    setMenuFor(null);
+    router.replace({ pathname, query: { ...baseQuery, clear: "1" } });
+  };
+
   const activeId = views.find((v) => sameFilterState(v.state, state))?.id ?? null;
+
+  /** Clicking the already-active tab again turns the view off rather than
+   * re-applying it — the only way to clear a saved view's filters without
+   * navigating elsewhere. */
+  const toggle = (view: SavedView) => (view.id === activeId ? clear() : open(view));
   const serialised = JSON.stringify(state);
 
   // With no views and nothing composed there is nothing to show and nothing
@@ -102,7 +114,7 @@ export function SavedViewsTabs({
                     : "border-transparent text-ink-2 hover:bg-raise"
                 }`}
               >
-                <button type="button" onClick={() => open(view)} className="max-w-[160px] truncate">
+                <button type="button" onClick={() => toggle(view)} className="max-w-[160px] truncate">
                   {view.name}
                 </button>
                 {view.isDefault && (

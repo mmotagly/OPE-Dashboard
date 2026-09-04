@@ -139,6 +139,7 @@ export default async function RoutesPage({
           controls={
             isStations ? toControls(stationFilters) : toControls(routeFilters)
           }
+          defaultFieldKeys={["code", "name"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={isStations ? t("searchStations") : t("searchRoutes")}

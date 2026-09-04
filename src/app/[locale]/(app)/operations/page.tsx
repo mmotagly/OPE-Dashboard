@@ -174,6 +174,7 @@ export default async function OperationsPage({
         <FilterBar
           pathname="/operations"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "status"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchPlaceholder")}

@@ -59,6 +59,7 @@ export default async function PassengerCountsPage({
         <FilterBar
           pathname="/passenger-counts"
           controls={toControls(filters)}
+          defaultFieldKeys={["vehicle", "camera"]}
           state={filterState}
           searchPlaceholder={t("searchPlaceholder")}
           savedViews={

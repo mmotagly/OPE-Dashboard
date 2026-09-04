@@ -120,6 +120,7 @@ export default async function InvoicesPage({
         <FilterBar
           pathname="/invoices"
           controls={toControls(filters)}
+          defaultFieldKeys={["vendor", "status"]}
           state={filterState}
           baseQuery={baseQuery}
           searchPlaceholder={t("searchPlaceholder")}
