@@ -137,7 +137,6 @@ export default async function ScorecardsPage({
           defaultFieldKeys={["status", "approvedBy"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={moduleKey}

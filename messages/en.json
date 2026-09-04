@@ -1,7 +1,6 @@
 {
   "brand": "Pyramids Ops",
   "common": {
-    "search": "Search",
     "filters": "Filters",
     "save": "Save",
     "cancel": "Cancel",
@@ -175,8 +174,7 @@
     "statusLocked": "Completed records are locked — only a super admin can change this.",
     "kmDelta": "+{km} km",
     "batteryRange": "{from} → {to}%",
-    "vendorLabel": "Vendor",
-    "searchPlaceholder": "Search code, vehicle, plate, driver or vendor"
+    "vendorLabel": "Vendor"
   },
   "master": {
     "record": "Record",
@@ -202,7 +200,6 @@
     "driversTitle": "Drivers",
     "newDriver": "New driver",
     "editDriver": "Edit driver",
-    "searchDrivers": "Search name, code or licence number",
     "companyDriver": "Company driver",
     "documentsDue": "Documents due",
     "licence": "Licence",
@@ -215,7 +212,6 @@
     "vendorsTitle": "Vendors",
     "newVendor": "New vendor",
     "editVendor": "Edit vendor",
-    "searchVendors": "Search vendor name or code",
     "companyVendor": "Company",
     "companyVendorHeldBy": "{vendor} is already the company vendor. There can only be one.",
     "billingTerms": "Invoicing terms",
@@ -234,8 +230,6 @@
     "editRoute": "Edit route",
     "newStation": "New station",
     "editStation": "Edit station",
-    "searchRoutes": "Search route name or code",
-    "searchStations": "Search station name or code",
     "stopsInSequence": "Stations in sequence",
     "stopCount": "{count} stations",
     "noStops": "No stations on this route yet.",
@@ -386,8 +380,7 @@
     },
     "field": {
       "number": "Request"
-    },
-    "searchPlaceholder": "Search request, vehicle, plate, driver or location"
+    }
   },
   "finance": {
     "scorecard": "Scorecard",
@@ -409,7 +402,6 @@
   "pm": {
     "title": "Periodic maintenance",
     "allParts": "All",
-    "search": "Search vehicle, plate number or part",
     "emptyHint": "Schedules appear once a vehicle has its PM plan built.",
     "field": {
       "vehicle": "Vehicle",
@@ -450,7 +442,6 @@
     "repair": "Repair",
     "replacedParts": "Replaced parts",
     "repeatIndex": "Repeating index",
-    "search": "Search work order, request or vehicle",
     "emptyHint": "Work orders are raised from a request.",
     "noSelection": "No work order selected",
     "noSelectionHint": "Pick a row to see the full work order.",
@@ -569,7 +560,6 @@
     "noVehicles": "No vehicles",
     "ignitionOn": "Ignition on",
     "ignitionOff": "Ignition off",
-    "searchPlaceholder": "Search vehicle, plate or vendor",
     "field": {
       "vehicle": "Vehicle",
       "vendor": "Vendor",
@@ -583,7 +573,6 @@
     "title": "Passenger counts",
     "noDataHint": "No counter-cam data yet — every count comes from a bridge-connected camera with counting enabled.",
     "noCounts": "No counts recorded",
-    "searchPlaceholder": "Search vehicle, plate or camera",
     "field": {
       "vehicle": "Vehicle",
       "camera": "Camera",
@@ -598,7 +587,6 @@
     "new": "New session",
     "edit": "Edit session",
     "session": "Session",
-    "search": "Search session, vehicle or charger",
     "chooseCharger": "Choose a charger",
     "plugsHint": "A, B or both",
     "electricOnly": "Only electric vehicles take a charging session.",
@@ -717,8 +705,7 @@
     "newTemplate": "New template",
     "newTemplateHint": "A vendor KPI set. Opening a month copies it.",
     "createTemplate": "Create template",
-    "allVendorsHaveTemplates": "Every vendor already has a KPI template.",
-    "searchPlaceholder": "Search vendor"
+    "allVendorsHaveTemplates": "Every vendor already has a KPI template."
   },
   "invoice": {
     "title": "Invoices",
@@ -776,8 +763,7 @@
       "negative": "Cannot be negative.",
       "duplicate": "That value is already used by another record.",
       "stillReferenced": "Other records still point at this one."
-    },
-    "searchPlaceholder": "Search vendor or code"
+    }
   },
   "vendorTrends": {
     "eyebrow": "Finance",
@@ -851,7 +837,6 @@
     "eyebrow": "Administration",
     "title": "Activity log",
     "all": "All",
-    "searchPlaceholder": "Search actor or action",
     "entity": {
       "rfr": "RFR",
       "operation": "Operation",
@@ -921,11 +906,9 @@
       "forbidden": "Only the planning manager can change settings.",
       "saveFailed": "The change could not be saved. Try again.",
       "stillReferenced": "Other records still point at this one."
-    },
-    "searchLookups": "Search code or label"
+    }
   },
   "filters": {
-    "search": "Search",
     "searchOptions": "Search options",
     "noOptions": "No matching options",
     "typeValues": "Type a value, comma-separated",

@@ -14,11 +14,11 @@ export function buildDriverFilters(
     list.map((l) => ({ value: l.id, label: l.labelEn }));
 
   return [
-    { key: "code", label: labels.driverCode, kind: "text", inSearch: true, get: (r) => r.driverCode },
-    { key: "name", label: labels.driverName, kind: "text", inSearch: true, get: (r) => r.driverName },
-    { key: "vendor", label: labels.vendor, kind: "picker", inSearch: true,
+    { key: "code", label: labels.driverCode, kind: "text", get: (r) => r.driverCode },
+    { key: "name", label: labels.driverName, kind: "text", get: (r) => r.driverName },
+    { key: "vendor", label: labels.vendor, kind: "picker",
       options: options.vendors, get: (r) => [r.vendorId, r.vendorName] },
-    { key: "mobile", label: labels.mobile, kind: "text", inSearch: true, get: (r) => r.mobileNumber },
+    { key: "mobile", label: labels.mobile, kind: "text", get: (r) => r.mobileNumber },
     { key: "grade", label: labels.licenseGrade, kind: "select",
       options: lookup(options.licenseGrades), get: (r) => r.licenseGradeId },
     { key: "hiring", label: labels.hiringDate, kind: "dateRange",

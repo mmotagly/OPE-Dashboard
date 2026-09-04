@@ -75,7 +75,6 @@ export default async function FleetLocationPage({
           controls={toControls(filters)}
           defaultFieldKeys={["vehicle", "vendor"]}
           state={filterState}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

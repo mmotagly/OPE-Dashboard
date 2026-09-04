@@ -150,7 +150,6 @@ export default async function RfrsPage({
           defaultFieldKeys={["vehicle", "stage"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

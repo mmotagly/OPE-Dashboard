@@ -142,7 +142,6 @@ export default async function RoutesPage({
           defaultFieldKeys={["code", "name"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={isStations ? t("searchStations") : t("searchRoutes")}
           savedViews={
             <SavedViewsTabs
               module={moduleKey}

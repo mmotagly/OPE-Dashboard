@@ -13,16 +13,13 @@ export function buildPassengerCountFilters(
     {
       key: "vehicle",
       label: labels.vehicle,
-      kind: "picker",
-      inSearch: true,
-      options: optionsFrom(rows, (r) => r.vehicleCode),
+      kind: "text",
       get: (r) => [r.vehicleCode, r.plateNumber],
     },
     {
       key: "camera",
       label: labels.camera,
       kind: "picker",
-      inSearch: true,
       options: optionsFrom(rows, (r) => r.cameraCode),
       get: (r) => r.cameraCode,
     },

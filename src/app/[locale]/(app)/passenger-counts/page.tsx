@@ -61,7 +61,6 @@ export default async function PassengerCountsPage({
           controls={toControls(filters)}
           defaultFieldKeys={["vehicle", "camera"]}
           state={filterState}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

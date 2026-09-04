@@ -7,10 +7,10 @@ export function buildChargingFilters(
   options: { vehicles: FilterOption[]; chargers: FilterOption[]; rows: ChargingRow[] },
 ): FilterDef<ChargingRow>[] {
   return [
-    { key: "code", label: labels.sessionCode, kind: "text", inSearch: true, get: (r) => r.sessionCode },
-    { key: "vehicle", label: labels.vehicle, kind: "picker", inSearch: true,
-      options: options.vehicles, get: (r) => [r.vehicleId, r.vehicleCode, r.plateNumber] },
-    { key: "charger", label: labels.charger, kind: "picker", inSearch: true,
+    { key: "code", label: labels.sessionCode, kind: "text", get: (r) => r.sessionCode },
+    { key: "vehicle", label: labels.vehicle, kind: "text",
+      get: (r) => [r.vehicleCode, r.plateNumber] },
+    { key: "charger", label: labels.charger, kind: "picker",
       options: options.chargers, get: (r) => [r.chargerId, r.chargerCode] },
     { key: "plugs", label: labels.plugs, kind: "select",
       options: PLUG_OPTIONS.map((p) => ({ value: p, label: p })),

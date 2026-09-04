@@ -72,12 +72,6 @@ export default async function PeriodicMaintenancePage({
       statusNeverServiced: tStatus("neverServiced"),
       statusNoKmData: tStatus("noKmData"),
     },
-    {
-      vehicles: [
-        ...new Map(all.map((r) => [r.vehicleId, `${r.vehicleCode} · ${r.plateNumber}`])),
-      ].map(([value, label]) => ({ value, label })),
-      rows: all,
-    },
   );
 
   const searched = applyFilters(all, filters, filterState);
@@ -147,7 +141,6 @@ export default async function PeriodicMaintenancePage({
           defaultFieldKeys={["vehicle", "status"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("search")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

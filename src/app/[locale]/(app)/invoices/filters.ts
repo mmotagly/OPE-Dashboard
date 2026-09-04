@@ -7,7 +7,7 @@ export function buildInvoiceFilters(
   options: { vendors: FilterOption[]; rows: InvoiceRow[] },
 ): FilterDef<InvoiceRow>[] {
   return [
-    { key: "vendor", label: labels.vendor, kind: "picker", inSearch: true,
+    { key: "vendor", label: labels.vendor, kind: "picker",
       options: options.vendors, get: (r) => [r.vendorId, r.vendorCode, r.vendorName] },
     { key: "month", label: labels.periodMonth, kind: "dateRange",
       get: (r) => r.periodMonth },

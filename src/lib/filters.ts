@@ -62,8 +62,6 @@ export type FilterValue = string | number | boolean | null;
 export type FilterDef<T> = FilterControl & {
   /** This row's value for the column. An array matches if any element matches. */
   get: (row: T) => FilterValue | FilterValue[];
-  /** Include this column in the free-text search. */
-  inSearch?: boolean;
 };
 
 /** One composed row. `value` encoding depends on the operator. */
@@ -74,12 +72,10 @@ export type FilterRow = {
 };
 
 export type FilterState = {
-  /** Free-text search, permanent and separate from the composed rows. */
-  q: string;
   rows: FilterRow[];
 };
 
-export const EMPTY_FILTER_STATE: FilterState = { q: "", rows: [] };
+export const EMPTY_FILTER_STATE: FilterState = { rows: [] };
 
 /* ---------------- encoding ---------------- */
 
@@ -98,9 +94,6 @@ export function decodeRange(raw: string): { from: string; to: string } {
 const OPERATOR_SET = new Set<string>(Object.values(OPERATORS).flat());
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
-
-const firstValue = (v: string | string[] | undefined) =>
-  (Array.isArray(v) ? v[0] : v) ?? "";
 
 /**
  * Rows travel as repeated `f=field:operator:value` params. The value is
@@ -129,17 +122,14 @@ export function readFilterState(params: RawSearchParams): FilterState {
     rows.push({ field, operator: operator as FilterOperator, value });
   }
 
-  return { q: firstValue(params.q), rows };
+  return { rows };
 }
 
 /** Back to query params. `f` repeats, so this returns a list for it. */
 export function writeFilterState(state: FilterState): {
-  q?: string;
   f?: string[];
 } {
-  const query: { q?: string; f?: string[] } = {};
-
-  if (state.q.trim()) query.q = state.q.trim();
+  const query: { f?: string[] } = {};
 
   if (state.rows.length > 0) {
     query.f = state.rows.map(
@@ -151,11 +141,9 @@ export function writeFilterState(state: FilterState): {
 }
 
 /** True when nothing is composed — used to apply a saved default view. */
-export const isFilterStateEmpty = (state: FilterState) =>
-  state.q.trim() === "" && state.rows.length === 0;
+export const isFilterStateEmpty = (state: FilterState) => state.rows.length === 0;
 
 export const sameFilterState = (a: FilterState, b: FilterState) =>
-  a.q.trim() === b.q.trim() &&
   a.rows.length === b.rows.length &&
   a.rows.every(
     (row, i) =>
@@ -171,8 +159,6 @@ export const toControls = <T,>(defs: FilterDef<T>[]): FilterControl[] =>
 
 const asArray = (v: FilterValue | FilterValue[]): FilterValue[] =>
   Array.isArray(v) ? v : [v];
-
-const asText = (v: FilterValue) => (v === null ? "" : String(v)).toLowerCase();
 
 const isBlank = (v: FilterValue) => v === null || v === "" || v === undefined;
 
@@ -252,18 +238,7 @@ export function applyFilters<T>(
   defs: FilterDef<T>[],
   state: FilterState,
 ): T[] {
-  const query = state.q.trim().toLowerCase();
-  const searchable = defs.filter((d) => d.inSearch);
-
   return rows.filter((row) => {
-    if (query && searchable.length > 0) {
-      const haystack = searchable
-        .flatMap((d) => asArray(d.get(row)))
-        .map(asText)
-        .join(" ");
-      if (!haystack.includes(query)) return false;
-    }
-
     for (const filter of state.rows) {
       const def = defs.find((d) => d.key === filter.field);
       // an unknown field in the URL must not silently hide everything

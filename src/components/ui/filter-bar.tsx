@@ -513,13 +513,80 @@ function InlineTextRow({
   );
 }
 
+/**
+ * A default-visible categorical field — select/picker/boolean, a genuinely
+ * bounded set of values, unlike the free-text identifier fields above. Same
+ * box treatment and operator toggle as InlineTextRow, but the value area
+ * opens a checklist popover instead of taking typed text, since there's a
+ * real (if sometimes long) list of valid values to pick from.
+ */
+function InlineDropdownRow({
+  field,
+  row,
+  onPatch,
+}: {
+  field: FilterControl;
+  row: FilterRow;
+  onPatch: (patch: Partial<FilterRow>) => void;
+}) {
+  const t = useTranslations("filters");
+  const [open, setOpen] = useState(false);
+  const other = row.operator === "in" ? "notIn" : "in";
+
+  const options = field.kind === "boolean" ? booleanOptions(t) : (field.options ?? []);
+  const summary = decodeList(row.value)
+    .map((v) => options.find((o) => o.value === v)?.label ?? v)
+    .join(", ");
+
+  return (
+    <div className="relative flex w-[260px] min-w-[220px] items-center gap-2 rounded-[8px] border border-hairline bg-canvas px-2.5 py-1.5">
+      <span className="whitespace-nowrap text-[12.5px] text-ink-3">{field.label}</span>
+      <button
+        type="button"
+        onClick={() => onPatch({ operator: other })}
+        title={t("changeOperator")}
+        className="whitespace-nowrap rounded-[5px] bg-elev px-1.5 py-0.5 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink"
+      >
+        {t(`operator.${row.operator}`)}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex min-w-0 flex-1 items-center gap-1 text-start text-[13px]"
+      >
+        <span className="min-w-0 flex-1 truncate text-ink">
+          {summary || <span className="text-ink-3">{t("choose")}</span>}
+        </span>
+        <span aria-hidden className="text-[9px] text-ink-3">
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <>
+          <Backdrop onClose={() => setOpen(false)} />
+          <div className={`${panel} start-0 w-[min(300px,90vw)]`}>
+            <ValueControl
+              field={field}
+              row={row}
+              onChange={(value) => onPatch({ value })}
+              onCommit={() => setOpen(false)}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function FilterBar({
   pathname,
   controls,
   state,
   /** Params that are not filters — the entity tab, the open record, the sort. */
   baseQuery = {},
-  searchPlaceholder,
   savedViews,
   defaultFieldKeys = [],
 }: {
@@ -527,7 +594,6 @@ export function FilterBar({
   controls: FilterControl[];
   state: FilterState;
   baseQuery?: QueryParams;
-  searchPlaceholder: string;
   /** Slot for the saved-view tabs, rendered above the bar. */
   savedViews?: ReactNode;
   /** A module's 1-2 most commonly-used fields — always visible, not tucked
@@ -539,9 +605,6 @@ export function FilterBar({
   const t = useTranslations("filters");
   const router = useRouter();
   const [pending, start] = useTransition();
-
-  const [search, setSearch] = useState(state.q);
-  const committed = useRef(state.q);
 
   const push = (next: FilterState) =>
     start(() =>
@@ -584,18 +647,6 @@ export function FilterBar({
     ]);
   };
 
-  useEffect(() => {
-    if (search === committed.current) return;
-    const timer = setTimeout(() => {
-      committed.current = search;
-      push({ ...state, q: search });
-    }, 300);
-    return () => clearTimeout(timer);
-    // `push` closes over the current state on purpose; re-running on every
-    // state identity change would restart the debounce mid-typing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
-
   const activeFields = new Set(state.rows.map((r) => r.field));
 
   const defaultRows = defaultFieldKeys
@@ -627,76 +678,55 @@ export function FilterBar({
     >
       {savedViews}
 
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={searchPlaceholder}
-          aria-label={searchPlaceholder}
-          className="min-w-[120px] flex-1 rounded-[10px] border border-hairline bg-canvas px-3 py-2 text-[13.5px] text-ink"
-        />
-
-        <FieldsMenu controls={addableControls} active={activeFields} onToggle={toggleField} />
-      </div>
-
-      {defaultRows.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
-          {defaultRows.map(({ field, row }) =>
-            field.kind === "text" ? (
-              <InlineTextRow
-                key={field.key}
-                field={field}
-                row={row}
-                onPatch={(patch) => patchField(field.key, patch)}
-              />
-            ) : (
-              <FilterButton
-                key={field.key}
-                field={field}
-                row={row}
-                onPatch={(patch) => patchField(field.key, patch)}
-              />
-            ),
-          )}
-        </div>
-      )}
-
-      {state.rows.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
-          {extraRows.map(({ field, row, index }) => (
-            <FilterButton
-              key={`${row.field}-${index}`}
+      <div className="flex flex-wrap items-center gap-1.5 px-4 py-3">
+        {defaultRows.map(({ field, row }) =>
+          field.kind === "text" ? (
+            <InlineTextRow
+              key={field.key}
               field={field}
               row={row}
-              onPatch={(patch) =>
-                setRows(
-                  state.rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
-                )
-              }
-              onRemove={() => setRows(state.rows.filter((_, i) => i !== index))}
+              onPatch={(patch) => patchField(field.key, patch)}
             />
-          ))}
+          ) : (
+            <InlineDropdownRow
+              key={field.key}
+              field={field}
+              row={row}
+              onPatch={(patch) => patchField(field.key, patch)}
+            />
+          ),
+        )}
 
-          {/* Available whenever anything is composed — a default field's own
-              value included — alongside each pill's individual "×" above,
-              not instead of it. */}
+        {extraRows.map(({ field, row, index }) => (
+          <FilterButton
+            key={`${row.field}-${index}`}
+            field={field}
+            row={row}
+            onPatch={(patch) =>
+              setRows(state.rows.map((r, i) => (i === index ? { ...r, ...patch } : r)))
+            }
+            onRemove={() => setRows(state.rows.filter((_, i) => i !== index))}
+          />
+        ))}
+
+        <FieldsMenu controls={addableControls} active={activeFields} onToggle={toggleField} />
+
+        {/* Available whenever anything is composed — a default field's own
+            value included — alongside each pill's individual "×" above,
+            not instead of it. */}
+        {state.rows.length > 0 && (
           <button
             type="button"
-            onClick={() => {
-              committed.current = "";
-              setSearch("");
+            onClick={() =>
               // `clear` stops a default view from immediately reapplying.
-              start(() =>
-                router.replace({ pathname, query: { ...baseQuery, clear: "1" } }),
-              );
-            }}
+              start(() => router.replace({ pathname, query: { ...baseQuery, clear: "1" } }))
+            }
             className="px-1.5 text-[12px] text-ink-3 transition-colors hover:text-ink"
           >
             {t("clearAll")}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

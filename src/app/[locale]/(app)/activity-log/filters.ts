@@ -13,7 +13,6 @@ export function buildActivityLogFilters(
       key: "actor",
       label: labels.actor,
       kind: "picker",
-      inSearch: true,
       options: optionsFrom(rows, (r) => r.actorName),
       get: (r) => r.actorName,
     },

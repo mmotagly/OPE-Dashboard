@@ -14,7 +14,6 @@ export function buildScorecardFilters(
     key: "vendor",
     label: labels.vendor,
     kind: "picker",
-    inSearch: true,
     options: options.vendors,
     get: (r) => [r.vendorId, r.vendorCode, r.vendorName],
   };

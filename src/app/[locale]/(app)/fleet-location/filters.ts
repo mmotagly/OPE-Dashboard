@@ -10,16 +10,13 @@ export function buildFleetLocationFilters(
     {
       key: "vehicle",
       label: labels.vehicle,
-      kind: "picker",
-      inSearch: true,
-      options: optionsFrom(rows, (r) => r.vehicleCode),
+      kind: "text",
       get: (r) => [r.vehicleCode, r.plateNumber],
     },
     {
       key: "vendor",
       label: labels.vendor,
       kind: "picker",
-      inSearch: true,
       options: optionsFrom(rows, (r) => r.vendorName),
       get: (r) => r.vendorName,
     },

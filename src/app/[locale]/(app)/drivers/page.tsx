@@ -156,7 +156,6 @@ export default async function DriversPage({
           defaultFieldKeys={["name", "vendor"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchDrivers")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

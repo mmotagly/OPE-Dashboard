@@ -108,7 +108,6 @@ export default async function WorkOrdersPage({
           defaultFieldKeys={["vehicle", "status"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("search")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

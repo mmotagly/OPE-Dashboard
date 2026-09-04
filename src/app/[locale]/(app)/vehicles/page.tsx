@@ -136,7 +136,6 @@ export default async function VehiclesPage({
           defaultFieldKeys={["code", "vendor"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchVehicles")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

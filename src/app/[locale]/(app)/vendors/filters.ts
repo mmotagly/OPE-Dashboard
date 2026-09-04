@@ -15,8 +15,8 @@ export function buildVendorFilters(
     list.map((l) => ({ value: l.id, label: l.labelEn }));
 
   return [
-    { key: "code", label: labels.vendorCode, kind: "text", inSearch: true, get: (r) => r.vendorCode },
-    { key: "name", label: labels.vendorName, kind: "text", inSearch: true, get: (r) => r.vendorName },
+    { key: "code", label: labels.vendorCode, kind: "text", get: (r) => r.vendorCode },
+    { key: "name", label: labels.vendorName, kind: "text", get: (r) => r.vendorName },
     { key: "type", label: labels.vendorType, kind: "select",
       options: lookup(options.vendorTypes), get: (r) => r.vendorTypeId },
     { key: "basis", label: labels.basis, kind: "select",

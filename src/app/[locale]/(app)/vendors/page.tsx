@@ -121,7 +121,6 @@ export default async function VendorsPage({
           defaultFieldKeys={["name", "type"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchVendors")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

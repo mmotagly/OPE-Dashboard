@@ -170,7 +170,6 @@ export default async function SettingsPage({
               defaultFieldKeys={["category", "code"]}
               state={filterState}
               baseQuery={baseQuery}
-              searchPlaceholder={t("searchLookups")}
               savedViews={
                 <SavedViewsTabs
                   module="settings:lookups"

@@ -11,8 +11,8 @@ export function buildRouteFilters(
   options: { statuses: LookupOption[]; rows: RouteRow[] },
 ): FilterDef<RouteRow>[] {
   return [
-    { key: "code", label: labels.routeCode, kind: "text", inSearch: true, get: (r) => r.routeCode },
-    { key: "name", label: labels.routeName, kind: "text", inSearch: true, get: (r) => r.routeName },
+    { key: "code", label: labels.routeCode, kind: "text", get: (r) => r.routeCode },
+    { key: "name", label: labels.routeName, kind: "text", get: (r) => r.routeName },
     { key: "distance", label: labels.routeDistance, kind: "number",
       get: (r) => r.routeDistanceKm },
     { key: "stops", label: labels.stopsInSequence, kind: "number",
@@ -35,8 +35,8 @@ export function buildStationFilters(
   options: { statuses: LookupOption[]; rows: StationRow[] },
 ): FilterDef<StationRow>[] {
   return [
-    { key: "code", label: labels.stationCode, kind: "text", inSearch: true, get: (r) => r.stationCode },
-    { key: "name", label: labels.stationName, kind: "text", inSearch: true, get: (r) => r.stationName },
+    { key: "code", label: labels.stationCode, kind: "text", get: (r) => r.stationCode },
+    { key: "name", label: labels.stationName, kind: "text", get: (r) => r.stationName },
     { key: "status", label: labels.status, kind: "select",
       options: lookup(options.statuses), get: (r) => r.statusId },
   ];

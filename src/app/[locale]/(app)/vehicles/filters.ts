@@ -16,15 +16,15 @@ export function buildVehicleFilters(
     list.map((l) => ({ value: l.id, label: l.labelEn }));
 
   return [
-    { key: "code", label: labels.vehicleCode, kind: "text", inSearch: true, get: (r) => r.vehicleCode },
-    { key: "plate", label: labels.plateNumber, kind: "text", inSearch: true, get: (r) => r.plateNumber },
-    { key: "vendor", label: labels.vendor, kind: "picker", inSearch: true,
+    { key: "code", label: labels.vehicleCode, kind: "text", get: (r) => r.vehicleCode },
+    { key: "plate", label: labels.plateNumber, kind: "text", get: (r) => r.plateNumber },
+    { key: "vendor", label: labels.vendor, kind: "picker",
       options: options.vendors, get: (r) => [r.vendorId, r.vendorName] },
     { key: "type", label: labels.type, kind: "select",
       options: lookup(options.vehicleTypes), get: (r) => r.vehicleTypeId },
     { key: "fuel", label: labels.fuelType, kind: "select",
       options: lookup(options.fuelTypes), get: (r) => r.fuelTypeId },
-    { key: "driver", label: labels.defaultDriver, kind: "picker", inSearch: true,
+    { key: "driver", label: labels.defaultDriver, kind: "picker",
       options: options.drivers, get: (r) => [r.defaultDriverId, r.defaultDriverName] },
     { key: "odometer", label: labels.odometer, kind: "number",
       get: (r) => r.currentOdometerKm },

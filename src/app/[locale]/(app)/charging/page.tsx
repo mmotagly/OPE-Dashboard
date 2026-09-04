@@ -112,7 +112,6 @@ export default async function ChargingPage({
           defaultFieldKeys={["vehicle", "finished"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("search")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

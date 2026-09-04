@@ -88,7 +88,6 @@ export default async function ActivityLogPage({
           defaultFieldKeys={["actor", "action"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

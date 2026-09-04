@@ -22,7 +22,7 @@ const OPERATOR_SET = new Set<string>(Object.values(OPERATORS).flat());
 function toState(raw: unknown): FilterState {
   if (!raw || typeof raw !== "object") return EMPTY_FILTER_STATE;
 
-  const record = raw as { q?: unknown; rows?: unknown };
+  const record = raw as { rows?: unknown };
   const rows: FilterRow[] = [];
 
   if (Array.isArray(record.rows)) {
@@ -40,7 +40,7 @@ function toState(raw: unknown): FilterState {
     }
   }
 
-  return { q: typeof record.q === "string" ? record.q : "", rows };
+  return { rows };
 }
 
 export async function loadSavedViews(module: string): Promise<SavedView[]> {

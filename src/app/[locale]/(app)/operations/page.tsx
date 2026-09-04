@@ -177,7 +177,6 @@ export default async function OperationsPage({
           defaultFieldKeys={["vehicle", "status"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}

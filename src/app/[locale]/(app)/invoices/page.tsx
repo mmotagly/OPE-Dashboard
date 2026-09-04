@@ -123,7 +123,6 @@ export default async function InvoicesPage({
           defaultFieldKeys={["vendor", "status"]}
           state={filterState}
           baseQuery={baseQuery}
-          searchPlaceholder={t("searchPlaceholder")}
           savedViews={
             <SavedViewsTabs
               module={MODULE}
