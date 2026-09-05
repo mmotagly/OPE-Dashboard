@@ -317,6 +317,7 @@
     "noSelectionHint": "Pick a row to see the full entry.",
     "newTrips": "New trips",
     "addTrip": "Add trip",
+    "addRoute": "Add another route",
     "saveTrips": "Save trips",
     "returnLeg": "Return leg",
     "findShift": "Find shift",

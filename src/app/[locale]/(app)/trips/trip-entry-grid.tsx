@@ -16,12 +16,23 @@ import type {
 } from "./trip-queries";
 
 /**
- * Fast multi-trip entry: one shift can have 10+ trips, so this is a grid of
- * compact rows rather than the usual one-record-per-Drawer form — a
- * deliberate deviation from CLAUDE.md's Drawer convention, same spirit as
- * Day Board's own noted exception, because a 560px column cannot show
- * several trips' full station sequences side by side, which is the entire
- * point of reviewing them together.
+ * Fast multi-trip entry: one shift can have 10+ trips, so this is a table of
+ * compact rows — grouped by route, since each route has its own station
+ * sequence and a shared header row can't show meaningful station names for
+ * rows belonging to different routes. Not a Drawer, same deviation as
+ * before: a 560px column can't show several trips' full station sequences
+ * side by side, which is the entire point of reviewing them together.
+ *
+ * Route is a per-group property, not a per-row dropdown — moving one trip
+ * to a different route means removing it from one group and adding it to
+ * another, rather than switching a value in place. A deliberate trade for
+ * density at the volume this screen is built for (10+ trips, usually on the
+ * same one or two routes per shift).
+ *
+ * A trip's return leg is inferred from its return cells being non-blank,
+ * not a separate checkbox — leaving every return cell empty is exactly
+ * "no return leg," matching what the server already does with blank time
+ * inputs.
  *
  * Leg/round-trip time are never computed here — only in SQL (0023's
  * computed columns), read back on the Trips list/drawer after saving.
@@ -36,7 +47,6 @@ type GridTrip = {
   id: string | null;
   routeId: string;
   outbound: StopTimes;
-  hasReturn: boolean;
   returnTimes: StopTimes;
 };
 
@@ -60,25 +70,11 @@ function fromExisting(t: TripEntryExistingTrip): GridTrip {
     const bucket = s.direction === "outbound" ? outbound : returnTimes;
     bucket[s.routeStationId] = toLocalTime(s.departureAt);
   }
-  return {
-    clientKey: newClientKey(),
-    id: t.id,
-    routeId: t.routeId,
-    outbound,
-    hasReturn: Object.keys(returnTimes).length > 0,
-    returnTimes,
-  };
+  return { clientKey: newClientKey(), id: t.id, routeId: t.routeId, outbound, returnTimes };
 }
 
 function blankRow(routeId: string): GridTrip {
-  return {
-    clientKey: newClientKey(),
-    id: null,
-    routeId,
-    outbound: {},
-    hasReturn: false,
-    returnTimes: {},
-  };
+  return { clientKey: newClientKey(), id: null, routeId, outbound: {}, returnTimes: {} };
 }
 
 /** `<input type="time">` gives local wall-clock HH:MM with no date or zone —
@@ -101,11 +97,9 @@ function buildDraft(operationId: string, date: string, rows: GridTrip[]) {
         const iso = toIso(date, hhmm);
         if (iso) stops.push({ routeStationId, direction: "outbound", departureAt: iso });
       }
-      if (r.hasReturn) {
-        for (const [routeStationId, hhmm] of Object.entries(r.returnTimes)) {
-          const iso = toIso(date, hhmm);
-          if (iso) stops.push({ routeStationId, direction: "return", departureAt: iso });
-        }
+      for (const [routeStationId, hhmm] of Object.entries(r.returnTimes)) {
+        const iso = toIso(date, hhmm);
+        if (iso) stops.push({ routeStationId, direction: "return", departureAt: iso });
       }
 
       return { clientKey: r.clientKey, id: r.id, routeId: r.routeId, stops };
@@ -113,134 +107,211 @@ function buildDraft(operationId: string, date: string, rows: GridTrip[]) {
   };
 }
 
-function StopInputs({
+type RouteGroup = {
+  routeId: string;
+  route: TripEntryRouteOption | undefined;
+  items: { trip: GridTrip; index: number }[];
+};
+
+/** Groups preserve the order their route first appears in `rows` — stable
+ * across edits, since it's derived fresh from `rows` every render rather
+ * than tracked separately. */
+function groupByRoute(rows: GridTrip[], routes: TripEntryRouteOption[]): RouteGroup[] {
+  const order: string[] = [];
+  const byRoute = new Map<string, { trip: GridTrip; index: number }[]>();
+
+  rows.forEach((trip, index) => {
+    if (!byRoute.has(trip.routeId)) {
+      byRoute.set(trip.routeId, []);
+      order.push(trip.routeId);
+    }
+    byRoute.get(trip.routeId)!.push({ trip, index });
+  });
+
+  return order.map((routeId) => ({
+    routeId,
+    route: routes.find((r) => r.id === routeId),
+    items: byRoute.get(routeId)!,
+  }));
+}
+
+function RouteTable({
+  group,
   stops,
-  values,
-  onChange,
+  resultFor,
+  onUpdate,
+  onRemove,
+  onAddTrip,
 }: {
+  group: RouteGroup;
   stops: RouteStationRow[];
-  values: StopTimes;
-  onChange: (routeStationId: string, value: string) => void;
+  resultFor: (clientKey: string) => TripSaveResult | undefined;
+  onUpdate: (index: number, next: GridTrip) => void;
+  onRemove: (index: number) => void;
+  onAddTrip: () => void;
 }) {
+  const t = useTranslations("trips");
+  const tCommon = useTranslations("common");
+  const returnStops = [...stops].reverse();
+
+  const cell = "px-2 py-1.5 whitespace-nowrap";
+  const headCell = `${cell} text-[10.5px] font-medium uppercase tracking-[0.03em] text-ink-3 text-start`;
+
   return (
-    <div className="flex flex-wrap items-end gap-1.5">
-      {stops.map((s, i) => (
-        <div key={s.id} className="flex items-center gap-1.5">
-          {i > 0 && <span className="text-ink-3">→</span>}
-          <div className="flex flex-col items-start gap-1">
-            <span className="whitespace-nowrap text-[10.5px] text-ink-3">{s.stationCode}</span>
-            <TextInput
-              type="time"
-              value={values[s.id] ?? ""}
-              onChange={(e) => onChange(s.id, e.target.value)}
-              className="w-[104px] py-1.5"
-            />
-          </div>
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-[10px] border border-hairline bg-canvas">
+      <div className="flex items-center justify-between border-b border-hairline bg-surface px-3 py-2">
+        <span className="text-[13px]">
+          <span className="tnum font-medium">{group.route?.routeCode ?? "—"}</span>
+          <span className="ms-2 text-ink-2">{group.route?.routeName}</span>
+        </span>
+        <button
+          type="button"
+          onClick={onAddTrip}
+          className="rounded-control border border-hairline bg-canvas px-2.5 py-1 text-[12px] font-medium text-ink transition-colors hover:bg-raise"
+        >
+          + {t("addTrip")}
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[12.5px]">
+          <thead>
+            <tr className="border-b border-hairline">
+              <th className={headCell} />
+              <th className={`${headCell} border-s border-hairline`} colSpan={stops.length}>
+                {t("direction.outbound")}
+              </th>
+              <th className={`${headCell} border-s border-hairline`} colSpan={returnStops.length}>
+                {t("direction.return")}
+              </th>
+              <th className={`${headCell} border-s border-hairline`} colSpan={2} />
+            </tr>
+            <tr className="border-b border-hairline">
+              <th className={headCell}>#</th>
+              {stops.map((s, i) => (
+                <th key={s.id} className={`${headCell} ${i === 0 ? "border-s border-hairline" : ""}`}>
+                  {s.stationCode}
+                </th>
+              ))}
+              {returnStops.map((s, i) => (
+                <th
+                  key={`r-${s.id}`}
+                  className={`${headCell} ${i === 0 ? "border-s border-hairline" : ""}`}
+                >
+                  {s.stationCode}
+                </th>
+              ))}
+              <th className={`${headCell} border-s border-hairline`} />
+              <th className={headCell} />
+            </tr>
+          </thead>
+          <tbody>
+            {group.items.map(({ trip, index }, rowIdx) => {
+              const result = resultFor(trip.clientKey);
+              return (
+                <tr key={trip.clientKey} className="border-b border-hairline last:border-b-0">
+                  <td className={`${cell} tnum text-ink-3`}>{rowIdx + 1}</td>
+                  {stops.map((s, i) => (
+                    <td key={s.id} className={`${cell} ${i === 0 ? "border-s border-hairline" : ""}`}>
+                      <TextInput
+                        type="time"
+                        value={trip.outbound[s.id] ?? ""}
+                        onChange={(e) =>
+                          onUpdate(index, {
+                            ...trip,
+                            outbound: { ...trip.outbound, [s.id]: e.target.value },
+                          })
+                        }
+                        className="w-[104px] py-1"
+                      />
+                    </td>
+                  ))}
+                  {returnStops.map((s, i) => (
+                    <td
+                      key={`r-${s.id}`}
+                      className={`${cell} ${i === 0 ? "border-s border-hairline" : ""}`}
+                    >
+                      <TextInput
+                        type="time"
+                        value={trip.returnTimes[s.id] ?? ""}
+                        onChange={(e) =>
+                          onUpdate(index, {
+                            ...trip,
+                            returnTimes: { ...trip.returnTimes, [s.id]: e.target.value },
+                          })
+                        }
+                        className="w-[104px] py-1"
+                      />
+                    </td>
+                  ))}
+                  <td className={`${cell} border-s border-hairline`}>
+                    {result && (
+                      <Micro bar={false} tone={result.ok ? "go" : "stop"}>
+                        {result.ok ? tCommon("saved") : t(`error.${result.reason ?? "saveFailed"}`)}
+                      </Micro>
+                    )}
+                  </td>
+                  <td className={cell}>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(index)}
+                      aria-label={tCommon("remove")}
+                      title={tCommon("remove")}
+                      className="grid h-7 w-7 place-items-center rounded-control border border-hairline text-[13px] text-ink-2 transition-colors hover:bg-raise"
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
-function TripCard({
-  trip,
+function AddRouteControl({
   routes,
-  routeStops,
-  result,
-  onChange,
-  onRemove,
+  onAdd,
 }: {
-  trip: GridTrip;
   routes: TripEntryRouteOption[];
-  routeStops: Record<string, RouteStationRow[]>;
-  result: TripSaveResult | undefined;
-  onChange: (next: GridTrip) => void;
-  onRemove: () => void;
+  onAdd: (routeId: string) => void;
 }) {
   const t = useTranslations("trips");
-  const tCommon = useTranslations("common");
-  const stops = routeStops[trip.routeId] ?? [];
-  const reversedStops = [...stops].reverse();
+  const [routeId, setRouteId] = useState(routes[0]?.id ?? "");
 
-  // useActionState's pending transition can leave a native <select>'s own
-  // displayed option out of sync with the value React thinks it set (a
-  // known class of bug for controlled <select> across a transition) —
-  // reasserted on every render, unconditionally, rather than trusting
-  // React's "value prop unchanged, skip the DOM write" optimization.
-  const routeSelectRef = useRef<HTMLSelectElement>(null);
+  // Same controlled-<select> desync guard as the rest of this form — see
+  // the header comment for why this reasserts every render.
+  const ref = useRef<HTMLSelectElement>(null);
   useEffect(() => {
-    if (routeSelectRef.current) routeSelectRef.current.value = trip.routeId;
+    if (ref.current) ref.current.value = routeId;
   });
 
   return (
-    <div className="rounded-[10px] border border-hairline bg-canvas p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <SelectInput
-          ref={routeSelectRef}
-          value={trip.routeId}
-          onChange={(e) => onChange({ ...trip, routeId: e.target.value })}
-          className="w-auto"
-          aria-label={t("field.route")}
-        >
-          {routes.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.routeCode} · {r.routeName}
-            </option>
-          ))}
-        </SelectInput>
-
-        {result && (
-          <Micro bar={false} tone={result.ok ? "go" : "stop"}>
-            {result.ok ? tCommon("saved") : t(`error.${result.reason ?? "saveFailed"}`)}
-          </Micro>
-        )}
-
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={tCommon("remove")}
-          title={tCommon("remove")}
-          className="ms-auto grid h-8 w-8 place-items-center rounded-control border border-hairline text-[13px] text-ink-2 transition-colors hover:bg-raise"
-        >
-          ×
-        </button>
-      </div>
-
-      <div className="mt-2.5">
-        <Micro bar={false}>{t("direction.outbound")}</Micro>
-        <div className="mt-1.5">
-          <StopInputs
-            stops={stops}
-            values={trip.outbound}
-            onChange={(id, value) => onChange({ ...trip, outbound: { ...trip.outbound, [id]: value } })}
-          />
-        </div>
-      </div>
-
-      <label className="mt-2.5 flex items-center gap-2 text-[12.5px] text-ink-2">
-        <input
-          type="checkbox"
-          checked={trip.hasReturn}
-          onChange={(e) => onChange({ ...trip, hasReturn: e.target.checked })}
-          className="h-4 w-4 accent-[var(--color-ink)]"
-        />
-        {t("returnLeg")}
-      </label>
-
-      {trip.hasReturn && (
-        <div className="mt-2">
-          <Micro bar={false}>{t("direction.return")}</Micro>
-          <div className="mt-1.5">
-            <StopInputs
-              stops={reversedStops}
-              values={trip.returnTimes}
-              onChange={(id, value) =>
-                onChange({ ...trip, returnTimes: { ...trip.returnTimes, [id]: value } })
-              }
-            />
-          </div>
-        </div>
-      )}
+    <div className="flex flex-wrap items-center gap-2">
+      <SelectInput
+        ref={ref}
+        value={routeId}
+        onChange={(e) => setRouteId(e.target.value)}
+        className="w-auto"
+        aria-label={t("field.route")}
+      >
+        {routes.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.routeCode} · {r.routeName}
+          </option>
+        ))}
+      </SelectInput>
+      <button
+        type="button"
+        onClick={() => routeId && onAdd(routeId)}
+        disabled={!routeId}
+        className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-raise disabled:opacity-50"
+      >
+        + {t("addRoute")}
+      </button>
     </div>
   );
 }
@@ -297,9 +368,9 @@ export function TripEntryGrid({
 
   const removeRow = (index: number) => setRows((prev) => prev.filter((_, i) => i !== index));
 
-  const addRow = () =>
-    setRows((prev) => [...prev, blankRow(prev[prev.length - 1]?.routeId ?? routes[0]?.id ?? "")]);
+  const addTripToRoute = (routeId: string) => setRows((prev) => [...prev, blankRow(routeId)]);
 
+  const groups = groupByRoute(rows, routes);
   const payload = JSON.stringify(buildDraft(operationId, date, rows));
 
   return (
@@ -307,26 +378,20 @@ export function TripEntryGrid({
       <input type="hidden" name="draft" value={payload} />
 
       <div className="grid gap-2.5">
-        {rows.map((trip, index) => (
-          <TripCard
-            key={trip.clientKey}
-            trip={trip}
-            routes={routes}
-            routeStops={routeStops}
-            result={resultFor(trip.clientKey)}
-            onChange={(next) => updateRow(index, next)}
-            onRemove={() => removeRow(index)}
+        {groups.map((group) => (
+          <RouteTable
+            key={group.routeId}
+            group={group}
+            stops={routeStops[group.routeId] ?? []}
+            resultFor={resultFor}
+            onUpdate={updateRow}
+            onRemove={removeRow}
+            onAddTrip={() => addTripToRoute(group.routeId)}
           />
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={addRow}
-        className="justify-self-start rounded-control border border-hairline bg-surface px-3 py-1.5 text-[13px] font-medium text-ink transition-colors hover:bg-raise"
-      >
-        {t("addTrip")}
-      </button>
+      <AddRouteControl routes={routes} onAdd={addTripToRoute} />
 
       {state.formError && (
         <p role="alert" className="text-[12px] text-stop-text">
