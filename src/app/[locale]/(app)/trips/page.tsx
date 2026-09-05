@@ -10,15 +10,19 @@ import { applyFilters, toControls, writeFilterState } from "@/lib/filters";
 import { resolveFilters } from "@/lib/filter-page";
 import { loadLookups } from "@/lib/lookups";
 import { loadRoutes, loadStations, type RouteEntity } from "./queries";
-import { loadTripEntryOptions, loadTrips } from "./trip-queries";
+import { loadHeadwayReport, loadTripEntryOptions, loadTrips } from "./trip-queries";
 import { buildRouteFilters, buildStationFilters, buildTripFilters } from "./filters";
 import { RoutesTable, StationsTable } from "./routes-table";
 import { TripsTable } from "./trips-table";
 import { RouteDrawer } from "./route-drawer";
 import { TripDrawer } from "./trip-drawer";
 import { TripEntryPanel } from "./trip-entry-panel";
+import { HeadwayReport } from "./headway-report";
+import { headwayRange, type HeadwayPeriod } from "./headway-period";
 
-type PageEntity = "trips" | RouteEntity;
+type PageEntity = "trips" | "headway" | RouteEntity;
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const newButton =
   "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
@@ -49,9 +53,16 @@ export default async function TripsPage({
 
   const rawEntity = one("entity");
   const entity: PageEntity =
-    rawEntity === "stations" ? "stations" : rawEntity === "routes" ? "routes" : "trips";
+    rawEntity === "stations"
+      ? "stations"
+      : rawEntity === "routes"
+        ? "routes"
+        : rawEntity === "headway"
+          ? "headway"
+          : "trips";
   const isTrips = entity === "trips";
   const isStations = entity === "stations";
+  const isHeadway = entity === "headway";
   const moduleKey = isTrips ? "trips" : isStations ? "routes:stations" : "routes";
 
   const t = await getTranslations("master");
@@ -96,14 +107,29 @@ export default async function TripsPage({
   const stationFilters = buildStationFilters(labels, { statuses, rows: stations });
   const tripFilters = buildTripFilters(tripLabels, { routes: tripOptions.routes });
 
-  const visibleRoutes = isTrips || isStations ? routes : applyFilters(routes, routeFilters, filterState);
+  const visibleRoutes =
+    isTrips || isStations || isHeadway ? routes : applyFilters(routes, routeFilters, filterState);
   const visibleStations = isStations
     ? applyFilters(stations, stationFilters, filterState)
     : stations;
   const visibleTrips = isTrips ? applyFilters(trips, tripFilters, filterState) : trips;
 
+  // Headway is a report, not a filtered record list — resolved from its own
+  // (route, period, date) query params rather than the FilterBar/saved-views
+  // system the other three tabs use. Fetched here (not inside HeadwayReport)
+  // so the same rows back both the tab's chip count and its table.
+  const headwayRouteId = one("route") || tripOptions.routes[0]?.id || "";
+  const headwayPeriod: HeadwayPeriod =
+    one("period") === "day" ? "day" : one("period") === "month" ? "month" : "week";
+  const headwayDate = one("date") || todayIso();
+  const headwayRangeDates = headwayRange(headwayPeriod, headwayDate);
+  const headwayRows = headwayRouteId
+    ? await loadHeadwayReport(headwayRouteId, headwayRangeDates.from, headwayRangeDates.to)
+    : [];
+
   const chips: Chip[] = [
     { value: "", label: tTrips("tripsTab"), count: visibleTrips.length },
+    { value: "headway", label: tTrips("headwayTab"), count: headwayRows.length },
     { value: "routes", label: t("routesTab"), count: visibleRoutes.length },
     { value: "stations", label: t("stationsTab"), count: visibleStations.length },
   ];
@@ -131,82 +157,107 @@ export default async function TripsPage({
     );
   }
 
-  const drawerMode = isTrips
-    ? id
-      ? "view"
-      : null
-    : canEditReference && mode === "new"
-      ? "new"
-      : canEditReference && mode === "edit" && id
-        ? "edit"
-        : canEditReference && mode === "import" && !isStations
-          ? "import"
-          : id
-            ? "view"
-            : null;
+  const drawerMode = isHeadway
+    ? null
+    : isTrips
+      ? id
+        ? "view"
+        : null
+      : canEditReference && mode === "new"
+        ? "new"
+        : canEditReference && mode === "edit" && id
+          ? "edit"
+          : canEditReference && mode === "import" && !isStations
+            ? "import"
+            : id
+              ? "view"
+              : null;
 
   const newLabel = isTrips ? tTrips("newTrips") : isStations ? t("newStation") : t("newRoute");
   const newHref = isTrips
     ? { pathname: "/trips", query: { ...query, entity: "trips", mode: "entry" } }
     : { pathname: "/trips", query: { ...query, mode: "new" } };
-  const showNew = isTrips ? canEditTrips : canEditReference;
+  const showNew = isHeadway ? false : isTrips ? canEditTrips : canEditReference;
+
+  const title = isHeadway
+    ? tTrips("headwayTab")
+    : isTrips
+      ? tTrips("tripsTitle")
+      : isStations
+        ? t("stationsTitle")
+        : t("routesTitle");
 
   return (
     <div className="font-inter contents">
       <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("operations")}
-          title={isTrips ? tTrips("tripsTitle") : isStations ? t("stationsTitle") : t("routesTitle")}
+          title={title}
           actions={
-            <>
-              {canEditReference && !isTrips && !isStations && (
-                <>
-                  <ExportCsvLink href="/api/export/routes" label={tCommon("exportCsv")} />
-                  <Link
-                    href={{ pathname: "/trips", query: { ...query, mode: "import" } }}
-                    className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
-                  >
-                    {tCommon("importCsv")}
+            isHeadway ? undefined : (
+              <>
+                {canEditReference && !isTrips && !isStations && (
+                  <>
+                    <ExportCsvLink href="/api/export/routes" label={tCommon("exportCsv")} />
+                    <Link
+                      href={{ pathname: "/trips", query: { ...query, mode: "import" } }}
+                      className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
+                    >
+                      {tCommon("importCsv")}
+                    </Link>
+                  </>
+                )}
+                {showNew && (
+                  <Link href={newHref} className={newButton}>
+                    {newLabel}
                   </Link>
-                </>
-              )}
-              {showNew && (
-                <Link href={newHref} className={newButton}>
-                  {newLabel}
-                </Link>
-              )}
-            </>
+                )}
+              </>
+            )
           }
         />
 
-        <FilterBar
-          pathname="/trips"
-          controls={
-            isTrips ? toControls(tripFilters) : isStations ? toControls(stationFilters) : toControls(routeFilters)
-          }
-          defaultFieldKeys={isTrips ? ["vehicle", "date"] : ["code", "name"]}
-          state={filterState}
-          baseQuery={baseQuery}
-          savedViews={
-            <SavedViewsTabs
-              module={moduleKey}
-              pathname="/trips"
-              views={saved}
-              state={filterState}
-              baseQuery={baseQuery}
-            />
-          }
-        />
+        {!isHeadway && (
+          <FilterBar
+            pathname="/trips"
+            controls={
+              isTrips ? toControls(tripFilters) : isStations ? toControls(stationFilters) : toControls(routeFilters)
+            }
+            defaultFieldKeys={isTrips ? ["vehicle", "date"] : ["code", "name"]}
+            state={filterState}
+            baseQuery={baseQuery}
+            savedViews={
+              <SavedViewsTabs
+                module={moduleKey}
+                pathname="/trips"
+                views={saved}
+                state={filterState}
+                baseQuery={baseQuery}
+              />
+            }
+          />
+        )}
 
         <FilterChips
           chips={chips}
-          active={isTrips ? "" : entity}
+          active={entity === "trips" ? "" : entity}
           param="entity"
           pathname="/trips"
           extraQuery={filterQuery}
         />
 
-        {isTrips ? (
+        {isHeadway ? (
+          <HeadwayReport
+            routes={tripOptions.routes}
+            routeId={headwayRouteId}
+            period={headwayPeriod}
+            date={headwayDate}
+            from={headwayRangeDates.from}
+            to={headwayRangeDates.to}
+            rows={headwayRows}
+            extraQuery={sort ? { sort, dir } : {}}
+          />
+        ) : isTrips ? (
           <TripsTable rows={visibleTrips} selectedId={id ?? null} query={query} sort={sort} dir={dir} />
         ) : isStations ? (
           <StationsTable

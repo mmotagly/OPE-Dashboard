@@ -8,6 +8,7 @@ import { operationTone, statusLabel } from "@/lib/format";
 import { loadLatestGpsPing } from "@/lib/gps/latest-ping";
 import { loadNearestPm, loadOperation, loadPickerOptions } from "../queries";
 import { OperationDetailBody } from "../operation-drawer";
+import { loadOperationHeadway, loadOperationTripSummary } from "../../trips/trip-queries";
 
 /**
  * Standalone full-page view — reached by clicking an operation's code in
@@ -38,12 +39,14 @@ export default async function OperationDetailPage({
   const showsLocation =
     operation.statusCode === "operating" || operation.statusCode === "completed";
 
-  const [pickers, pm, ping] = await Promise.all([
+  const [pickers, pm, ping, tripSummary, headway] = await Promise.all([
     loadPickerOptions(),
     operation.vehicleId ? loadNearestPm(operation.vehicleId) : Promise.resolve(null),
     operation.vehicleId && showsLocation
       ? loadLatestGpsPing(operation.vehicleId)
       : Promise.resolve(null),
+    loadOperationTripSummary(operation.id),
+    loadOperationHeadway(operation.id, operation.date),
   ]);
 
   return (
@@ -74,6 +77,8 @@ export default async function OperationDetailPage({
           shifts={pickers.shifts}
           pm={pm}
           ping={ping}
+          tripSummary={tripSummary}
+          headway={headway}
         />
       </DetailPage>
     </div>

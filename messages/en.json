@@ -177,7 +177,17 @@
     "statusLocked": "Completed records are locked — only a super admin can change this.",
     "kmDelta": "+{km} km",
     "batteryRange": "{from} → {to}%",
-    "vendorLabel": "Vendor"
+    "vendorLabel": "Vendor",
+    "trips": {
+      "title": "Trips",
+      "tripCount": "{count} trips today",
+      "avgOutboundLeg": "Avg. outbound leg",
+      "avgReturnLeg": "Avg. return leg",
+      "avgRoundTrip": "Avg. round trip",
+      "noTrips": "No trips logged for this shift yet",
+      "headwayTitle": "Headway at this shift's stations",
+      "noHeadway": "Not enough same-day trips at these stations to compute headway."
+    }
   },
   "master": {
     "record": "Record",
@@ -300,6 +310,7 @@
   "trips": {
     "tripsTab": "Trips",
     "tripsTitle": "Trips",
+    "headwayTab": "Headway",
     "record": "Record",
     "choose": "Choose",
     "noSelection": "No trip selected",
@@ -313,7 +324,10 @@
     "noOperationFound": "No operation found for that vehicle, date and shift",
     "noOperationFoundHint": "Trips always belong to a Daily Operations record — create that first, then come back to log trips against it.",
     "noStopsRecorded": "No departure times recorded yet",
+    "noHeadwayData": "No trips recorded at any station on this route in the selected period.",
     "legTimeValue": "Leg time: {time}",
+    "applyPeriod": "Apply",
+    "periodRange": "{from} – {to}",
     "field": {
       "tripCode": "Trip",
       "vehicle": "Vehicle",
@@ -324,13 +338,22 @@
       "direction": "Direction",
       "legTime": "Leg time",
       "roundTripTime": "Round trip time",
-      "hasReturn": "Has return leg"
+      "hasReturn": "Has return leg",
+      "station": "Station",
+      "avgHeadway": "Average headway",
+      "sampleCount": "Trips",
+      "period": "Period"
     },
     "direction": {
       "outbound": "Outbound",
       "return": "Return",
       "outboundOnly": "Outbound only",
       "roundTrip": "Round trip"
+    },
+    "period": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
     },
     "error": {
       "saveFailed": "The trip could not be saved. Try again.",

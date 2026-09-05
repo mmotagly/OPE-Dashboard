@@ -301,3 +301,138 @@ export async function loadTripsForOperation(operationId: string): Promise<TripEn
 
 export type { RouteStationRow };
 export { loadRouteStations };
+
+/* ---------------- headway report (Phase 4) ---------------- */
+
+export type HeadwayRow = {
+  stationId: string;
+  stationCode: string;
+  stationName: string;
+  direction: TripDirection;
+  avgHeadwayMinutes: number | null;
+  avgHeadwayDisplay: string | null;
+  sampleCount: number;
+};
+
+/**
+ * `fn_trip_headway_report` (0023) does the actual computation — pooling
+ * every trip's gap to its nearest neighbour in time, partitioned by day so
+ * one day's last trip is never "adjacent" to the next day's first, and by
+ * direction so a stop passed outbound and the same stop passed on the way
+ * back count separately (see the Phase 4 plan). This just calls it and
+ * reshapes the row.
+ */
+export async function loadHeadwayReport(
+  routeId: string,
+  from: string,
+  to: string,
+): Promise<HeadwayRow[]> {
+  const supabase = await tripsDb();
+  const { data } = await supabase.rpc("fn_trip_headway_report", {
+    p_route_id: routeId,
+    p_from: from,
+    p_to: to,
+  });
+
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+    stationId: String(r.station_id),
+    stationCode: String(r.station_code),
+    stationName: String(r.station_name),
+    direction: r.direction === "return" ? "return" : "outbound",
+    avgHeadwayMinutes: num(r.avg_headway_minutes),
+    avgHeadwayDisplay: (r.avg_headway_display as string | null) ?? null,
+    sampleCount: Number(r.sample_count ?? 0),
+  }));
+}
+
+/* ---------------- Daily Operations integration (Phase 5) ---------------- */
+
+export type OperationTripSummary = {
+  tripCount: number;
+  avgOutboundLegMinutes: number | null;
+  avgReturnLegMinutes: number | null;
+  avgRoundTripMinutes: number | null;
+};
+
+/** One shift's trips, aggregated — `fn_operation_trip_summary` (0023) does
+ * the averaging; this just calls it. Always returns a row (count 0, averages
+ * null, when the shift has no trips), matching the SQL function's shape. */
+export async function loadOperationTripSummary(
+  operationId: string,
+): Promise<OperationTripSummary> {
+  const supabase = await tripsDb();
+  const { data } = await supabase
+    .rpc("fn_operation_trip_summary", { p_operation_id: operationId })
+    .maybeSingle();
+
+  return {
+    tripCount: Number(data?.trip_count ?? 0),
+    avgOutboundLegMinutes: num(data?.avg_outbound_leg_minutes),
+    avgReturnLegMinutes: num(data?.avg_return_leg_minutes),
+    avgRoundTripMinutes: num(data?.avg_round_trip_minutes),
+  };
+}
+
+export type OperationHeadwayRow = HeadwayRow & { routeId: string; routeCode: string };
+
+/**
+ * For every station this shift's trips actually stopped at, the same-day
+ * fleet-wide headway at that (route, station, direction) — headway is
+ * inherently a multi-vehicle metric, so this surfaces the real number
+ * rather than "this vehicle vs. itself" (see the Phase 5 plan).
+ */
+export async function loadOperationHeadway(
+  operationId: string,
+  date: string,
+): Promise<OperationHeadwayRow[]> {
+  const supabase = await tripsDb();
+
+  const { data: stopRows } = await supabase
+    .from("trip_stops")
+    .select(
+      "direction, route_stations ( station_id ), trips!inner ( operation_id, route_id, routes ( route_code ) )",
+    )
+    .eq("trips.operation_id", operationId);
+
+  type Touched = { routeId: string; routeCode: string; stationId: string; direction: string };
+
+  const touched: Touched[] = ((stopRows ?? []) as Record<string, unknown>[])
+    .map((r) => {
+      const rs = (Array.isArray(r.route_stations) ? r.route_stations[0] : r.route_stations) as
+        | Record<string, unknown>
+        | undefined;
+      const trip = (Array.isArray(r.trips) ? r.trips[0] : r.trips) as
+        | Record<string, unknown>
+        | undefined;
+      const route = trip
+        ? ((Array.isArray(trip.routes) ? trip.routes[0] : trip.routes) as
+            | Record<string, unknown>
+            | undefined)
+        : undefined;
+
+      return {
+        routeId: trip ? String(trip.route_id) : "",
+        routeCode: route ? String(route.route_code) : "",
+        stationId: rs ? String(rs.station_id) : "",
+        direction: String(r.direction),
+      };
+    })
+    .filter((t) => t.routeId && t.stationId);
+
+  if (touched.length === 0) return [];
+
+  const touchedKeys = new Set(touched.map((t) => `${t.routeId}:${t.stationId}:${t.direction}`));
+  const routeCodeById = new Map(touched.map((t) => [t.routeId, t.routeCode]));
+  const routeIds = [...routeCodeById.keys()];
+
+  const perRoute = await Promise.all(
+    routeIds.map(async (routeId) => {
+      const rows = await loadHeadwayReport(routeId, date, date);
+      return rows.map((row) => ({ ...row, routeId, routeCode: routeCodeById.get(routeId) ?? "" }));
+    }),
+  );
+
+  return perRoute
+    .flat()
+    .filter((row) => touchedKeys.has(`${row.routeId}:${row.stationId}:${row.direction}`));
+}

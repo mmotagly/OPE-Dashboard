@@ -19,6 +19,7 @@ import {
   operationTone,
   statusLabel,
   dateTime,
+  duration,
 } from "@/lib/format";
 import {
   loadNearestPm,
@@ -31,6 +32,12 @@ import {
 } from "./queries";
 import { OperationForm } from "./operation-form";
 import { BulkPlanForm } from "./bulk-plan-form";
+import {
+  loadOperationHeadway,
+  loadOperationTripSummary,
+  type OperationHeadwayRow,
+  type OperationTripSummary,
+} from "../trips/trip-queries";
 
 const PM_STATUS_KEY: Record<string, string> = {
   overdue: "overdue",
@@ -55,17 +62,22 @@ export async function OperationDetailBody({
   shifts,
   pm,
   ping,
+  tripSummary,
+  headway,
 }: {
   operation: OperationRow;
   shifts: ShiftOption[];
   pm: NearestPm | null;
   ping: LatestGpsPing | null;
+  tripSummary: OperationTripSummary;
+  headway: OperationHeadwayRow[];
 }) {
   const t = await getTranslations("operations");
   const tCommon = await getTranslations("common");
   const tVehicle = await getTranslations("vehicle");
   const tShift = await getTranslations("shift");
   const tStatus = await getTranslations("status");
+  const tTrips = await getTranslations("trips");
 
   const shiftLabel = (shiftId: string | null) => {
     const shift = shifts.find((s) => s.id === shiftId);
@@ -180,6 +192,48 @@ export async function OperationDetailBody({
             {money(operation.driverTips)}
           </Row>
         </KeyValue>
+      </Section>
+
+      <Section title={t("trips.title")}>
+        {tripSummary.tripCount === 0 ? (
+          <Empty title={t("trips.noTrips")} />
+        ) : (
+          <>
+            <div className="mb-2 px-4">
+              <Micro bar={false}>{t("trips.tripCount", { count: tripSummary.tripCount })}</Micro>
+            </div>
+            <KeyValue>
+              <Row label={t("trips.avgOutboundLeg")}>
+                <span className="tnum">{duration(tripSummary.avgOutboundLegMinutes)}</span>
+              </Row>
+              <Row label={t("trips.avgReturnLeg")} muted>
+                <span className="tnum">{duration(tripSummary.avgReturnLegMinutes)}</span>
+              </Row>
+              <Row label={t("trips.avgRoundTrip")}>
+                <span className="tnum">{duration(tripSummary.avgRoundTripMinutes)}</span>
+              </Row>
+            </KeyValue>
+
+            <p className="mb-2 mt-4 text-section-label font-medium uppercase tracking-[0.04em] text-ink-3">
+              {t("trips.headwayTitle")}
+            </p>
+            {headway.length === 0 ? (
+              <Empty title={t("trips.noHeadway")} />
+            ) : (
+              <KeyValue>
+                {headway.map((h) => (
+                  <Row
+                    key={`${h.routeId}-${h.stationId}-${h.direction}`}
+                    label={`${h.stationCode} · ${h.stationName} · ${tTrips(`direction.${h.direction}`)}`}
+                    muted
+                  >
+                    {h.avgHeadwayDisplay ?? "—"}
+                  </Row>
+                ))}
+              </KeyValue>
+            )}
+          </>
+        )}
       </Section>
 
       {operation.remarks && (
@@ -328,11 +382,13 @@ export async function OperationDrawer({
   const showsLocation =
     operation.statusCode === "operating" || operation.statusCode === "completed";
 
-  const [pm, ping] = await Promise.all([
+  const [pm, ping, tripSummary, headway] = await Promise.all([
     operation.vehicleId ? loadNearestPm(operation.vehicleId) : Promise.resolve(null),
     operation.vehicleId && showsLocation
       ? loadLatestGpsPing(operation.vehicleId)
       : Promise.resolve(null),
+    loadOperationTripSummary(operation.id),
+    loadOperationHeadway(operation.id, operation.date),
   ]);
 
   return (
@@ -360,7 +416,14 @@ export async function OperationDrawer({
         ) : undefined
       }
     >
-      <OperationDetailBody operation={operation} shifts={shifts} pm={pm} ping={ping} />
+      <OperationDetailBody
+        operation={operation}
+        shifts={shifts}
+        pm={pm}
+        ping={ping}
+        tripSummary={tripSummary}
+        headway={headway}
+      />
     </Drawer>
   );
 }

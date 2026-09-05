@@ -177,7 +177,17 @@
     "statusLocked": "السجلات المكتملة مقفلة — يمكن للمشرف العام فقط تغيير هذا الحقل.",
     "kmDelta": "+{km} كم",
     "batteryRange": "{from} ← {to}%",
-    "vendorLabel": "المورد"
+    "vendorLabel": "المورد",
+    "trips": {
+      "title": "الرحلات",
+      "tripCount": "{count} رحلة اليوم",
+      "avgOutboundLeg": "متوسط زمن الذهاب",
+      "avgReturnLeg": "متوسط زمن العودة",
+      "avgRoundTrip": "متوسط زمن الذهاب والعودة",
+      "noTrips": "لم تُسجَّل رحلات لهذه المناوبة بعد",
+      "headwayTitle": "الفاصل الزمني عند محطات هذه المناوبة",
+      "noHeadway": "لا توجد رحلات كافية في نفس اليوم عند هذه المحطات لحساب الفاصل الزمني."
+    }
   },
   "master": {
     "record": "السجل",
@@ -300,6 +310,7 @@
   "trips": {
     "tripsTab": "الرحلات",
     "tripsTitle": "الرحلات",
+    "headwayTab": "الفاصل الزمني",
     "record": "السجل",
     "choose": "اختر",
     "noSelection": "لم يتم اختيار رحلة",
@@ -313,7 +324,10 @@
     "noOperationFound": "لا يوجد سجل تشغيل لهذه المركبة والتاريخ والمناوبة",
     "noOperationFoundHint": "الرحلات مرتبطة دائمًا بسجل تشغيل يومي — أنشئ السجل أولًا ثم عد لتسجيل الرحلات عليه.",
     "noStopsRecorded": "لم يتم تسجيل أي أوقات مغادرة بعد",
+    "noHeadwayData": "لا توجد رحلات مسجَّلة عند أي محطة على هذا المسار خلال الفترة المحددة.",
     "legTimeValue": "زمن الرحلة: {time}",
+    "applyPeriod": "تطبيق",
+    "periodRange": "{from} – {to}",
     "field": {
       "tripCode": "الرحلة",
       "vehicle": "المركبة",
@@ -324,13 +338,22 @@
       "direction": "الاتجاه",
       "legTime": "زمن الرحلة",
       "roundTripTime": "زمن الرحلة ذهابًا وإيابًا",
-      "hasReturn": "بها رحلة عودة"
+      "hasReturn": "بها رحلة عودة",
+      "station": "المحطة",
+      "avgHeadway": "متوسط الفاصل الزمني",
+      "sampleCount": "الرحلات",
+      "period": "الفترة"
     },
     "direction": {
       "outbound": "ذهاب",
       "return": "عودة",
       "outboundOnly": "ذهاب فقط",
       "roundTrip": "ذهاب وعودة"
+    },
+    "period": {
+      "day": "يوم",
+      "week": "أسبوع",
+      "month": "شهر"
     },
     "error": {
       "saveFailed": "تعذّر حفظ الرحلة. حاول مرة أخرى.",
