@@ -7,6 +7,9 @@
     "create": "إنشاء",
     "edit": "تعديل",
     "delete": "حذف",
+    "remove": "إزالة",
+    "saved": "تم الحفظ",
+    "done": "تم",
     "signOut": "تسجيل الخروج",
     "loading": "جارٍ التحميل",
     "fullscreen": "ملء الشاشة",
@@ -293,6 +296,47 @@
       "saveFailed": "تعذّر حفظ السجل. حاول مرة أخرى."
     },
     "allRecords": "الكل"
+  },
+  "trips": {
+    "tripsTab": "الرحلات",
+    "tripsTitle": "الرحلات",
+    "record": "السجل",
+    "choose": "اختر",
+    "noSelection": "لم يتم اختيار رحلة",
+    "noSelectionHint": "اختر صفًا لعرض التفاصيل الكاملة.",
+    "newTrips": "رحلات جديدة",
+    "addTrip": "إضافة رحلة",
+    "saveTrips": "حفظ الرحلات",
+    "returnLeg": "رحلة العودة",
+    "findShift": "بحث عن المناوبة",
+    "entryContext": "{vehicle} · {date} · {shift}",
+    "noOperationFound": "لا يوجد سجل تشغيل لهذه المركبة والتاريخ والمناوبة",
+    "noOperationFoundHint": "الرحلات مرتبطة دائمًا بسجل تشغيل يومي — أنشئ السجل أولًا ثم عد لتسجيل الرحلات عليه.",
+    "noStopsRecorded": "لم يتم تسجيل أي أوقات مغادرة بعد",
+    "legTimeValue": "زمن الرحلة: {time}",
+    "field": {
+      "tripCode": "الرحلة",
+      "vehicle": "المركبة",
+      "route": "المسار",
+      "date": "التاريخ",
+      "shift": "المناوبة",
+      "outboundStart": "بداية الذهاب",
+      "direction": "الاتجاه",
+      "legTime": "زمن الرحلة",
+      "roundTripTime": "زمن الرحلة ذهابًا وإيابًا",
+      "hasReturn": "بها رحلة عودة"
+    },
+    "direction": {
+      "outbound": "ذهاب",
+      "return": "عودة",
+      "outboundOnly": "ذهاب فقط",
+      "roundTrip": "ذهاب وعودة"
+    },
+    "error": {
+      "saveFailed": "تعذّر حفظ الرحلة. حاول مرة أخرى.",
+      "invalidDraft": "تعذّرت قراءة هذا الإدخال. حاول مرة أخرى.",
+      "duplicate": "رمز الرحلة هذا مستخدم بالفعل."
+    }
   },
   "vehicle": {
     "vendor": "المورد",

@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -106,17 +107,18 @@ export function NumberInput({
   );
 }
 
-export function SelectInput({
-  className = "",
-  children,
-  ...rest
-}: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select {...rest} className={`${CONTROL} ${className}`}>
-      {children}
-    </select>
-  );
-}
+/** Forwards its ref — needed by callers that must reassert the native
+ * element's value imperatively (see trip-entry-grid.tsx's controlled-select
+ * desync workaround). */
+export const SelectInput = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
+  function SelectInput({ className = "", children, ...rest }, ref) {
+    return (
+      <select ref={ref} {...rest} className={`${CONTROL} ${className}`}>
+        {children}
+      </select>
+    );
+  },
+);
 
 export function TextArea({
   className = "",

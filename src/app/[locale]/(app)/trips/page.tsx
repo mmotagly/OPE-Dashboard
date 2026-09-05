@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
-import { canWriteMaster, requireUser } from "@/lib/auth";
+import { canWriteMaster, canWriteOps, requireUser } from "@/lib/auth";
 import { Panel, PanelHead } from "@/components/ui/panel";
 import { ExportCsvLink } from "@/components/ui/export-csv-link";
 import { FilterChips, type Chip } from "@/components/ui/filter-chips";
@@ -10,18 +10,26 @@ import { applyFilters, toControls, writeFilterState } from "@/lib/filters";
 import { resolveFilters } from "@/lib/filter-page";
 import { loadLookups } from "@/lib/lookups";
 import { loadRoutes, loadStations, type RouteEntity } from "./queries";
-import { buildRouteFilters, buildStationFilters } from "./filters";
+import { loadTripEntryOptions, loadTrips } from "./trip-queries";
+import { buildRouteFilters, buildStationFilters, buildTripFilters } from "./filters";
 import { RoutesTable, StationsTable } from "./routes-table";
+import { TripsTable } from "./trips-table";
 import { RouteDrawer } from "./route-drawer";
+import { TripDrawer } from "./trip-drawer";
+import { TripEntryPanel } from "./trip-entry-panel";
+
+type PageEntity = "trips" | RouteEntity;
 
 const newButton =
   "rounded-control border border-accent-fill bg-accent-fill px-3 py-1.5 text-button font-medium text-on-accent transition-opacity hover:opacity-90";
 
 /**
- * Routes and stations on one page. Each entity carries its own filter set and
- * its own saved filters — a route filter is meaningless on a station list.
+ * Trips, routes and stations on one page. Trips (real, timestamped runs —
+ * see 0023_trips.sql) is the default landing tab; routes/stations are still
+ * the fixed reference data they always were, just one tab over. Each entity
+ * carries its own filter set and its own saved filters.
  */
-export default async function RoutesPage({
+export default async function TripsPage({
   params,
   searchParams,
 }: {
@@ -38,22 +46,31 @@ export default async function RoutesPage({
   const mode = one("mode");
   const sort = one("sort");
   const dir = one("dir") || "asc";
-  const entity: RouteEntity = one("entity") === "stations" ? "stations" : "routes";
+
+  const rawEntity = one("entity");
+  const entity: PageEntity =
+    rawEntity === "stations" ? "stations" : rawEntity === "routes" ? "routes" : "trips";
+  const isTrips = entity === "trips";
   const isStations = entity === "stations";
-  const moduleKey = isStations ? "routes:stations" : "routes";
+  const moduleKey = isTrips ? "trips" : isStations ? "routes:stations" : "routes";
 
   const t = await getTranslations("master");
+  const tTrips = await getTranslations("trips");
   const tNav = await getTranslations("nav");
   const tCommon = await getTranslations("common");
   const user = await requireUser(locale);
-  const canEdit = canWriteMaster(user.role);
+  const canEditReference = canWriteMaster(user.role);
+  const canEditTrips = canWriteOps(user.role);
 
-  const [routes, stations, statuses, { state: filterState, saved }] = await Promise.all([
-    loadRoutes(""),
-    loadStations(""),
-    loadLookups("generic_status"),
-    resolveFilters(moduleKey, sp),
-  ]);
+  const [routes, stations, statuses, trips, tripOptions, { state: filterState, saved }] =
+    await Promise.all([
+      loadRoutes(""),
+      loadStations(""),
+      loadLookups("generic_status"),
+      loadTrips({}),
+      loadTripEntryOptions(),
+      resolveFilters(moduleKey, sp),
+    ]);
 
   const labels = {
     routeCode: t("field.routeCode"),
@@ -68,78 +85,106 @@ export default async function RoutesPage({
     status: t("field.status"),
   };
 
+  const tripLabels = {
+    vehicle: tTrips("field.vehicle"),
+    route: tTrips("field.route"),
+    date: tTrips("field.date"),
+    hasReturn: tTrips("field.hasReturn"),
+  };
+
   const routeFilters = buildRouteFilters(labels, { statuses, rows: routes });
   const stationFilters = buildStationFilters(labels, { statuses, rows: stations });
+  const tripFilters = buildTripFilters(tripLabels, { routes: tripOptions.routes });
 
-  const visibleRoutes = isStations ? routes : applyFilters(routes, routeFilters, filterState);
+  const visibleRoutes = isTrips || isStations ? routes : applyFilters(routes, routeFilters, filterState);
   const visibleStations = isStations
     ? applyFilters(stations, stationFilters, filterState)
     : stations;
+  const visibleTrips = isTrips ? applyFilters(trips, tripFilters, filterState) : trips;
 
   const chips: Chip[] = [
-    { value: "", label: t("routesTab"), count: visibleRoutes.length },
+    { value: "", label: tTrips("tripsTab"), count: visibleTrips.length },
+    { value: "routes", label: t("routesTab"), count: visibleRoutes.length },
     { value: "stations", label: t("stationsTab"), count: visibleStations.length },
   ];
 
   const filterQuery = writeFilterState(filterState);
   const baseQuery: Record<string, string> = {};
-  if (isStations) baseQuery.entity = "stations";
+  if (entity !== "trips") baseQuery.entity = entity;
   if (sort) {
     baseQuery.sort = sort;
     baseQuery.dir = dir;
   }
   const query = { ...baseQuery, ...filterQuery };
 
-  const drawerMode =
-    canEdit && mode === "new"
+  if (isTrips && mode === "entry") {
+    return (
+      <div className="font-inter contents">
+        <TripEntryPanel
+          operationId={one("operationId") || undefined}
+          date={one("date") || undefined}
+          vehicleId={one("vehicleId") || undefined}
+          shiftId={one("shiftId") || undefined}
+          backTo={query}
+        />
+      </div>
+    );
+  }
+
+  const drawerMode = isTrips
+    ? id
+      ? "view"
+      : null
+    : canEditReference && mode === "new"
       ? "new"
-      : canEdit && mode === "edit" && id
+      : canEditReference && mode === "edit" && id
         ? "edit"
-        : canEdit && mode === "import" && !isStations
+        : canEditReference && mode === "import" && !isStations
           ? "import"
           : id
             ? "view"
             : null;
 
-  const newLabel = isStations ? t("newStation") : t("newRoute");
+  const newLabel = isTrips ? tTrips("newTrips") : isStations ? t("newStation") : t("newRoute");
+  const newHref = isTrips
+    ? { pathname: "/trips", query: { ...query, entity: "trips", mode: "entry" } }
+    : { pathname: "/trips", query: { ...query, mode: "new" } };
+  const showNew = isTrips ? canEditTrips : canEditReference;
 
   return (
     <div className="font-inter contents">
       <Panel clip={false} fill>
         <PanelHead
           eyebrow={tNav("operations")}
-          title={isStations ? t("stationsTitle") : t("routesTitle")}
+          title={isTrips ? tTrips("tripsTitle") : isStations ? t("stationsTitle") : t("routesTitle")}
           actions={
-            canEdit ? (
-              <>
-                {!isStations && (
-                  <>
-                    <ExportCsvLink href="/api/export/routes" label={tCommon("exportCsv")} />
-                    <Link
-                      href={{ pathname: "/trips", query: { ...query, mode: "import" } }}
-                      className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
-                    >
-                      {tCommon("importCsv")}
-                    </Link>
-                  </>
-                )}
-                <Link
-                  href={{ pathname: "/trips", query: { ...query, mode: "new" } }}
-                  className={newButton}
-                >
+            <>
+              {canEditReference && !isTrips && !isStations && (
+                <>
+                  <ExportCsvLink href="/api/export/routes" label={tCommon("exportCsv")} />
+                  <Link
+                    href={{ pathname: "/trips", query: { ...query, mode: "import" } }}
+                    className="rounded-control border border-hairline bg-surface px-3 py-1.5 text-button font-medium text-ink transition-colors hover:bg-raise"
+                  >
+                    {tCommon("importCsv")}
+                  </Link>
+                </>
+              )}
+              {showNew && (
+                <Link href={newHref} className={newButton}>
                   {newLabel}
                 </Link>
-              </>
-            ) : undefined
+              )}
+            </>
           }
         />
 
         <FilterBar
           pathname="/trips"
           controls={
-            isStations ? toControls(stationFilters) : toControls(routeFilters)
+            isTrips ? toControls(tripFilters) : isStations ? toControls(stationFilters) : toControls(routeFilters)
           }
-          defaultFieldKeys={["code", "name"]}
+          defaultFieldKeys={isTrips ? ["vehicle", "date"] : ["code", "name"]}
           state={filterState}
           baseQuery={baseQuery}
           savedViews={
@@ -155,13 +200,15 @@ export default async function RoutesPage({
 
         <FilterChips
           chips={chips}
-          active={isStations ? "stations" : ""}
+          active={isTrips ? "" : entity}
           param="entity"
           pathname="/trips"
           extraQuery={filterQuery}
         />
 
-        {isStations ? (
+        {isTrips ? (
+          <TripsTable rows={visibleTrips} selectedId={id ?? null} query={query} sort={sort} dir={dir} />
+        ) : isStations ? (
           <StationsTable
             rows={visibleStations}
             selectedId={id ?? null}
@@ -170,23 +217,21 @@ export default async function RoutesPage({
             dir={dir}
           />
         ) : (
-          <RoutesTable
-            rows={visibleRoutes}
-            selectedId={id ?? null}
-            query={query}
-            sort={sort}
-            dir={dir}
-          />
+          <RoutesTable rows={visibleRoutes} selectedId={id ?? null} query={query} sort={sort} dir={dir} />
         )}
       </Panel>
 
-      {drawerMode && (
+      {drawerMode && isTrips && (
+        <TripDrawer id={id} closeHref={{ pathname: "/trips", query }} canEdit={canEditTrips} />
+      )}
+
+      {drawerMode && !isTrips && (
         <RouteDrawer
-          entity={entity}
+          entity={isStations ? "stations" : "routes"}
           mode={drawerMode}
           id={id}
           closeHref={{ pathname: "/trips", query }}
-          canEdit={canEdit}
+          canEdit={canEditReference}
         />
       )}
     </div>

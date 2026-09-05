@@ -7,6 +7,9 @@
     "create": "Create",
     "edit": "Edit",
     "delete": "Delete",
+    "remove": "Remove",
+    "saved": "Saved",
+    "done": "Done",
     "signOut": "Sign out",
     "loading": "Loading",
     "fullscreen": "Full screen",
@@ -293,6 +296,47 @@
       "saveFailed": "The record could not be saved. Try again."
     },
     "allRecords": "All"
+  },
+  "trips": {
+    "tripsTab": "Trips",
+    "tripsTitle": "Trips",
+    "record": "Record",
+    "choose": "Choose",
+    "noSelection": "No trip selected",
+    "noSelectionHint": "Pick a row to see the full entry.",
+    "newTrips": "New trips",
+    "addTrip": "Add trip",
+    "saveTrips": "Save trips",
+    "returnLeg": "Return leg",
+    "findShift": "Find shift",
+    "entryContext": "{vehicle} · {date} · {shift}",
+    "noOperationFound": "No operation found for that vehicle, date and shift",
+    "noOperationFoundHint": "Trips always belong to a Daily Operations record — create that first, then come back to log trips against it.",
+    "noStopsRecorded": "No departure times recorded yet",
+    "legTimeValue": "Leg time: {time}",
+    "field": {
+      "tripCode": "Trip",
+      "vehicle": "Vehicle",
+      "route": "Route",
+      "date": "Date",
+      "shift": "Shift",
+      "outboundStart": "Outbound start",
+      "direction": "Direction",
+      "legTime": "Leg time",
+      "roundTripTime": "Round trip time",
+      "hasReturn": "Has return leg"
+    },
+    "direction": {
+      "outbound": "Outbound",
+      "return": "Return",
+      "outboundOnly": "Outbound only",
+      "roundTrip": "Round trip"
+    },
+    "error": {
+      "saveFailed": "The trip could not be saved. Try again.",
+      "invalidDraft": "That entry could not be read. Try again.",
+      "duplicate": "That trip code is already in use."
+    }
   },
   "vehicle": {
     "vendor": "Vendor",

@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/lib/i18n/routing";
-import { canWriteMaster, requireUser } from "@/lib/auth";
+import { canWriteMaster, canWriteOps, requireUser } from "@/lib/auth";
 import { DetailPage } from "@/components/ui/detail-page";
 import { Pill } from "@/components/ui/pill";
 import { loadRoute, loadRouteOptions, loadRouteStations, loadStation } from "../queries";
 import { RouteDetailBody, StationDetailBody } from "../route-drawer";
+import { loadTrip } from "../trip-queries";
+import { TripDetailBody } from "../trip-drawer";
 
 const editButton =
   "rounded-control border border-ink bg-ink px-3.5 py-2 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90";
@@ -33,6 +35,40 @@ export default async function RouteOrStationDetailPage({
 
   const t = await getTranslations("master");
   const tCommon = await getTranslations("common");
+
+  if (entity === "trip") {
+    const trip = await loadTrip(id);
+    if (!trip) notFound();
+
+    const tTrips = await getTranslations("trips");
+    const canEditTrips = canWriteOps(user.role);
+
+    return (
+      <div className="font-inter contents">
+        <DetailPage
+          code={trip.tripCode}
+          sub={`${trip.vehicleCode} · ${trip.routeCode}`}
+          backHref="/trips"
+          backLabel={tTrips("tripsTitle")}
+          actions={
+            canEditTrips ? (
+              <Link
+                href={{
+                  pathname: "/trips",
+                  query: { entity: "trips", mode: "entry", operationId: trip.operationId },
+                }}
+                className={editButton}
+              >
+                {tCommon("edit")}
+              </Link>
+            ) : undefined
+          }
+        >
+          <TripDetailBody trip={trip} />
+        </DetailPage>
+      </div>
+    );
+  }
 
   if (entity === "station") {
     const station = await loadStation(id);
