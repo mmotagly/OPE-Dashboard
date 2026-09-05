@@ -18,6 +18,8 @@ fixed, pre-planned routes. Some buses are owned by the company, most are
 supplied by vendors. The system tracks:
 
 - **Daily operations** — one record per bus per shift, with odometer readings
+- **Trips** (added 2026-09) — per-station departure times within a shift,
+  with computed leg/round-trip time and a fleet-wide headway report
 - **Maintenance** — RFR (Request For Repair) → Work Order flow
 - **Periodic maintenance** — per-part, KM-driven, fed by daily odometer readings
 - **Vendor invoicing** — monthly, driven by KPI scorecards
@@ -171,9 +173,13 @@ NULL` means it's that vendor's template; a set month is a frozen snapshot.
 Achieved is expressed in **points capped at the KPI's own weight**, enforced
 by a DB trigger. Total comes from `v_scorecard_totals`.
 
-**There is no trips module.** Trips were discussed at length and deliberately
-dropped. The `trip_status` lookup category exists but is empty and unused —
-do not treat it as a hint that trips are coming.
+**Trips is real (added 2026-09, after this document was first written).**
+A vehicle's shift can have many timestamped trips, each with per-station
+departure times, computed leg/round-trip time, and a fleet-wide headway
+report — see `CLAUDE.md`'s "Trips" domain-rules subsection and migration
+`0023_trips.sql`. This section originally said the opposite; treat any
+other "no trips" language elsewhere in this document (written earlier and
+not fully swept for this) as similarly stale.
 
 **Every vehicle has a vendor.** Company-owned buses point at the company's own
 vendor row (`vendors.is_company = true`, one row only, enforced by index).
@@ -271,12 +277,13 @@ Ordered by how much they matter.
   third was never built.
 - **GPS / telematics integration.** Devices exist; integration is a later
   phase. Keep odometer ingestion in one place so it can be swapped.
-- **Trips module.** Deliberately dropped, see section 6.
 - **Per-vehicle "next PM KM".** The work order has the field; per-part
   scheduling was built first and the per-vehicle version deferred.
-- **KPI auto-calculation from operations data.** All KPI values are entered
-  manually. Availability could come from `operating_percentage`; Lead Time
-  depends on trips logic that doesn't exist.
+- **KPI auto-calculation from operations/trips data.** All KPI values are
+  entered manually. Availability could come from `operating_percentage`;
+  Lead Time could now come from access time or trip leg/round-trip time
+  (both real as of 2026-09, see section 6) — deliberately still not wired
+  up, see `CLAUDE.md` §8.
 - **Lead Time SLA target.** Access time is measured but deliberately compared
   against nothing. Do not wire it up or invent a target without asking.
 

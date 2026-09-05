@@ -5,7 +5,55 @@ snapshot) this file is meant to be updated as work lands, so any session on
 any machine can `git pull` and know exactly where things stand. Read
 `CLAUDE.md` first for domain rules; this file is state, not spec.
 
-Last updated: 2026-09-02 (sidebar reorg + Routes→Trips rename, see below).
+Last updated: 2026-09-05 (Trips module — real trips, headway, Daily
+Operations integration, see below).
+
+---
+
+## Trips module — real timestamped trips, headway, Daily Ops integration (2026-09-05)
+
+Full 5-phase build, on top of the pre-existing routes/stations reference
+data (see the note right below on the earlier Trips *rename*, a separate,
+unrelated event). See `CLAUDE.md`'s "Trips (2026-09)" domain-rules
+subsection for the schema and calculation rules. Migration
+`0023_trips.sql` run against the live database and confirmed by the user
+before Phase 2 began.
+
+- **Phase 1** (`35fecae`) — schema: `trips`, `trip_stops`, the leg/round-trip
+  computed columns, `v_trip_summary`, `fn_operation_trip_summary`,
+  `fn_trip_headway_report`, RLS.
+- **Phase 2** (`33fe0f1`) — Trip CRUD, the fast multi-trip entry grid (a
+  deliberate deviation from the usual Drawer-form convention — see the
+  file-level comment on `trip-entry-grid.tsx`), the Trips list tab, its
+  drawer, and the `/trips/[id]?entity=trip` detail page.
+- **Phases 4–5** (`afc0022`) — the Headway report tab (route + day/week/month
+  picker) and the Daily Operations drawer/detail page's new "Trips" section
+  (trip count, average leg/round-trip time, same-day headway at the shift's
+  own stations).
+- Phase 3 (calculated fields visible in the UI) fell out of Phases 2 and 4's
+  own work rather than needing a separate pass.
+
+Two real bugs found and fixed during live verification of Phase 2 — worth
+knowing about if either pattern gets reused elsewhere:
+- A `"use server"` file may only export async functions. `trip-actions.ts`
+  was also exporting a plain state constant (`EMPTY_SAVE_TRIPS_STATE`) —
+  built fine, crashed the first time the action actually ran. Fixed by
+  moving state-shape constants into `trip-schema.ts`, matching how
+  `operations/schema.ts` already does this for `EMPTY_BULK_PLAN_STATE`.
+- A controlled `<select>` can visually desync from React's own state across
+  a `useActionState` pending transition — the DOM shows the wrong option
+  while React's props say otherwise. `SelectInput`
+  (`components/ui/field.tsx`) now forwards a ref, and the route select in
+  the entry grid reasserts its DOM value every render as a defensive fix.
+
+**Status: all 5 phases shipped, deployed, and verified live by Claude
+against real data** (created trips, checked computed leg/round-trip/headway
+values by hand, checked RTL, checked console) — not yet separately
+re-verified by the user in the UI. Deliberately not built, per explicit
+product decisions now recorded in `CLAUDE.md` §8: GPS auto-population of
+trip stops (the schema supports it via each row's `source` column, nothing
+writes `'gps'` yet), and wiring trip/access time into the Lead Time KPI or
+inventing an SLA target for it.
 
 ---
 
@@ -1158,6 +1206,11 @@ been run** against the live Supabase project, confirmed by the user as of
 0016_alerts.sql
 0017_dashboard.sql
 0018_vendor_kpi_trend.sql
+0019_gps_pings.sql
+0020_cameras.sql
+0021_driver_accounts.sql
+0022_realtime_gps_pings.sql
+0023_trips.sql
 ```
 
 Note on `0014`: the file in the repo is the **corrected** version (a
@@ -1166,9 +1219,15 @@ failed before touching any data — see §1). There was never a version of
 `0014` that ran successfully with the bug still in it, so there's nothing
 to reconcile.
 
-**0001 through 0018 all confirmed run** — 0001-0014 as of 2026-08-24,
+**0001 through 0023 all confirmed run** — 0001-0014 as of 2026-08-24,
 0015-0018 as of 2026-08-31 (autonomous session, see the top of this file;
-types regenerated the same day). Same rule as always: if a future session sees a
+types regenerated the same day), 0019-0022 as of 2026-09-01 (GPS/camera
+roadmap, see `CLAUDE.md` §1), 0023 as of 2026-09-05 (Trips, see the top of
+this file). Types were **not** regenerated for 0019 onward — every query
+against a table/view/function newer than the checked-in generated types
+goes through an explicit `as any` escape hatch (`saved-filters-db.ts` for
+`saved_filters`, `lib/trips-db.ts` for everything 0023 added), documented
+inline at each one. Same rule as always: if a future session sees a
 migration file with no corresponding "run" confirmation, treat its
 run-state as unknown — ask the user, don't assume either way. Claude has no
 direct database access on this project; migration-run status can only be

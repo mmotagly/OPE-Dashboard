@@ -57,12 +57,45 @@ built yet — better done against real hardware than guessed at now.
 - One row per **vehicle per shift per date**. Enforced by a unique constraint.
 - Shifts are Morning and Night. A bus cannot have two drivers in one shift; it can
   have different drivers across the two shifts.
-- Routes never change mid-shift. Do not build for that case.
-- **There is no trips module.** Trips are not entered, not derived, not counted.
-  Do not add one.
 - `vendor_id` is auto-filled from the vehicle by a DB trigger. Never ask for it.
 - `vehicles.current_odometer_km` is maintained by a DB trigger from the latest
   operation row. Never write to it from application code.
+
+### Trips (2026-09)
+Real, timestamped runs on top of the fixed routes/stations reference data — a
+vehicle's shift can have many trips (10+ in one shift is normal), entered via
+a fast batch grid rather than one form per trip. See migration
+`0023_trips.sql` for the full schema.
+
+- A trip always belongs to an existing `daily_vehicle_operations` row (its
+  shift) and is never created without one — Operations is always entered
+  first. `route_id` is chosen **per trip**, independent of the shift's own
+  `route_id` field: that field is an unrelated, unchanged summary value, not
+  something trips read or write. This supersedes the old "routes never
+  change mid-shift" assumption, which predated trips existing at all.
+- A trip's stops (`trip_stops`) are one row per station visit, not one row
+  per direction. A return leg reuses the exact same route's station sequence
+  in reverse — descending `sequence_number` instead of ascending.
+- **Leg time** = the last station's departure time minus the first's, read in
+  the route's own fixed sequence order — never clock order, never entry
+  order. **Round-trip time** = outbound leg + return leg, and exists **only**
+  when both legs do: an outbound-only trip shows a leg time and no
+  round-trip value at all, not a round-trip equal to its leg time.
+- **Headway** compares departure times at the same station, route, day *and
+  direction* (a stop passed outbound and the same stop passed on the way
+  back count separately) across every trip that touched it, any vehicle —
+  the average gap between each trip and its chronologically nearest
+  neighbour, not the more common "average gap between consecutive trips." A
+  day boundary always breaks adjacency; yesterday's last trip is never
+  "adjacent" to today's first.
+- `source` (`'manual' | 'gps'`) exists on both `trips` and `trip_stops` so a
+  future GPS feed can populate the same columns — including backfilling
+  individual stops of an otherwise-manual trip — without a schema change.
+  Nothing writes `'gps'` yet; this is future-proofing only.
+- Read `v_trip_summary`, `fn_operation_trip_summary` and
+  `fn_trip_headway_report`. **Never recompute leg time, round-trip time or
+  headway in TypeScript** — same rule as access time, PM status and the
+  repeat index.
 
 ### RFR → Work Order
 - Operations files an **RFR** (Request For Repair). It is created as `Pending`.
@@ -264,16 +297,24 @@ Six groups, in this order, all visible to every role except where noted:
 | Finance | Dashboard, Vendor Trends, Scorecards, Invoices | `canSeeMoney(role)` |
 | Administration | Activity Log, Settings | `isSuper(role)` |
 
-"Trips" (2026-09) is a sidebar label and URL rename of "Routes &
-Stations" — the page moved from `/routes` to `/trips`, with a redirect
-in `src/middleware.ts` for old links. Nothing else about the module
-changed: the `routes` / `route_stations` database tables, the internal
-file and component names (`route-drawer.tsx`, `RoutesTable`,
-`loadRoute`, …), and the CSV `/api/export/routes` /
-`/api/import-template/routes` endpoints all still say "route" on
-purpose, because the domain entity itself was not renamed — only how
-it's labelled and linked to in the sidebar. Don't read that mismatch as
-something to "fix."
+"Trips" is two things sharing one page (`/trips`, tabs: Trips · Headway ·
+Routes · Stations):
+
+- First, a sidebar label and URL rename (2026-09-02) of "Routes &
+  Stations" — the page moved from `/routes` to `/trips`, with a redirect
+  in `src/middleware.ts` for old links. That rename touched *only*
+  labelling and routing: the `routes` / `route_stations` database
+  tables, the internal file and component names (`route-drawer.tsx`,
+  `RoutesTable`, `loadRoute`, …), and the CSV `/api/export/routes` /
+  `/api/import-template/routes` endpoints all still say "route" on
+  purpose, because that domain entity (fixed reference data — a
+  route's ordered stops) was never renamed. Don't read that mismatch
+  as something to "fix."
+- Second, and unrelated to the rename above, the real timestamped-trips
+  feature built on top of that reference data (2026-09, see the "Trips"
+  domain-rules subsection above and migration `0023_trips.sql`). This is
+  new code with its own consistent naming (`trip-queries.ts`, `trips` /
+  `trip_stops` tables, …) and no such old/new mismatch.
 
 "Maintenance Alerts" is a label-only rename of "Alerts" — the page,
 route, and code all stay `alerts`.
@@ -427,18 +468,20 @@ select v.vehicle_code, fn_init_pm_schedules(v.id) from vehicles v;
   There is no proration for a bus joining or leaving mid-month — the average
   already accounts for it. This is exactly what `per_avg_bus_month` does in
   `fn_generate_invoice`, so nothing in the code changes.
-- **The Lead Time KPI is entered by hand.** It is based on trips logic, which
-  does not exist. Access time *is* measured — `fn_rfr_access_minutes` and
-  `v_rfr_access_time` — but it is deliberately compared against no target, and
-  no SLA threshold is configured anywhere. Do not wire access time into the
-  Lead Time KPI or invent a target for it.
+- **The Lead Time KPI is entered by hand.** Access time *is* measured —
+  `fn_rfr_access_minutes` and `v_rfr_access_time` — and trip leg/round-trip
+  time *is* measured too (0023's `fn_operation_trip_summary` and
+  `fn_trip_headway_report`) — but neither is wired into the Lead Time KPI,
+  and no SLA threshold is configured anywhere. Do not wire either in, or
+  invent a target, without asking.
 
 ### Deferred — do not build against these
 
-- **There is no trips module and none is planned.** The `trip_status` lookup
-  category exists with no seeded values and nothing reads it. Leave it alone:
-  do not seed it, do not surface it, and do not treat its presence as a sign
-  that trips are coming.
+- **KPI auto-calculation from trip/access-time data.** Now that both exist,
+  it would be technically possible to derive Lead Time or an availability
+  metric from them — deliberately not done. Needs an explicit product
+  decision, not an assumption that measuring something is the same as
+  wanting it scored.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
